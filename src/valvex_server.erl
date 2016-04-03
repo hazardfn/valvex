@@ -137,7 +137,7 @@ handle_call( {assign_work, {Work, Reply, Timestamp}, {_Key, QPid, Backend}}
       WorkFun = fun() ->
                     case is_process_alive(Reply) of
                       true  -> Reply ! Work();
-                      false -> erlang:error(caller_dead)
+                      false -> caller_dead
                     end
                 end,
       gen_server:cast(Worker, {work, WorkFun}),
