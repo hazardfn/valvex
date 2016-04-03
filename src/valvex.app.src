@@ -1,0 +1,17 @@
+{application, valvex,
+ [{description, "A fully customizeable rate-limiter for erlang"},
+  {vsn, "0.1.0"},
+  {registered, [valvex]},
+  {applications,
+   [kernel,
+    stdlib
+   ]},
+  {env,[ {queues,           []}
+       , {pushback_enabled, true}
+       , {workers, 10}
+       ]},
+  {modules, [valvex]},
+  {maintainers, ["Howard Beard-Marlowe <howardbm@live.se>"]},
+  {licenses, []},
+  {links, ["https://github.com/hazardfn"]}
+ ]}.
