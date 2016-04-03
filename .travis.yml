@@ -5,5 +5,6 @@ otp_release:
   - 18.2
   - 18.2.1
 script:
-  - kerl update releases
+  - ./rebar3 dialyzer
+  - ./rebar3 xref
   - ./rebar3 eunit
