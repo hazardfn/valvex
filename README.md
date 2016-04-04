@@ -145,3 +145,49 @@ Pushes work to the queue with the queue key you specified. Will not error if the
 **Reply Identifier:** Pid of the process that is awaiting the result of the work.
 
 **Work:** A fun() of stuff to do.
+
+### `get_available_workers (Identifier) -> [pid()].`
+---
+#### Description:
+
+Gets a list of pid's that represent your available workers.
+
+#### Spec:
+
+**Identifier:** Pid or registered atom of the valve server.
+
+### `get_available_workers_count (Identifier) -> non_neg_integer()`
+---
+#### Description:
+
+Gets the number of workers currently available (not processing work).
+
+#### Spec:
+
+**Identifier:** Pid or registered atom of the valve server.
+
+### `get_queue_size (Identifier, Queue Key) -> non_neg_integer().`
+---
+#### Description:
+
+Gets the current number of items in a specified queue.
+
+#### Spec:
+
+**Identifier:** Pid or registered atom of the valve server.
+
+**Queue Key:** A unique atom identifying the queue. 
+
+### `pushback (Identifier, Queue Key, Reply Identifier) -> ok.`
+---
+#### Description:
+
+Simply waits for the pushback limit of the specified queue and responds {error, threshold_hit} to the Reply Identifier
+
+#### Spec:
+
+**Identifier:** Pid or registered atom of the valve server.
+
+**Queue Key:** A unique atom identifying the queue. 
+
+**Reply Identifier:** Pid of the process that is awaiting the result of the work.
