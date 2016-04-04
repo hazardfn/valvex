@@ -166,7 +166,7 @@ Gets the number of workers currently available (not processing work).
 
 **Identifier:** Pid or registered atom of the valve server.
 
-### `get_queue_size (Identifier, Queue Key) -> non_neg_integer().`
+### `get_queue_size (Identifier, Queue Key) -> non_neg_integer() | {error, key_not_found}.`
 ---
 #### Description:
 
