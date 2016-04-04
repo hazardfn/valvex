@@ -1,56 +1,54 @@
 # Overview | [Travis-CI](https://travis-ci.org/hazardfn/valvex) :: ![Build Status](https://travis-ci.org/hazardfn/valvex.svg)
 --------
 valveX is a rate-limiter written in erlang - it has a lot of tweakable
-options to ensure you get the best solution. Valvex_core allows you to
-include the functionality of valvex into your existing application, if
-you want to run valvex as a standalone application amongst other
-services see the standard valvex repo.
+options to ensure you get the best solution.
 
 Features
 --------
 * Support for unlimited queues (within the erlang process limit)
 * Each queue has independent state, allowing separate rules for each queue
-* Choose from different queue types such as FIFO or LIFO
-* Extensibility through the use of backends - each queue can use a
-   different backend
+* Choose from different queue types, FIFO and LIFO are supported out the box using erlangs queue - create your own if these don't appeal to you.
+* Extensibility through the use of backends - each queue can use a different backend
 * Queues are supervised and restarted
 * Configurable threshold allowing for pushback under high load
 
 Configuration
 --------
-Before you can use valvex you need to configure environment variables
-in your sys.config or you can use the API to change the settings/add
-queues at runtime.
+Before you can use valvex you need to configure environment variables in your sys.config or you can use the API to change the settings/add queues at runtime.
 
 Usage
 --------
-The best way to use valvex is to start the process and then register
-it with a name, this makes it reachable from anywhere you need it.
+The best way to use valvex is to start the process and then register it with a name, this makes it reachable from anywhere you need it.
 
 ````erlang
 Pid = valvex:start_link([]),
 erlang:register(valvex, Pid).
 ````
-Here is an example of how to create a queue at run time and push work
-to it then listen for the reply. (This assumes you registered the PID
-with the name valvex as above).
+Here is an example of how to create a queue at run time and push work to it then listen for the reply.
 
 ````erlang
-%% Add a queue with the key randomqueue
-%% that has a threshold of 1 and a timeout
-%% of 10 seconds, add is idempotent but there
-%% is different behaviours if you supply a change
-%% to the timeout or threshold
-%% read further in the api docs for more info.
-valvex:add(valvex, {randomqueue, 1, 10}),
+%% Add a queue with the key randomqueue that has a threshold of 1, a timeout of 10 seconds, a pushback of 10 seconds 
+%% and uses the valvex_queue_fifo_backend. there are various options you can supply to add to change the behaviour,
+%% read the API docs for more info.
+
+Pid = valvex:start_link([]),
+erlang:register(valvex, Pid),
+
+Key       = randomqueue,
+Threshold = {1, unit},
+Timeout   = {10, seconds},
+Pushback  = {10, seconds},
+Backend   = valvex_queue_fifo_backend,
+Queue     = {Key, Threshold, Timeout, Pushback, Backend},
+valvex:add(valvex, Queue),
 RandomFun = fun() ->
              timer:sleep(1000),
              {expected_reply, 1000}
             end,
-valvex:push(valvex, self(), randomqueue, RandomFun),
+valvex:push(valvex, Key, self(), RandomFun),
 receive
   {expected_reply, Value} ->
-    io:format(Value);
+    io:format("Value: ~p", [Value]);
   {error, timeout} ->
     io:format("The timeout has been hit");
   {error, threshold_hit} ->
@@ -66,7 +64,7 @@ API
 
 This sections attempts to document the API and it's behaviour under certain scenarios.
 
-### add (Identifier, {Queue Key, Threshold, Timeout, Queue Backend}, Option) -> ok | {error, key_not_unique}.
+### `add (Identifier, {Queue Key, Threshold, Timeout, Pushback, Queue Backend}, Option) -> ok | {error, key_not_unique}.`
 ---
 #### Description:
 
@@ -82,35 +80,31 @@ Adds a queue at runtime. An add/2 operation also exists removing the need for op
 
 **Timeout:** A value that indicates when the work this queue will receive has gone on too long - this value is also used as part of the pushback.
 
+**Pushback:** In the event of the threshold being hit valvex will wait x seconds before responding to the client, this prevents users from receiving an instant response decreasing the chance that they will constantly spam refresh your page causing more work / requests.
+
 **Option:** An atom which can change how add works:
 
-_crossover_on_existing_
+`crossover_on_existing`
 
-_crossover_on_existing_force_remove_
+`crossover_on_existing_force_remove`
 
 **Queue Backend:** A module that uses the queue behaviour you need, there are some defaults:
 
-_valvex_fifo_queue_backend_
+`valvex_fifo_queue_backend`
 
-_valvex_lifo_queue_backend_
+`valvex_lifo_queue_backend`
 
 Feel free to create your own with any additional features you may need.
 
 #### Notes:
 
-Add is an idempotent operation, if the queue already exists with the same settings and key you will get an ok back and nothing will change.
+The functionality of add differs depending on the option you supply, by default if you try to add a key that isn't unique you will receive an `{error, key_not_unique}` back. 
 
-However, if you specify different settings with an existing key you will get an error stating your key is not unique. If you don't care about this you can specify the crossover_on_error option.
+`crossover_on_existing` will create your new queue regardless of key uniqueness and all future requests will go to that queue, the old one will be tombstoned and locked - this means it will process any work it has left using old values (Timeout, Pushback etc.) then kill itself. This is good when you want to change queue settings but not disturb ongoing requests.
 
-_crossover_on_existing:_
+`crossover_on_existing_force_remove` will add your new queue and immediately kill the old queue regardless of contents - this can be highly disruptive and is only useful in some corner cases.
 
-Instead of returning key_not_unique a crossover will be performed meaning the old queue will process it's existing items as it did before but accept no new ones and deactivate itself when it's finished while the new queue, with it's updated threshold and timeout, will accept all further work items.
-
-_crossover_on_error_force_remove:_
-
-This will immediately remove the old queue and any work it had queued up instead of a graceful crossover.
-
-### remove (Identifier, Queue Key, Option) -> ok.
+### `remove (Identifier, Queue Key, Option) -> ok | {error, key_not_found}.`
 ---
 #### Description:
 
@@ -124,34 +118,30 @@ Triggers a queue removal at runtime. A remove/2 operation also exists removing t
 
 **Option:** An atom that can change how remove works:
 
-_force_remove_
+`force_remove`
 
-_lock_queue_
+`lock_queue`
 
 #### Notes:
 
-By default remove is an idempotent and safe operation, it will merely mark a queue for removal and only remove it when it has no remaining work - it can still continue to receive work however, this is by design to prevent crashes. If a queue marked for removal is continuing to receive work it will print a warning. You can specify options to change this behaviour.
+By default remove is a safe operation, it will merely mark a queue for removal and only remove it when it has no remaining work - it can still continue to receive work however, this is by design to prevent crashes. If a queue marked for removal is continuing to receive work it will print a warning. You can specify options to change this behaviour.
 
-_force_remove_:
+`force_remove` will kill a queue regardless of it's contents, again please use this carefully.
 
-Will remove the queue regardless of work left.
+`lock_queue` will remove as normal but prevent the queue from receiving new work, while in most cases safe your code can crash if you have forgot to remove all instances where the queue being removed is used.
 
-_lock_queue_:
-
-Will remove as normal but prevent the queue from receiving new work.
-
-### push (Identifier, Reply Identifier, Queue Key, Work) -> ok | {error, key_not_found}.
+### `push (Identifier, Queue Key, Reply Identifier, Work) -> ok.`
 ---
 #### Description:
 
-Pushes work to the queue with the queue key you specified. Will error if the key does not exist.
+Pushes work to the queue with the queue key you specified. Will not error if the queue does not exist.
 
 #### Spec:
 
 **Identifier:** Pid or registered atom of the valve server.
 
-**Reply Identifier:** Pid of the process that is awaiting the result of the work.
+**Queue Key:** A unique atom identifying the queue. 
 
-**Queue Key:** A unique atom identifying the queue you want to push work to.
+**Reply Identifier:** Pid of the process that is awaiting the result of the work.
 
 **Work:** A fun() of stuff to do.
