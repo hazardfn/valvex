@@ -25,7 +25,7 @@
 %%==============================================================================
 -spec start_link(valvex:valvex_options()) -> valvex:valvex_ref().
 start_link(Options) ->
-  {ok, Pid} = gen_server:start_link(?MODULE, Options, []),
+  {ok, Pid} = gen_server:start_link({local, valvex}, ?MODULE, Options, []),
   Pid.
 
 -spec add( valvex:valvex_ref()
@@ -65,7 +65,7 @@ get_queue_size(Valvex, Key) ->
 
 -spec pushback( valvex:valvex_ref()
               , valvex:queue_key()
-			  , valvex:valvex_ref()
+              , valvex:valvex_ref()
               ) -> ok.
 pushback(Valvex, Key, Reply) ->
   do_pushback(Valvex, Key, Reply).
@@ -78,15 +78,16 @@ init([ {queues, Queues}
      , {pushback_enabled, Pushback}
      , {workers, WorkerCount}
      ]) ->
+  process_flag(trap_exit, true),
   QueueFun = fun({ Key
                  , _Threshold
                  , _Timeout
                  , _Pushback
                  , Backend
                  } = Q) ->
-                 Pid = valvex_queue:start_link(Backend, self(), Q),
-                 valvex_queue:start_consumer(Backend, Pid),
-                 [{Key, Pid, Backend}]
+                 valvex_queue_sup:start_link(Backend, Key, Q),
+                 valvex_queue:start_consumer(Backend, Key),
+                 [{Key, Backend}]
              end,
   Workers = start_workers(WorkerCount),
   {ok, #{ queues            => Queues
@@ -121,9 +122,9 @@ handle_call({add, { Key
                                   , queue_pids := QPids
                                   } = S) ->
   NewQueues = lists:append(Queues, [Q]),
-  NewPid    = valvex_queue:start_link(Backend, self(), Q),
+  NewPid    = valvex_queue_sup:start_link(Backend, Key, Q),
   valvex_queue:start_consumer(Backend, NewPid),
-  NewQPids  = lists:append(QPids, [{Key, NewPid, Backend}]),
+  NewQPids  = lists:append(QPids, [{Key, Backend}]),
   {reply, ok, S#{ queues     := NewQueues
                 , queue_pids := NewQPids
                 }};
@@ -149,8 +150,8 @@ handle_call( {assign_work, {Work, Reply, Timestamp}, {_Key, QPid, Backend}}
 handle_call({remove, Key}, _From, #{ queues     := Queues
                                    , queue_pids := QPids
                                    } = S) ->
-  {reply, ok, S#{ queues     := lists:keydelete(Key,1,Queues)
-                , queue_pids := lists:keydelete(Key,1,QPids)
+  {reply, ok, S#{ queues     := lists:keydelete(Key, 1, Queues)
+                , queue_pids := lists:keydelete(Key, 1, QPids)
                 }}.
 
 handle_cast({pushback, Key, Reply}, #{ queues := Queues } = S) ->
@@ -170,8 +171,8 @@ handle_cast({push, Key, Value}, #{queue_pids := Queues} = S) ->
   case lists:keyfind(Key, 1, ActiveQ) of
     false ->
       {noreply, S};
-    {Key, QPid, Backend} ->
-      valvex_queue:push(Backend, QPid, Value),
+    {Key, Backend} ->
+      valvex_queue:push(Backend, Key, Value),
       {noreply, S}
   end;
 handle_cast({work_finished, WorkerPid}
@@ -187,8 +188,8 @@ code_change(_Vsn, S, _Extra) ->
 terminate(_Reason, #{ queue_pids := QPids
                     , workers    := Workers
                     }) ->
-  lists:foreach(fun({_, Pid, _}) ->
-                    gen_server:stop(Pid)
+  lists:foreach(fun({Key, _}) ->
+                    gen_server:stop(Key)
                 end, QPids),
   lists:foreach(fun(Pid) ->
                     gen_server:stop(Pid)
@@ -212,39 +213,39 @@ do_add(Valvex, {Key, _, _, _, _} = Q, crossover_on_existing) ->
   case get_queue(Valvex, Key) of
     {error, key_not_found} ->
       do_add(Valvex, Q, undefined);
-    {Key, Pid, Backend} ->
+    {Key, Backend} ->
       do_add(Valvex, Q, undefined),
-      valvex_queue:lock(Backend, Pid),
-      valvex_queue:tombstone(Backend, Pid)
+      valvex_queue:lock(Backend, Key),
+      valvex_queue:tombstone(Backend, Key)
   end;
 do_add(Valvex, {Key, _, _, _, _} = Q, crossover_on_existing_force_remove) ->
   case get_queue(Valvex, Key) of
     {error, key_not_found} ->
       do_add(Valvex, Q, undefined);
-    {Key, Pid, _Backend} ->
-      add(Valvex, Pid, undefined),
+    {Key, _Backend} ->
+      add(Valvex, Key, undefined),
       remove(Valvex, Key, force_remove)
   end.
 
 do_remove(Valvex, Key, undefined) ->
   case get_queue(Valvex, Key) of
-    {_Key, Pid, Backend} ->
+    {Pid, Backend} ->
       valvex_queue:tombstone(Backend, Pid);
     Error ->
       Error
   end;
 do_remove(Valvex, Key, lock_queue) ->
   case get_queue(Valvex, Key) of
-    {_Key, Pid, Backend} ->
-      valvex_queue:lock(Backend, Pid),
-      valvex_queue:tombstone(Backend, Pid);
+    {Key, Backend} ->
+      valvex_queue:lock(Backend, Key),
+      valvex_queue:tombstone(Backend, Key);
     Error ->
       Error
   end;
 do_remove(Valvex, Key, force_remove) ->
   case get_queue(Valvex, Key) of
-    {Key, Pid, _Backend}          ->
-      gen_server:stop(Pid),
+    {Key, _Backend}          ->
+      gen_server:stop(Key),
       gen_server:call(Valvex, {remove, Key});
     {error, key_not_found} = Error ->
       Error
@@ -258,8 +259,8 @@ do_get_workers(Valvex) ->
 
 do_get_queue_size(Valvex, Key) ->
   case get_queue(Valvex, Key) of
-    {Key, QPid, Backend} ->
-      valvex_queue:size(Backend, QPid);
+    {Key, Backend} ->
+      valvex_queue:size(Backend, Key);
     Error ->
       Error
   end.
@@ -268,8 +269,8 @@ do_pushback(Valvex, Key, Reply) ->
   gen_server:cast(Valvex, {pushback, Key, Reply}).
 
 get_active_queues(Queues) ->
-  lists:filter(fun({_Key, Pid, Backend}) ->
-                 valvex_queue:is_locked(Backend, Pid) == false
+  lists:filter(fun({Key, Backend}) ->
+                 valvex_queue:is_locked(Backend, Key) == false
                end, Queues).
 
 start_workers(WorkerCount) ->

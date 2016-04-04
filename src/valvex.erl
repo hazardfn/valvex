@@ -75,9 +75,10 @@
 %%==============================================================================
 %% API functions
 %%==============================================================================
--spec start_link(valvex_options()) -> valvex_ref().
+-spec start_link(valvex_options()) -> {ok, valvex_ref()}.
 start_link(Options) ->
-  valvex_server:start_link(Options).
+  Pid = valvex_server:start_link(Options),
+  {ok, Pid}.
 
 -spec add( valvex_ref(), valvex_queue() | valvex_queue_raw()
          , add_option()) -> ok.

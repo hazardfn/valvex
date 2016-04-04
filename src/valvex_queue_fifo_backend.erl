@@ -32,7 +32,7 @@
                 , valvex:valvex_queue()
                 ) -> valvex:valvex_ref().
 start_link(Valvex, Q) ->
-  {ok, Pid} = gen_server:start_link(?MODULE, [Valvex, Q], []),
+  {ok, Pid} = gen_server:start_link({local, ?MODULE}, ?MODULE, [Valvex, Q], []),
   Pid.
 
 -spec pop(valvex:valvex_ref()) -> valvex:valvex_q_item().
