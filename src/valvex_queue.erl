@@ -10,7 +10,9 @@
         , size/2
         , start_consumer/2
         , start_link/3
+        , stop_consumer/2
         , tombstone/2
+        , unlock/2
         ]).
 
 %%==============================================================================
@@ -34,11 +36,13 @@
 -callback is_tombstoned(Q :: valvex:valvex_ref() ) -> true | false.
 
 -callback lock( Q :: valvex:valvex_ref() ) -> ok.
+-callback unlock( Q :: valvex:valvex_ref() ) -> ok.
 -callback is_locked( Q :: valvex:valvex_ref() ) -> true | false.
 
 -callback size( Q :: valvex:valvex_ref() ) -> non_neg_integer().
 
 -callback start_consumer( Q :: valvex:valvex_ref() ) -> ok.
+-callback stop_consumer( Q :: valvex:valvex_ref() ) -> ok.
 
 %%==============================================================================
 %% API
@@ -46,7 +50,7 @@
 -spec start_link( valvex:queue_backend()
                 , valvex:valvex_ref()
                 , valvex:valvex_queue()
-                ) -> valvex:valvex_ref().
+                ) -> {ok, valvex:valvex_ref()}.
 start_link(Backend, Valvex, Q) ->
   Backend:start_link(Valvex, Q).
 
@@ -76,6 +80,10 @@ push_r(Backend, Q, Value) ->
 start_consumer(Backend, Q) ->
   Backend:start_consumer(Q).
 
+-spec stop_consumer(valvex:queue_backend(), valvex:valvex_ref()) -> ok.
+stop_consumer(Backend, Q) ->
+  Backend:stop_consumer(Q).
+
 -spec tombstone(valvex:queue_backend(), valvex:valvex_ref()) -> ok.
 tombstone(Backend, Q) ->
   Backend:tombstone(Q).
@@ -87,6 +95,10 @@ is_tombstoned(Backend, Q) ->
 -spec lock(valvex:queue_backend(), valvex:valvex_ref()) -> ok.
 lock(Backend, Q) ->
   Backend:lock(Q).
+
+-spec unlock(valvex:queue_backend(), valvex:valvex_ref()) -> ok.
+unlock(Backend, Q) ->
+  Backend:unlock(Q).
 
 -spec is_locked(valvex:queue_backend(), valvex:valvex_ref()) -> true | false.
 is_locked(Backend, Q) ->
