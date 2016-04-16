@@ -9,7 +9,7 @@ start_link() ->
 
 init([]) ->
   {ok
-  , { #{ strategy  => one_for_all
+  , { #{ strategy  => one_for_one
        , intensity => 3
        , period    => 60
        }
@@ -29,9 +29,9 @@ valvex_server_child_specs() ->
 
 valvex_queue_sup_child_specs() ->
   #{ id       => valvex_queue_sup
-   , start    => {valvex_queue_sup, start_link, [[]]}
+   , start    => {valvex_queue_sup, start_link, []}
    , restart  => permanent
    , shutdown => 3600
-   , type     => worker
+   , type     => supervisor
    , modules  => [ valvex_queue_sup ]
    }.

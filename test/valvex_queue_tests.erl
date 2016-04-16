@@ -1,16 +1,23 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% @doc valve tests
-%%% @copyright 2015 Klarna AB
+%%% @copyright 2016 Howard Beard-Marlowe
 %%% @end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%_* Module declaration =======================================================
 -module(valvex_queue_tests).
 
--export([
-          test_work_completes/1
-        , test_threshold_hit/1
-        , test_timeout_hit/1
-        , test_available_workers/1
+-export([ test_queue_sup_start_fifo/1
+        , test_queue_sup_start_lifo/1
+        , test_queue_push_fifo/1
+        , test_queue_push_lifo/1
+        , test_queue_push_r_fifo/1
+        , test_queue_push_r_lifo/1
+        , test_queue_consumer_fifo/1
+        , test_queue_consumer_lifo/1
+        , test_queue_tombstone_fifo/1
+        , test_queue_tombstone_lifo/1
+        , test_queue_lock_fifo/1
+        , test_queue_lock_lifo/1
         ]).
 
 -export([ all/0
@@ -29,207 +36,383 @@ suite() ->
   [{timetrap, {seconds, 60}}].
 
 init_per_suite(Config) ->
-Config.
-
+  Config ++
+     [ {queues, [ { test_fifo
+                  , {threshold, 3}
+                  , {timeout, 10, seconds}
+                  , {pushback, 10, seconds}
+                  , valvex_queue_fifo_backend
+                  }
+                , { test_lifo
+                  , {threshold, 3}
+                  , {timeout, 10, seconds}
+                  , {pushback, 10, seconds}
+                  , valvex_queue_lifo_backend
+                  }
+                ]
+       }
+     ].
 end_per_suite(Config) ->
-Config.
-
+  Config.
 
 init_per_testcase(TestCase, Config) ->
-  Valvex           = valvex:start_link(get_params()),
-  ValvexNoPushback = valvex:start_link(get_params_no_pushback()),
- ?MODULE:TestCase({init,   [ {test_pid, Valvex}
-                           , {no_pushback_pid, ValvexNoPushback}
-                             | Config
-                           ]}).
+  {ok, _VSupPid}      = valvex_sup:start_link(),
+  QFifo               = get_queue_from_config(test_fifo, Config),
+  QLifo               = get_queue_from_config(test_lifo, Config),
+  ok                  = valvex:add(valvex, QFifo, manual_start),
+  ok                  = valvex:add(valvex, QLifo, manual_start),
+  ?MODULE:TestCase({init, Config}).
 
 end_per_testcase(TestCase, Config)  ->
-  {_, Valvex}           = lists:keyfind(test_pid, 1, Config),
-  {_, ValvexNoPushback} = lists:keyfind(no_pushback_pid, 1, Config),
-  ?assertEqual(ok, gen_server:stop(Valvex)),
-  ?assertEqual(ok, gen_server:stop(ValvexNoPushback)),
+  valvex:remove(valvex, test_fifo, force_remove),
+  valvex:remove(valvex, test_lifo, force_remove),
+  gen_server:stop(whereis(valvex)),
+  gen_server:stop(whereis(valvex_queue_sup)),
+  gen_server:stop(whereis(valvex_sup)),
   ?MODULE:TestCase({'end', Config}).
 
 all()      ->
   all(suite).
 all(suite) ->
-  [
-    test_work_completes
-  , test_threshold_hit
-  , test_timeout_hit
-  , test_available_workers
+  [ test_queue_sup_start_fifo
+  , test_queue_sup_start_lifo
+  , test_queue_push_fifo
+  , test_queue_push_lifo
+  , test_queue_push_r_fifo
+  , test_queue_push_r_lifo
+  , test_queue_consumer_fifo
+  , test_queue_consumer_lifo
+  , test_queue_tombstone_fifo
+  , test_queue_tombstone_lifo
+  , test_queue_lock_fifo
+  , test_queue_lock_lifo
   ].
 
 %%%_ * Tests ===================================================================
-test_work_completes(suite)                         -> [];
-test_work_completes({init, Config})                -> Config;
-test_work_completes({'end', _Config})              -> ok;
-test_work_completes(doc)                           ->
-  ["Test we can send some work and we get a reasonable reply"];
-test_work_completes(Config) when is_list(Config)   ->
-  {_, Valvex} = lists:keyfind(test_pid, 1, Config),
-  WorkFun = fun() ->
-                timer:sleep(1000),
-                {timer_run, 1000}
-            end,
-  push(Valvex, test_fifo, self(), WorkFun, 1),
+test_queue_sup_start_fifo(suite)                         -> [];
+test_queue_sup_start_fifo({init, Config})                -> Config;
+test_queue_sup_start_fifo({'end', _Config})              -> ok;
+test_queue_sup_start_fifo(doc)                           ->
+  ["Test we can start the fifo queue supervised and the config is correct"];
+test_queue_sup_start_fifo(Config) when is_list(Config)   ->
+  ?assert(is_pid(whereis(valvex_sup))),
+  ?assert(is_pid(whereis(valvex_queue_sup))),
+  ?assert(is_pid(whereis(test_fifo))).
+
+test_queue_sup_start_lifo(suite)                         -> [];
+test_queue_sup_start_lifo({init, Config})                -> Config;
+test_queue_sup_start_lifo({'end', _Config})              -> ok;
+test_queue_sup_start_lifo(doc)                           ->
+  ["Test we can start the lifo queue supervised and the config is correct"];
+test_queue_sup_start_lifo(Config) when is_list(Config)   ->
+  ?assert(is_pid(whereis(valvex_sup))),
+  ?assert(is_pid(whereis(valvex_queue_sup))),
+  ?assert(is_pid(whereis(test_lifo))).
+
+test_queue_push_fifo(suite)                         -> [];
+test_queue_push_fifo({init, Config})                -> Config;
+test_queue_push_fifo({'end', _Config})              -> ok;
+test_queue_push_fifo(doc)                           ->
+  ["Test pushing to the queue creates a queue item and handles it correctly"];
+test_queue_push_fifo(Config) when is_list(Config)   ->
+  FirstTestFun  = fun() ->
+                      "First Test Complete"
+                  end,
+  SecondTestFun = fun() ->
+                      "Second Test Complete"
+                  end,
+  FirstItem     = {FirstTestFun, self(), os:timestamp()},
+  SecondItem    = {SecondTestFun, self(), os:timestamp()},
+  gen_server:cast(test_fifo, unlock),
+  valvex_queue:push(valvex_queue_fifo_backend, test_fifo, FirstItem),
+  valvex_queue:push(valvex_queue_fifo_backend, test_fifo, SecondItem),
+  ?assertEqual(2, valvex_queue:size(valvex_queue_fifo_backend, test_fifo)),
+  ?assertMatch( {{value, FirstItem}, _}
+              , valvex_queue:pop(valvex_queue_fifo_backend, test_fifo)
+              ),
+  ?assertMatch( {{value, SecondItem}, _}
+              , valvex_queue:pop(valvex_queue_fifo_backend, test_fifo)
+              ).
+
+test_queue_push_lifo(suite)                         -> [];
+test_queue_push_lifo({init, Config})                -> Config;
+test_queue_push_lifo({'end', _Config})              -> ok;
+test_queue_push_lifo(doc)                           ->
+  ["Test pushing to the queue creates a queue item and handles it correctly"];
+test_queue_push_lifo(Config) when is_list(Config)   ->
+  FirstTestFun  = fun() ->
+                      "First Test Complete"
+                  end,
+  SecondTestFun = fun() ->
+                      "Second Test Complete"
+                  end,
+  FirstItem     = {FirstTestFun, self(), os:timestamp()},
+  SecondItem    = {SecondTestFun, self(), os:timestamp()},
+  gen_server:cast(test_lifo, unlock),
+  valvex_queue:push(valvex_queue_lifo_backend, test_lifo, FirstItem),
+  valvex_queue:push(valvex_queue_lifo_backend, test_lifo, SecondItem),
+  ?assertEqual(2, valvex_queue:size(valvex_queue_lifo_backend, test_lifo)),
+  ?assertMatch( {{value, SecondItem}, _}
+              , valvex_queue:pop(valvex_queue_lifo_backend, test_lifo)
+              ),
+  ?assertMatch( {{value, FirstItem}, _}
+              , valvex_queue:pop(valvex_queue_lifo_backend, test_lifo)
+              ).
+
+test_queue_push_r_fifo(suite)                         -> [];
+test_queue_push_r_fifo({init, Config})                -> Config;
+test_queue_push_r_fifo({'end', _Config})              -> ok;
+test_queue_push_r_fifo(doc)                           ->
+  ["Test r-pushing to the queue creates a queue item and handles it correctly"];
+test_queue_push_r_fifo(Config) when is_list(Config)   ->
+  FirstTestFun  = fun() ->
+                      "First Test Complete"
+                  end,
+  SecondTestFun = fun() ->
+                      "Second Test Complete"
+                  end,
+  FirstItem     = {FirstTestFun, self(), os:timestamp()},
+  SecondItem    = {SecondTestFun, self(), os:timestamp()},
+  gen_server:cast(test_fifo, unlock),
+  valvex_queue:push_r(valvex_queue_fifo_backend, test_fifo, FirstItem),
+  valvex_queue:push_r(valvex_queue_fifo_backend, test_fifo, SecondItem),
+  ?assertEqual(2, valvex_queue:size(valvex_queue_fifo_backend, test_fifo)),
+  ?assertMatch( {{value, FirstItem}, _}
+              , valvex_queue:pop_r(valvex_queue_fifo_backend, test_fifo)
+              ),
+  ?assertMatch( {{value, SecondItem}, _}
+              , valvex_queue:pop_r(valvex_queue_fifo_backend, test_fifo)
+              ).
+
+test_queue_push_r_lifo(suite)                         -> [];
+test_queue_push_r_lifo({init, Config})                -> Config;
+test_queue_push_r_lifo({'end', _Config})              -> ok;
+test_queue_push_r_lifo(doc)                           ->
+  ["Test r-pushing to the queue creates a queue item and handles it correctly"];
+test_queue_push_r_lifo(Config) when is_list(Config)   ->
+  FirstTestFun  = fun() ->
+                      "First Test Complete"
+                  end,
+  SecondTestFun = fun() ->
+                      "Second Test Complete"
+                  end,
+  FirstItem     = {FirstTestFun, self(), os:timestamp()},
+  SecondItem    = {SecondTestFun, self(), os:timestamp()},
+  gen_server:cast(test_lifo, unlock),
+  valvex_queue:push_r(valvex_queue_lifo_backend, test_lifo, FirstItem),
+  valvex_queue:push_r(valvex_queue_lifo_backend, test_lifo, SecondItem),
+  ?assertEqual(2, valvex_queue:size(valvex_queue_lifo_backend, test_lifo)),
+  ?assertMatch( {{value, SecondItem}, _}
+              , valvex_queue:pop_r(valvex_queue_lifo_backend, test_lifo)
+              ),
+  ?assertMatch( {{value, FirstItem}, _}
+              , valvex_queue:pop_r(valvex_queue_lifo_backend, test_lifo)
+              ).
+
+test_queue_consumer_fifo(suite)                         -> [];
+test_queue_consumer_fifo({init, Config})                -> Config;
+test_queue_consumer_fifo({'end', _Config})              -> ok;
+test_queue_consumer_fifo(doc)                           ->
+  ["Test the consumer works"];
+test_queue_consumer_fifo(Config) when is_list(Config)   ->
+  valvex_queue:start_consumer(valvex_queue_fifo_backend, test_fifo),
+  FirstTestFun  = fun() ->
+                      "First Test Complete"
+                  end,
+  SecondTestFun = fun() ->
+                      "Second Test Complete"
+                  end,
+  valvex:push(valvex, test_fifo, self(), FirstTestFun),
+  valvex:push(valvex, test_fifo, self(), SecondTestFun),
   receive
-    {timer_run, Value} ->
-      ?assertEqual(Value, 1000);
-    Err ->
-      erlang:error(Err)
+    FirstItem ->
+      ?assertEqual(FirstItem, "First Test Complete")
   end,
-  push(Valvex, test_lifo, self(), WorkFun, 1),
   receive
-    {timer_run, LifoValue} ->
-      ?assertEqual(LifoValue, 1000);
-    LifoErr ->
-      erlang:error(LifoErr)
-  end.
-test_threshold_hit(suite)                          -> [];
-test_threshold_hit({init, Config})                 -> Config;
-test_threshold_hit({'end', _Config})               -> ok;
-test_threshold_hit(doc)                            ->
-    ["Test the threshold is hit"];
-test_threshold_hit(Config) when is_list(Config)    ->
-  {_, Valvex} = lists:keyfind(test_pid, 1, Config),
-  WorkFun = fun() ->
-                timer:sleep(3000),
-                {timer_run, 3000}
-            end,
-  push(Valvex, test_fifo, self(), WorkFun, 13),
-  ?assertEqual(receive_until_throttled(), {error, threshold_hit}),
-  push(Valvex, test_lifo, self(), WorkFun, 13),
-  ?assertEqual(receive_until_throttled(), {error, threshold_hit}).
+    SecondItem ->
+      ?assertEqual(SecondItem, "Second Test Complete")
+  end,
+  valvex_queue:stop_consumer(valvex_queue_fifo_backend, test_fifo),
+  ?assert(valvex_queue:is_locked(valvex_queue_fifo_backend, test_fifo)),
+  valvex:push(valvex, test_fifo, self(), FirstTestFun),
+  valvex:push(valvex, test_fifo, self(), SecondTestFun),
+  timer:sleep(300),
+  valvex_queue:unlock(valvex_queue_fifo_backend, test_fifo),
+  ?assertEqual(0, valvex:get_queue_size(valvex, test_fifo)).
 
-test_timeout_hit(suite)                            -> [];
-test_timeout_hit({init, Config})                   -> Config;
-test_timeout_hit({'end', _Config})                 -> ok;
-test_timeout_hit(doc)                              ->
-    ["Test the timeout is hit"];
-test_timeout_hit(Config) when is_list(Config)      ->
-  {_, Valvex} = lists:keyfind(test_pid, 1, Config),
-  WorkFun = fun() ->
-                timer:sleep(5000),
-                {timer_run, 5000}
-            end,
-  push(Valvex, test_fifo, self(), WorkFun, 11),
-  ?assertEqual(receive_until_stale(), {error, timeout}),
-  push(Valvex, test_lifo, self(), WorkFun, 11),
-  ?assertEqual(receive_until_stale(), {error, timeout}).
+test_queue_consumer_lifo(suite)                         -> [];
+test_queue_consumer_lifo({init, Config})                -> Config;
+test_queue_consumer_lifo({'end', _Config})              -> ok;
+test_queue_consumer_lifo(doc)                           ->
+  ["Test the consumer works"];
+test_queue_consumer_lifo(Config) when is_list(Config)   ->
+  valvex_queue:start_consumer(valvex_queue_lifo_backend, test_lifo),
+  FirstTestFun  = fun() ->
+                      "First Test Complete"
+                  end,
+  SecondTestFun = fun() ->
+                      "Second Test Complete"
+                  end,
+  valvex:push(valvex, test_lifo, self(), FirstTestFun),
+  valvex:push(valvex, test_lifo, self(), SecondTestFun),
+  receive
+    SecondItem ->
+      ?assertEqual(SecondItem, "Second Test Complete")
+  end,
+  receive
+    FirstItem ->
+      ?assertEqual(FirstItem, "First Test Complete")
+  end,
+  valvex_queue:stop_consumer(valvex_queue_lifo_backend, test_lifo),
+  valvex:push(valvex, test_lifo, self(), FirstTestFun),
+  valvex:push(valvex, test_lifo, self(), SecondTestFun),
+  timer:sleep(300),
+  valvex_queue:unlock(valvex_queue_lifo_backend, test_lifo),
+  ?assertEqual(0, valvex:get_queue_size(valvex, test_lifo)).
 
-test_available_workers(suite)                       -> [];
-test_available_workers({init, Config})              -> Config;
-test_available_workers({'end', _Config})            -> ok;
-test_available_workers(doc)                         ->
-    ["Test an available worker is consumed when work is pushed"];
-test_available_workers(Config) when is_list(Config) ->
-  {_, Valvex} = lists:keyfind(test_pid, 1, Config),
-  Workers     = valvex:get_available_workers(Valvex),
-  case is_list(Workers) of
-    true  ->
-      WorkerCount = valvex:get_available_workers_count(Valvex),
-      ?assertEqual(length(Workers), WorkerCount),
-      WorkFun     = fun() ->
-                        timer:sleep(1000),
-                        {timer_run, 1000}
-                    end,
-      push(Valvex, test_fifo, self(), WorkFun, 1),
-      ?assertEqual(do_until_worker_state(Valvex, WorkerCount-1), true),
-      ?assertEqual(do_until_worker_state(Valvex, WorkerCount), true),
-      push(Valvex, test_lifo, self(), WorkFun, 1),
-      ?assertEqual(do_until_worker_state(Valvex, WorkerCount-1), true),
-      ?assertEqual(do_until_worker_state(Valvex, WorkerCount), true);
-    false -> error(workers_not_a_list)
-  end.
+test_queue_tombstone_fifo(suite)                         -> [];
+test_queue_tombstone_fifo({init, Config})                -> Config;
+test_queue_tombstone_fifo({'end', _Config})              -> ok;
+test_queue_tombstone_fifo(doc)                           ->
+  ["Test that a tombstoned queue dies"];
+test_queue_tombstone_fifo(Config) when is_list(Config)   ->
+  FirstTestFun  = fun() ->
+                      "First Test Complete"
+                  end,
+  SecondTestFun = fun() ->
+                      "Second Test Complete"
+                  end,
+  gen_server:cast(test_fifo, unlock),
+  valvex:push(valvex, test_fifo, self(), FirstTestFun),
+  valvex:push(valvex, test_fifo, self(), SecondTestFun),
+  valvex:remove(valvex, test_fifo),
+  ?assert(valvex_queue:is_tombstoned(valvex_queue_fifo_backend, test_fifo)),
+  ?assert(is_process_alive(whereis(test_fifo))),
+  valvex_queue:start_consumer(valvex_queue_fifo_backend, test_fifo),
+  receive
+    FirstItem ->
+      ?assertEqual(FirstItem, "First Test Complete")
+  end,
+  receive
+    SecondItem ->
+      ?assertEqual(SecondItem, "Second Test Complete")
+  end,
+  timer:sleep(300),
+  ?assertEqual(undefined, whereis(test_fifo)).
+
+test_queue_tombstone_lifo(suite)                         -> [];
+test_queue_tombstone_lifo({init, Config})                -> Config;
+test_queue_tombstone_lifo({'end', _Config})              -> ok;
+test_queue_tombstone_lifo(doc)                           ->
+  ["Test that a tombstoned queue dies"];
+test_queue_tombstone_lifo(Config) when is_list(Config)   ->
+  FirstTestFun  = fun() ->
+                      "First Test Complete"
+                  end,
+  SecondTestFun = fun() ->
+                      "Second Test Complete"
+                  end,
+  gen_server:cast(test_lifo, unlock),
+  valvex:push(valvex, test_lifo, self(), FirstTestFun),
+  valvex:push(valvex, test_lifo, self(), SecondTestFun),
+  valvex:remove(valvex, test_lifo),
+  ?assert(valvex_queue:is_tombstoned(valvex_queue_lifo_backend, test_lifo)),
+  ?assert(is_process_alive(whereis(test_lifo))),
+  valvex_queue:start_consumer(valvex_queue_lifo_backend, test_lifo),
+  receive
+    SecondItem ->
+      ?assertEqual(SecondItem, "Second Test Complete")
+  end,
+  receive
+    FirstItem ->
+      ?assertEqual(FirstItem, "First Test Complete")
+  end,
+  timer:sleep(300),
+  ?assertEqual(undefined, whereis(test_lifo)).
+
+test_queue_lock_fifo(suite)                         -> [];
+test_queue_lock_fifo({init, Config})                -> Config;
+test_queue_lock_fifo({'end', _Config})              -> ok;
+test_queue_lock_fifo(doc)                           ->
+  ["Test that a locked queue has expected behaviour"];
+test_queue_lock_fifo(Config) when is_list(Config)   ->
+  ?assert(valvex_queue:is_locked(valvex_queue_fifo_backend, test_fifo)),
+  FirstTestFun  = fun() ->
+                      "First Test Complete"
+                  end,
+  SecondTestFun = fun() ->
+                      "Second Test Complete"
+                  end,
+  valvex:push(valvex, test_fifo, self(), FirstTestFun),
+  valvex:push(valvex, test_fifo, self(), SecondTestFun),
+  timer:sleep(300),
+  valvex_queue:unlock(valvex_queue_fifo_backend, test_fifo),
+  ?assertEqual(0, valvex:get_queue_size(valvex, test_fifo)),
+  ?assertEqual(false
+              , valvex_queue:is_locked( valvex_queue_fifo_backend
+                                      , test_fifo
+                                      )
+              ),
+  valvex:push(valvex, test_fifo, self(), FirstTestFun),
+  valvex:push(valvex, test_fifo, self(), SecondTestFun),
+  ?assertEqual(2, valvex:get_queue_size(valvex, test_fifo)),
+  valvex_queue:pop(valvex_queue_fifo_backend, test_fifo),
+  ?assertEqual(1, valvex:get_queue_size(valvex, test_fifo)),
+  valvex_queue:pop(valvex_queue_fifo_backend, test_fifo),
+  ?assertEqual(0, valvex:get_queue_size(valvex, test_fifo)),
+  valvex_queue:lock(valvex_queue_fifo_backend, test_fifo),
+  ?assert(valvex_queue:is_locked(valvex_queue_fifo_backend, test_fifo)).
+
+test_queue_lock_lifo(suite)                         -> [];
+test_queue_lock_lifo({init, Config})                -> Config;
+test_queue_lock_lifo({'end', _Config})              -> ok;
+test_queue_lock_lifo(doc)                           ->
+  ["Test that a locked queue has expected behaviour"];
+test_queue_lock_lifo(Config) when is_list(Config)   ->
+  ?assert(valvex_queue:is_locked(valvex_queue_lifo_backend, test_lifo)),
+  FirstTestFun  = fun() ->
+                      "First Test Complete"
+                  end,
+  SecondTestFun = fun() ->
+                      "Second Test Complete"
+                  end,
+  valvex:push(valvex, test_lifo, self(), FirstTestFun),
+  valvex:push(valvex, test_lifo, self(), SecondTestFun),
+  timer:sleep(300),
+  valvex_queue:unlock(valvex_queue_lifo_backend, test_lifo),
+  ?assertEqual(0, valvex:get_queue_size(valvex, test_lifo)),
+  ?assertEqual(false
+              , valvex_queue:is_locked( valvex_queue_lifo_backend
+                                      , test_lifo
+                                      )
+              ),
+  valvex:push(valvex, test_lifo, self(), FirstTestFun),
+  valvex:push(valvex, test_lifo, self(), SecondTestFun),
+  ?assertEqual(2, valvex:get_queue_size(valvex, test_lifo)),
+  valvex_queue:pop(valvex_queue_lifo_backend, test_lifo),
+  ?assertEqual(1, valvex:get_queue_size(valvex, test_lifo)),
+  valvex_queue:pop(valvex_queue_lifo_backend, test_lifo),
+  ?assertEqual(0, valvex:get_queue_size(valvex, test_lifo)),
+  valvex_queue:lock(valvex_queue_lifo_backend, test_lifo),
+  ?assert(valvex_queue:is_locked(valvex_queue_lifo_backend, test_lifo)).
 
 %%%_* Internals ================================================================
-push(_Valvex, _Key, _Reply, _WorkFun, 0) ->
-  ok;
-push(Valvex, Key, Reply, WorkFun, N) ->
-  valvex:push(Valvex, Key, Reply, WorkFun),
-  push(Valvex, Key, Reply, WorkFun, N-1).
 
-get_params() ->
-  [{ queues,
-     [ { test_fifo
-       , {10, unit}
-       , {1, seconds}
-       , {1, seconds}
-       , valvex_queue_fifo_backend
-       }
-     , { test_lifo
-       , {10, unit}
-       , {1, seconds}
-       , {1, seconds}
-       , valvex_queue_lifo_backend
-       }
-     ]},
-   {pushback_enabled, false},
-   {workers, 5}
-  ].
+get_queue_from_config(Key, Config) ->
+  {queues, Queues} = lists:keyfind(queues, 1, Config),
+  Q                = lists:keyfind(Key, 1, Queues),
+  ?assertNotEqual(false, Q),
+  ?assert(is_tuple(Q)),
+  Q.
 
-get_params_no_pushback() ->
-  [{ queues,
-     [ { test_fifo
-       , {10, unit}
-       , {20, seconds}
-       , {20, seconds}
-       , valvex_queue_fifo_backend
-       }
-     , { test_lifo
-       , {10, unit}
-       , {20, seconds}
-       , {20, seconds}
-       , valvex_queue_lifo_backend
-       }
-     ]},
-   {pushback_enabled, true},
-   {workers, 10}
-  ].
-%%get_bad_params_() ->
-%%  [
-%%   {throttle_rules, []}
-%%  ].
-get_timeout_params() ->
-  [
-   {throttle_rules, [{timeout_method, 25, 1}]}
-  ].
+get_child_spec_from_Q({ Key
+                      , _Threshold
+                      , _Timeout
+                      , _Pushback
+                      , Backend
+                      } = Q) ->
+  [Backend, Key, Q].
 
-receive_until_throttled() ->
-    receive
-      {timer_run, _Value} ->
-        receive_until_throttled();
-      {error, threshold_hit} ->
-        {error, threshold_hit};
-      _Other ->
-        receive_until_throttled()
-  end.
-
-receive_until_stale() ->
-    receive
-      {timer_run, Value} ->
-        ?assertEqual(Value, 5000),
-        receive_until_stale();
-      {error, timeout} ->
-        {error, timeout};
-      _Other ->
-        receive_until_stale()
-  end.
-
-do_until_worker_state(Valvex, ExpectedCount) ->
-  case valvex:get_available_workers_count(Valvex) of
-    ExpectedCount ->
-      true;
-    _OtherCount    ->
-      do_until_worker_state(Valvex, ExpectedCount)
-  end.
-
-do_until_queue_size(Valvex, Key, Size) ->
-  case valvex:get_queue_size(Valvex, Key) of
-    Size       -> true;
-    _OtherSize -> do_until_queue_size(Valvex, Key, Size)
-  end.
 %%%_* Emacs ============================================================
 %%% Local Variables:
 %%% allout-layout: t

@@ -20,9 +20,9 @@
 %% Queue Types
 -type queue_key()        :: atom().
 -type queue_backend()    :: module() | {module, list()}.
--type queue_threshold()  :: {non_neg_integer(), unit}.
--type queue_timeout()    :: {non_neg_integer(), seconds}.
--type queue_pushback()   :: {non_neg_integer(), seconds}.
+-type queue_threshold()  :: {threshold, non_neg_integer()}.
+-type queue_timeout()    :: {timeout, non_neg_integer(), seconds}.
+-type queue_pushback()   :: {pushback, non_neg_integer(), seconds}.
 
 %% Option / Behavioural modifier types
 -type add_option()       :: crossover_on_existing              |
@@ -83,9 +83,9 @@ start_link(Options) ->
 -spec add( valvex_ref(), valvex_queue() | valvex_queue_raw()
          , add_option()) -> ok.
 add(Valvex, { _Key
-            , {_Threshold, unit}
-            , {_Timeout, seconds}
-            , {_Pushback, seconds}
+            , {threshold, _Threshold}
+            , {timeout, _Timeout, seconds}
+            , {pushback, _Pushback, seconds}
             , _Backend
             } = Q, Option) ->
   valvex_server:add(Valvex, Q, Option);
@@ -96,9 +96,9 @@ add(Valvex, { Key
             , Backend
             }, Option) ->
   valvex:add(Valvex, { Key
-                     , {Threshold, unit}
-                     , {Timeout, seconds}
-                     , {Pushback, seconds}
+                     , {threshold, Threshold}
+                     , {timeout, Timeout, seconds}
+                     , {pushback, Pushback, seconds}
                      , Backend
                      }, Option).
 
@@ -106,9 +106,9 @@ add(Valvex, { Key
          , valvex_queue() | valvex_queue_raw()
          ) -> ok | unique_key_error().
 add(Valvex, { _Key
-            , {_Threshold, unit}
-            , {_Timeout, seconds}
-            , {_Pushback, seconds}
+            , {threshold, _Threshold}
+            , {timeout, _Timeout, seconds}
+            , {pushback, _Pushback, seconds}
             , _Backend
             } = Q) ->
   valvex:add(Valvex, Q, undefined);
@@ -119,9 +119,9 @@ add(Valvex, { Key
             , Backend
             }) ->
   valvex:add(Valvex, { Key
-                     , {Threshold, unit}
-                     , {Timeout, seconds}
-                     , {Pushback, seconds}
+                     , {threshold, Threshold}
+                     , {timeout, Timeout, seconds}
+                     , {pushback, Pushback, seconds}
                      , Backend
                      }, undefined).
 

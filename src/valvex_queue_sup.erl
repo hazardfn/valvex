@@ -1,22 +1,25 @@
 -module(valvex_queue_sup).
 -behaviour(supervisor).
 
--export([ start_link/0 ]).
+-export([ start_link/0
+        , start_child/1
+        ]).
 -export([ init/1 ]).
+-export([ valvex_queue_child_specs/1 ]).
 
-start_link([]) ->
-  supervisor:start_link({local, Key}, ?MODULE, []).
+start_link() ->
+  supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
-start_child([Backend, Key, Q]) ->
-  supervisor:start_child
+start_child([_Backend, _Key, _Q] = Args) ->
+    supervisor:start_child(?MODULE, valvex_queue_child_specs(Args)).
 
-init([Backend, Key, Q]) ->
+init([]) ->
   {ok
   , { #{ strategy  => one_for_one
        , intensity => 3
        , period    => 60
        }
-    , [valvex_queue_child_specs([Backend, Key, Q])]
+    , []
     }}.
 
 valvex_queue_child_specs([Backend, Key, Q]) ->

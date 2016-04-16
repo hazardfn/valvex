@@ -14,7 +14,9 @@
         , size/1
         , start_consumer/1
         , start_link/2
+        , stop_consumer/1
         , tombstone/1
+        , unlock/1
         ]).
 
 -export([ init/1
@@ -31,9 +33,8 @@
 -spec start_link( valvex:valvex_ref()
                 , valvex:valvex_queue()
                 ) -> valvex:valvex_ref().
-start_link(Valvex, Q) ->
-  {ok, Pid} = gen_server:start_link(?MODULE, [Valvex, Q], []),
-  Pid.
+start_link(Valvex, { Key, _, _, _, _ } = Q) ->
+  gen_server:start_link({local, Key}, ?MODULE, [Valvex, Q], []).
 
 -spec pop(valvex:valvex_ref()) -> valvex:valvex_q_item().
 pop(Q) ->
@@ -63,6 +64,10 @@ is_tombstoned(Q) ->
 lock(Q) ->
   gen_server:cast(Q, lock).
 
+-spec unlock(valvex:valvex_ref()) -> ok.
+unlock(Q) ->
+  gen_server:cast(Q, unlock).
+
 -spec is_locked(valvex:valvex_ref()) -> true | false.
 is_locked(Q) ->
   gen_server:call(Q, is_locked).
@@ -74,6 +79,10 @@ size(Q) ->
 -spec start_consumer(valvex:valvex_ref()) -> ok.
 start_consumer(Q) ->
   gen_server:cast(Q, start_consumer).
+
+-spec stop_consumer(valvex:valvex_ref()) -> ok.
+stop_consumer(Q) ->
+  gen_server:cast(Q, stop_consumer).
 
 -spec consume( valvex:valvex_ref()
              , valvex:valvex_ref()
@@ -89,9 +98,9 @@ consume(Valvex, QPid, Backend, Key, Timeout) ->
 
 init([ Valvex
      , { Key
-       , {Threshold, unit}
-       , {Timeout, seconds}
-       , {Pushback, seconds}
+       , {threshold, Threshold}
+       , {timeout, Timeout, seconds}
+       , {pushback, Pushback, seconds}
        , _Backend
        }
      ]) ->
@@ -181,6 +190,8 @@ handle_cast( {push_r, {_Work, Reply, _Timestamp} = Value}, #{ key       := Key
   end;
 handle_cast(lock, S) ->
   {noreply, S#{ locked := true }};
+handle_cast(unlock, S) ->
+  {noreply, S#{ locked := false}};
 handle_cast(tombstone, S) ->
   {noreply, S#{ tombstoned := true}};
 handle_cast(start_consumer, #{ valvex    := Valvex
@@ -196,6 +207,11 @@ handle_cast(start_consumer, #{ valvex    := Valvex
                                    ),
   {noreply, S#{ consumer => TRef
               , locked   := false
+              }};
+handle_cast(stop_consumer, #{ consumer := TRef } = S) ->
+  timer:cancel(TRef),
+  {noreply, S#{ consumer := undefined
+              , locked   := true
               }}.
 
 handle_info(_Info, S) ->
@@ -204,8 +220,23 @@ handle_info(_Info, S) ->
 code_change(_Vsn, S, _Extra) ->
   {ok, S}.
 
-terminate(_Reason, #{ consumer := Consumer }) ->
-  timer:cancel(Consumer).
+terminate(_Reason, #{ consumer := Consumer
+                    , key      := Key
+                    }) ->
+
+  case Consumer of
+    undefined ->
+      ok;
+    _         ->
+      timer:cancel(Consumer)
+  end,
+
+  case whereis(Key) of
+    undefined ->
+      ok;
+    _         ->
+    erlang:unregister(Key)
+  end.
 
 %%%=============================================================================
 %%% Helpers
@@ -227,8 +258,7 @@ do_consume(Valvex, QPid, Backend, Key, Timeout) ->
         end,
         do_consume(Valvex, QPid, Backend, Key, Timeout);
       {empty, tombstoned} ->
-        gen_server:call(Valvex, {remove, Key}),
-        gen_server:stop(QPid);
+        valvex:remove(Valvex, Key, force_remove);
       {empty, _} ->
         ok
     end
