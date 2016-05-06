@@ -33,7 +33,7 @@
 -spec start_link( valvex:valvex_ref()
                 , valvex:valvex_queue()
                 ) -> valvex:valvex_ref().
-start_link(Valvex, { Key, _, _, _, _ } = Q) ->
+start_link(Valvex, { Key, _, _, _, _, _ } = Q) ->
   gen_server:start_link({local, Key}, ?MODULE, [Valvex, Q], []).
 
 -spec pop(valvex:valvex_ref()) -> valvex:valvex_q_item().
@@ -101,6 +101,7 @@ init([ Valvex
        , {threshold, Threshold}
        , {timeout, Timeout, seconds}
        , {pushback, Pushback, seconds}
+       , {poll_rate, Poll, ms}
        , _Backend
        }
      ]) ->
@@ -110,6 +111,7 @@ init([ Valvex
         , pushback   => Pushback
         , backend    => ?MODULE
         , size       => 0
+        , poll_rate => Poll
         , queue      => queue:new()
         , locked     => true
         , tombstoned => false
@@ -195,13 +197,14 @@ handle_cast(unlock, S) ->
   {noreply, S#{ locked := false}};
 handle_cast(tombstone, S) ->
   {noreply, S#{ tombstoned := true}};
-handle_cast(start_consumer, #{ valvex    := Valvex
-                             , queue_pid := QPid
-                             , backend   := Backend
-                             , key       := Key
-                             , timeout   := Timeout
+handle_cast(start_consumer, #{ valvex     := Valvex
+                             , queue_pid  := QPid
+                             , backend    := Backend
+                             , key        := Key
+                             , timeout    := Timeout
+                             , poll_rate := Poll
                              } = S) ->
-  {ok, TRef} = timer:apply_interval( 100
+  {ok, TRef} = timer:apply_interval( Poll
                                    , ?MODULE
                                    , consume
                                    , [Valvex, QPid, Backend, Key, Timeout]

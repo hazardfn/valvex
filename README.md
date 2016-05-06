@@ -18,28 +18,29 @@ Before you can use valvex you need to configure environment variables in your sy
 
 Usage
 --------
-The best way to use valvex is to start the process and then register it with a name, this makes it reachable from anywhere you need it.
+Simply start valvex through the supervisor, it will then be registered
+as valvex to be used throughout your application.
 
 ````erlang
-Pid = valvex:start_link([]),
-erlang:register(valvex, Pid).
+Pid = valvex_sup:start_link([]).
 ````
 Here is an example of how to create a queue at run time and push work to it then listen for the reply.
 
 ````erlang
-%% Add a queue with the key randomqueue that has a threshold of 1, a timeout of 10 seconds, a pushback of 10 seconds 
+%% Add a queue with the key randomqueue that has a threshold of 1, a
+timeout of 10 seconds, a pushback of 10 seconds, a poll rate of 100ms
 %% and uses the valvex_queue_fifo_backend. there are various options you can supply to add to change the behaviour,
 %% read the API docs for more info.
 
-Pid = valvex:start_link([]),
-erlang:register(valvex, Pid),
+Pid = valvex_sup:start_link([]),
 
 Key       = randomqueue,
-Threshold = {1, unit},
-Timeout   = {10, seconds},
-Pushback  = {10, seconds},
+Threshold = {threshold, 1},
+Timeout   = {timeout, 10, seconds},
+Pushback  = {pushback, 10, seconds},
+Poll      = {poll_rate, 100, ms},
 Backend   = valvex_queue_fifo_backend,
-Queue     = {Key, Threshold, Timeout, Pushback, Backend},
+Queue     = {Key, Threshold, Timeout, Pushback, Poll, Backend},
 valvex:add(valvex, Queue),
 RandomFun = fun() ->
              timer:sleep(1000),
@@ -64,7 +65,7 @@ API
 
 This sections attempts to document the API and it's behaviour under certain scenarios.
 
-### `add (Identifier, {Queue Key, Threshold, Timeout, Pushback, Queue Backend}, Option) -> ok | {error, key_not_unique}.`
+### `add (Identifier, {Queue Key, Threshold, Timeout, Pushback, Poll, Queue Backend}, Option) -> ok | {error, key_not_unique}.`
 ---
 #### Description:
 
@@ -82,6 +83,8 @@ Adds a queue at runtime. An add/2 operation also exists removing the need for op
 
 **Pushback:** In the event of the threshold being hit valvex will wait x seconds before responding to the client, this prevents users from receiving an instant response decreasing the chance that they will constantly spam refresh your page causing more work / requests.
 
+**Poll:** A value that indicates how often the queue should be polled.
+
 **Option:** An atom which can change how add works:
 
 `crossover_on_existing`
@@ -98,7 +101,7 @@ Feel free to create your own with any additional features you may need.
 
 #### Notes:
 
-The functionality of add differs depending on the option you supply, by default if you try to add a key that isn't unique you will receive an `{error, key_not_unique}` back. 
+The functionality of add differs depending on the option you supply, by default if you try to add a key that isn't unique you will receive an `{error, key_not_unique}` back.
 
 `crossover_on_existing` will create your new queue regardless of key uniqueness and all future requests will go to that queue, the old one will be tombstoned and locked - this means it will process any work it has left using old values (Timeout, Pushback etc.) then kill itself. This is good when you want to change queue settings but not disturb ongoing requests.
 

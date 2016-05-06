@@ -23,6 +23,7 @@
 -type queue_threshold()  :: {threshold, non_neg_integer()}.
 -type queue_timeout()    :: {timeout, non_neg_integer(), seconds}.
 -type queue_pushback()   :: {pushback, non_neg_integer(), seconds}.
+-type queue_poll_rate()  :: {poll_rate, non_neg_integer(), ms}.
 
 %% Option / Behavioural modifier types
 -type add_option()       :: crossover_on_existing              |
@@ -42,12 +43,14 @@
                             , non_neg_integer()
                             , non_neg_integer()
                             , non_neg_integer()
+                            , non_neg_integer()
                             , queue_backend()
                             }.
 -type valvex_queue()     :: { queue_key()
                             , queue_threshold()
                             , queue_timeout()
                             , queue_pushback()
+                            , queue_poll_rate()
                             , queue_backend()
                             }.
 -type valvex_q_item()    :: {function(), pid(), erlang:timestamp()}
@@ -60,6 +63,7 @@
              , queue_threshold/0
              , queue_timeout/0
              , queue_pushback/0
+             , queue_poll_rate/0
              , add_option/0
              , remove_option/0
              , unique_key_error/0
@@ -86,6 +90,7 @@ add(Valvex, { _Key
             , {threshold, _Threshold}
             , {timeout, _Timeout, seconds}
             , {pushback, _Pushback, seconds}
+            , {poll_rate, _Poll, ms}
             , _Backend
             } = Q, Option) ->
   valvex_server:add(Valvex, Q, Option);
@@ -93,12 +98,14 @@ add(Valvex, { Key
             , Threshold
             , Timeout
             , Pushback
+            , Poll
             , Backend
             }, Option) ->
   valvex:add(Valvex, { Key
                      , {threshold, Threshold}
                      , {timeout, Timeout, seconds}
                      , {pushback, Pushback, seconds}
+                     , {poll_rate, Poll, ms}
                      , Backend
                      }, Option).
 
@@ -109,6 +116,7 @@ add(Valvex, { _Key
             , {threshold, _Threshold}
             , {timeout, _Timeout, seconds}
             , {pushback, _Pushback, seconds}
+            , {poll_rate, _Poll, ms}
             , _Backend
             } = Q) ->
   valvex:add(Valvex, Q, undefined);
@@ -116,12 +124,14 @@ add(Valvex, { Key
             , Threshold
             , Timeout
             , Pushback
+            , Poll
             , Backend
             }) ->
   valvex:add(Valvex, { Key
                      , {threshold, Threshold}
                      , {timeout, Timeout, seconds}
                      , {pushback, Pushback, seconds}
+                     , {poll_rate, Poll, ms}
                      , Backend
                      }, undefined).
 

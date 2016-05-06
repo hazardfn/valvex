@@ -35,6 +35,7 @@ add(Valvex, { _Key
             , {threshold, _Threshold}
             , {timeout, _Timeout, seconds}
             , {pushback, _Pushback, seconds}
+            , {poll_rate, _Poll, ms}
             , _Backend
             } = Q, Option) ->
   do_add(Valvex, Q, Option).
@@ -83,6 +84,7 @@ init([ {queues, Queues}
                  , _Threshold
                  , _Timeout
                  , _Pushback
+                 , _Poll
                  , Backend
                  } = Q) ->
                  valvex_queue_sup:start_child([Backend, Key, Q]),
@@ -118,6 +120,7 @@ handle_call({add, { Key
                   , _Threshold
                   , _Timeout
                   , _Pushback
+                  , _Poll
                   , Backend
                   } = Q, Option}, _From, #{ queues     := Queues
                                           , queue_pids := QPids
@@ -161,7 +164,7 @@ handle_call({remove, Key}, _From, #{ queues     := Queues
 
 handle_cast({pushback, Key, Reply}, #{ queues := Queues } = S) ->
   case lists:keyfind(Key, 1, Queues) of
-    {Key, _, _, {Pushback, seconds}, _} ->
+    {Key, _, _, {Pushback, seconds}, _, _} ->
       spawn(fun() ->
                 TimeoutMS = timer:seconds(Pushback),
                 timer:sleep(TimeoutMS),
@@ -202,14 +205,14 @@ terminate(_Reason, #{ queue_pids := _QPids
 get_queue(Valvex, Key) ->
   gen_server:call(Valvex, {get_queue, Key}).
 
-do_add(Valvex, {Key, _, _, _, _} = Q, undefined) ->
+do_add(Valvex, {Key, _, _, _, _, _} = Q, undefined) ->
   case get_queue(Valvex, Key) of
     {error, key_not_found} ->
       gen_server:call(Valvex, {add, Q, undefined});
     _ ->
       {error, key_not_unique}
   end;
-do_add(Valvex, {Key, _, _, _, _} = Q, crossover_on_existing) ->
+do_add(Valvex, {Key, _, _, _, _, _} = Q, crossover_on_existing) ->
   case get_queue(Valvex, Key) of
     {error, key_not_found} ->
       do_add(Valvex, Q, undefined);
@@ -218,7 +221,7 @@ do_add(Valvex, {Key, _, _, _, _} = Q, crossover_on_existing) ->
       valvex_queue:lock(Backend, Key),
       valvex_queue:tombstone(Backend, Key)
   end;
-do_add(Valvex, {Key, _, _, _, _} = Q, crossover_on_existing_force_remove) ->
+do_add(Valvex, {Key, _, _, _, _, _} = Q, crossover_on_existing_force_remove) ->
   case get_queue(Valvex, Key) of
     {error, key_not_found} ->
       do_add(Valvex, Q, undefined);
@@ -226,7 +229,7 @@ do_add(Valvex, {Key, _, _, _, _} = Q, crossover_on_existing_force_remove) ->
       do_add(Valvex, Key, undefined),
       do_remove(Valvex, Key, force_remove)
   end;
-do_add(Valvex, {Key, _, _, _, Backend} = Q, manual_start) ->
+do_add(Valvex, {Key, _, _, _, _, Backend} = Q, manual_start) ->
   case get_queue(Valvex, Key) of
     {error, key_not_found} ->
       gen_server:call(Valvex, {add, Q, manual_start});
