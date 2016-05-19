@@ -111,7 +111,7 @@ init([ Valvex
         , pushback   => Pushback
         , backend    => ?MODULE
         , size       => 0
-        , poll_rate => Poll
+        , poll_rate  => Poll
         , queue      => queue:new()
         , locked     => true
         , tombstoned => false
@@ -202,7 +202,7 @@ handle_cast(start_consumer, #{ valvex     := Valvex
                              , backend    := Backend
                              , key        := Key
                              , timeout    := Timeout
-                             , poll_rate := Poll
+                             , poll_rate  := Poll
                              } = S) ->
   {ok, TRef} = timer:apply_interval( Poll
                                    , ?MODULE

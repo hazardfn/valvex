@@ -41,14 +41,14 @@ init_per_suite(Config) ->
                   , {threshold, 3}
                   , {timeout, 10, seconds}
                   , {pushback, 10, seconds}
-                  , {poll_timer, 100, ms}
+                  , {poll_rate, 100, ms}
                   , valvex_queue_fifo_backend
                   }
                 , { test_lifo
                   , {threshold, 3}
                   , {timeout, 10, seconds}
                   , {pushback, 10, seconds}
-                  , {poll_timer, 100, ms}
+                  , {poll_rate, 100, ms}
                   , valvex_queue_lifo_backend
                   }
                 ]
