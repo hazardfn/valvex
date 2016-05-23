@@ -1,4 +1,4 @@
-# Overview | [Travis-CI](https://travis-ci.org/hazardfn/valvex) :: ![Build Status](https://travis-ci.org/hazardfn/valvex.svg)
+# Overview | [![Travis-CI](https://travis-ci.org/hazardfn/valvex.svg)](https://travis-ci.org/hazardfn/valvex)
 --------
 valveX is a rate-limiter written in erlang - it has a lot of tweakable
 options to ensure you get the best solution.
