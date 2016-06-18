@@ -1,16 +1,26 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% @doc Public API for valvex
+%%% @author Howard Beard-Marlowe <howardbm@live.se>
+%%% @copyright 2016 Howard Beard-Marlowe
+%%% @end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%_* Module declaration =======================================================
 -module(valvex).
 
 %% API exports
 -export([ add/2
         , add/3
-        , remove/2
-        , remove/3
-        , push/4
+        , add_handler/3
         , get_available_workers/1
         , get_available_workers_count/1
         , get_queue_size/2
+        , notify/2
+        , push/3
+        , pushback/2
+        , remove/2
+        , remove/3
+        , remove_handler/3
         , start_link/1
-        , pushback/3
         ]).
 
 %%==============================================================================
@@ -18,12 +28,12 @@
 %%==============================================================================
 
 %% Queue Types
--type queue_key()        :: atom().
 -type queue_backend()    :: module() | {module, list()}.
+-type queue_key()        :: atom().
+-type queue_poll_rate()  :: {poll_rate, non_neg_integer(), ms}.
+-type queue_pushback()   :: {pushback, non_neg_integer(), seconds}.
 -type queue_threshold()  :: {threshold, non_neg_integer()}.
 -type queue_timeout()    :: {timeout, non_neg_integer(), seconds}.
--type queue_pushback()   :: {pushback, non_neg_integer(), seconds}.
--type queue_poll_rate()  :: {poll_rate, non_neg_integer(), ms}.
 
 %% Option / Behavioural modifier types
 -type add_option()       :: crossover_on_existing              |
@@ -34,8 +44,8 @@
                             undefined.
 
 %% Error types
--type unique_key_error() :: {error, key_not_unique}.
 -type key_find_error()   :: {error, key_not_found}.
+-type unique_key_error() :: {error, key_not_unique}.
 
 %% Other types
 -type valvex_ref()       :: pid() | atom().
@@ -53,27 +63,27 @@
                             , queue_poll_rate()
                             , queue_backend()
                             }.
--type valvex_q_item()    :: {function(), pid(), erlang:timestamp()}
+-type valvex_q_item()    :: {function(), erlang:timestamp()}
                           | {empty, any()}.
 -type valvex_options()   :: [{atom(), any()}].
 -type valvex_workers()   :: [pid()].
 
--export_type([ queue_key/0
+-export_type([ add_option/0
+             , key_find_error/0
              , queue_backend/0
+             , queue_key/0
+             , queue_poll_rate/0
+             , queue_pushback/0
              , queue_threshold/0
              , queue_timeout/0
-             , queue_pushback/0
-             , queue_poll_rate/0
-             , add_option/0
              , remove_option/0
              , unique_key_error/0
-             , key_find_error/0
-             , valvex_ref/0
-             , valvex_queue_raw/0
-             , valvex_queue/0
              , valvex_options/0
-             , valvex_workers/0
              , valvex_q_item/0
+             , valvex_queue/0
+             , valvex_queue_raw/0
+             , valvex_ref/0
+             , valvex_workers/0
              ]).
 
 %%==============================================================================
@@ -84,7 +94,9 @@ start_link(Options) ->
   Pid = valvex_server:start_link(Options),
   {ok, Pid}.
 
--spec add( valvex_ref(), valvex_queue() | valvex_queue_raw()
+
+-spec add( valvex_ref()
+         , valvex_queue() | valvex_queue_raw()
          , add_option()) -> ok.
 add(Valvex, { _Key
             , {threshold, _Threshold}
@@ -149,12 +161,11 @@ remove(Valvex, Key) ->
   valvex:remove(Valvex, Key, undefined).
 
 -spec push( valvex_ref()
-		  , queue_key()
-          , valvex_ref()
+          , queue_key()
           , function()
           ) -> ok.
-push(Valvex, Key, Reply, Work) ->
-  valvex_server:push(Valvex, Key, {Work, Reply, erlang:timestamp()}).
+push(Valvex, Key, Work) ->
+  valvex_server:push(Valvex, Key, {Work, erlang:timestamp()}).
 
 -spec get_available_workers(valvex_ref()) -> valvex_workers().
 get_available_workers(Valvex) ->
@@ -172,10 +183,25 @@ get_queue_size(Valvex, Key) ->
 
 -spec pushback( valvex_ref()
               , queue_key()
-              , valvex_ref()
               ) -> ok.
-pushback(Valvex, Key, Reply) ->
-  valvex_server:pushback(Valvex, Key, Reply).
+pushback(Valvex, Key) ->
+  valvex_server:pushback(Valvex, Key).
+
+-spec notify( valvex_ref()
+            , any()
+            ) -> ok.
+notify(Valvex, Event) ->
+  valvex_server:notify(Valvex, Event).
+
+-spec add_handler( valvex_ref()
+                 , module()
+                 , [any()]
+                 ) -> ok.
+add_handler(Valvex, Module, Args) ->
+  valvex_server:add_handler(Valvex, Module, Args).
+
+remove_handler(Valvex, Module, Args) ->
+  valvex_server:remove_handler(Valvex, Module, Args).
 
 %%%_* Emacs ====================================================================
 %%% Local Variables:
