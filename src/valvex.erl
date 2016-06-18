@@ -1,9 +1,14 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% @doc Public API for valvex
 %%% @author Howard Beard-Marlowe <howardbm@live.se>
 %%% @copyright 2016 Howard Beard-Marlowe
+%%% @version 0.1.0
 %%% @end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% @doc Valvex - the ultimate tool for rate-limiting in erlang.
+%%
+%% This module provides the main interface to Valvex.
+
 %%%_* Module declaration =======================================================
 -module(valvex).
 
