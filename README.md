@@ -230,3 +230,37 @@ responds {threshold_hit, _Q} via eventing.
 **Identifier:** Pid or registered atom of the valve server.
 
 **Queue Key:** A unique atom identifying the queue.
+
+### `notify (Identifier, Event) -> ok.`
+---
+#### Description:
+
+Notifies any added handlers of an event.
+
+#### Spec:
+
+**Identifier:** Pid or registered atom of the valve server.
+
+**Queue Key:** An event (see list of valid events in notes)
+
+#### Notes:
+
+Valid events:
+
+* {queue_started, Q} - Triggered on start_link
+* {queue_popped, Q} - Triggered when pop is called
+* {queue_popped_r, Q} - Triggered when pop_r is called
+* {queue_push, Q, Work} - Triggered when push is called, regardless of outcome
+* {queue_push_r, Q, Work} - See push.
+* {push_complete, Q, Work} - Triggered when the push operation was a success
+* {push_to_locked_queue, Q, Work} - Triggered when there's an attempt
+  to push to a locked queue
+* {queue_tombstoned, Q} - Triggered when a queue is marked to die
+* {queue_locked, Q} - Triggered when a queue is locked
+* {queue_unlocked, Q} - Triggered when a queue is unlocked
+* {queue_consumer_started, Q} - Triggered when the consumer is started
+* {queue_consumer_stopped, Q} - Triggered when the consumer is stopped
+* {timeout, QKey} - Triggered when the work goes stale
+* {result, Result} - Triggered when work is finally over
+* {threshold_hit, Q} - Triggered when a push is attempted but there's
+  already too many items.
