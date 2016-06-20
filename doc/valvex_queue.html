@@ -1,0 +1,162 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Module valvex_queue</title>
+<link rel="stylesheet" type="text/css" href="stylesheet.css" title="EDoc">
+</head>
+<body bgcolor="white">
+<div class="navbar"><a name="#navbar_top"></a><table width="100%" border="0" cellspacing="0" cellpadding="2" summary="navigation bar"><tr><td><a href="overview-summary.html" target="overviewFrame">Overview</a></td><td><a href="http://www.erlang.org/"><img src="erlang.png" align="right" border="0" alt="erlang logo"></a></td></tr></table></div>
+<hr>
+
+<h1>Module valvex_queue</h1>
+<ul class="index"><li><a href="#description">Description</a></li><li><a href="#types">Data Types</a></li><li><a href="#index">Function Index</a></li><li><a href="#functions">Function Details</a></li></ul>valvex_queue.
+<p>Copyright © 2016 Howard Beard-Marlowe</p>
+
+<p><b>Version:</b> 0.1.0</p>
+<p><b>This module defines the <tt>valvex_queue</tt> behaviour.</b><br> Required callback functions: <tt>crossover/2</tt>, <tt>is_locked/1</tt>, <tt>is_tombstoned/1</tt>, <tt>lock/1</tt>, <tt>pop/1</tt>, <tt>pop_r/1</tt>, <tt>push/2</tt>, <tt>push_r/2</tt>, <tt>size/1</tt>, <tt>start_consumer/1</tt>, <tt>start_link/2</tt>, <tt>stop_consumer/1</tt>, <tt>tombstone/1</tt>, <tt>unlock/1</tt>.</p>
+<p><b>Authors:</b> Howard Beard-Marlowe (<a href="mailto:howardbm@live.se"><tt>howardbm@live.se</tt></a>).</p>
+
+<h2><a name="description">Description</a></h2><p>valvex_queue</p>
+ 
+  This module defines the behaviour any queue backend should have
+  read through the readme and the documentation for more info.
+<h2><a name="types">Data Types</a></h2>
+
+<h3 class="typedecl"><a name="type-queue_state">queue_state()</a></h3>
+<p><tt>queue_state() = #{key =&gt; <a href="valvex.html#type-queue_key">valvex:queue_key()</a>, threshold =&gt; non_neg_integer(), timeout =&gt; non_neg_integer(), pushback =&gt; non_neg_integer(), backend =&gt; module(), size =&gt; non_neg_integer(), poll_rate =&gt; non_neg_integer(), queue =&gt; <a href="queue.html#type-queue">queue:queue()</a>, q =&gt; <a href="valvex.html#type-valvex_queue">valvex:valvex_queue()</a>, locked =&gt; true | false, tombstoned =&gt; true | false, valvex =&gt; <a href="valvex.html#type-valvex_ref">valvex:valvex_ref()</a>, queue_pid =&gt; <a href="valvex.html#type-valvex_ref">valvex:valvex_ref()</a>, consumer =&gt; undefined | <a href="timer.html#type-tref">timer:tref()</a>}</tt></p>
+
+
+<h2><a name="index">Function Index</a></h2>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#crossover-3">crossover/3</a></td><td>This defines the crossover behaviour for your queue should you be developing
+  your own backend take a look at how it is done in other stock modules if your module cannot
+  work with this behaviour for any reason it is important that the user is made aware and something is logged.</td></tr>
+<tr><td valign="top"><a href="#is_locked-2">is_locked/2</a></td><td>Whenever needed this should reply true or false depending on if
+  the queue is locked, a locked queue is one that cannot be pushed to
+  remaining work may continue to be consumed however view the stock
+  backends or the readme for more info.</td></tr>
+<tr><td valign="top"><a href="#is_tombstoned-2">is_tombstoned/2</a></td><td>Whenever needed this should reply true or false depending on if
+  the queue is tombstoned, a tombstoned queue is marked for deletion
+  and will delete itself when all work is consumed.</td></tr>
+<tr><td valign="top"><a href="#lock-2">lock/2</a></td><td>This will lock a queue, a locked queue cannot be pushed to.</td></tr>
+<tr><td valign="top"><a href="#pop-2">pop/2</a></td><td>This will pop the queue, depending on your backends behaviour
+  this can have different conotations see the documentation for your
+  specific backend for more info.</td></tr>
+<tr><td valign="top"><a href="#pop_r-2">pop_r/2</a></td><td>This will pop the queue but with the reverse operation of pop()
+  this can have different conotations depending on your backends
+  behaviour see the documentation for more info.</td></tr>
+<tr><td valign="top"><a href="#push-3">push/3</a></td><td>This will push a queue item to the queue, this can have different conotations
+  depending on your backend view its documentation for more information.</td></tr>
+<tr><td valign="top"><a href="#push_r-3">push_r/3</a></td><td>This will do the reverse operation of push, this can have different conotations
+  depending on your backend view its documentation for more information.</td></tr>
+<tr><td valign="top"><a href="#size-2">size/2</a></td><td>This function should retrieve the current size of the queue, if for some reason
+  this is costly with your implementation make sure the user is notified this doesnt
+  work.</td></tr>
+<tr><td valign="top"><a href="#start_consumer-2">start_consumer/2</a></td><td>This function should start your consumer, this will be a regularly run
+  function that slurps the queue.</td></tr>
+<tr><td valign="top"><a href="#start_link-3">start_link/3</a></td><td></td></tr>
+<tr><td valign="top"><a href="#stop_consumer-2">stop_consumer/2</a></td><td>This function should stop the consumer, note that it should not remove the queue
+  entirely.</td></tr>
+<tr><td valign="top"><a href="#tombstone-2">tombstone/2</a></td><td>This function marks the queue for deletion, once the queue is empty it should be removed
+  note a queue does not have to be locked to be tombstoned.</td></tr>
+<tr><td valign="top"><a href="#unlock-2">unlock/2</a></td><td>This function unlocks a locked queue, it is idempotent.</td></tr>
+</table>
+
+<h2><a name="functions">Function Details</a></h2>
+
+<h3 class="function"><a name="crossover-3">crossover/3</a></h3>
+<div class="spec">
+<p><tt>crossover(Backend::<a href="valvex.html#type-queue_backend">valvex:queue_backend()</a>, Q::<a href="valvex.html#type-valvex_ref">valvex:valvex_ref()</a>, NuQ::<a href="valvex.html#type-valvex_queue">valvex:valvex_queue()</a>) -&gt; ok</tt><br></p>
+</div><p>This defines the crossover behaviour for your queue should you be developing
+  your own backend take a look at how it is done in other stock modules if your module cannot
+  work with this behaviour for any reason it is important that the user is made aware and something is logged.</p>
+
+<h3 class="function"><a name="is_locked-2">is_locked/2</a></h3>
+<div class="spec">
+<p><tt>is_locked(Backend::<a href="valvex.html#type-queue_backend">valvex:queue_backend()</a>, Q::<a href="valvex.html#type-valvex_ref">valvex:valvex_ref()</a>) -&gt; true | false</tt><br></p>
+</div><p>Whenever needed this should reply true or false depending on if
+  the queue is locked, a locked queue is one that cannot be pushed to
+  remaining work may continue to be consumed however view the stock
+  backends or the readme for more info.</p>
+
+<h3 class="function"><a name="is_tombstoned-2">is_tombstoned/2</a></h3>
+<div class="spec">
+<p><tt>is_tombstoned(Backend::<a href="valvex.html#type-queue_backend">valvex:queue_backend()</a>, Q::<a href="valvex.html#type-valvex_ref">valvex:valvex_ref()</a>) -&gt; true | false</tt><br></p>
+</div><p>Whenever needed this should reply true or false depending on if
+  the queue is tombstoned, a tombstoned queue is marked for deletion
+  and will delete itself when all work is consumed. A tombstoned
+  queue does not have to be locked, this simply means it will stay
+  alive as long as work is being passed to it.</p>
+
+<h3 class="function"><a name="lock-2">lock/2</a></h3>
+<div class="spec">
+<p><tt>lock(Backend::<a href="valvex.html#type-queue_backend">valvex:queue_backend()</a>, Q::<a href="valvex.html#type-valvex_ref">valvex:valvex_ref()</a>) -&gt; ok</tt><br></p>
+</div><p>This will lock a queue, a locked queue cannot be pushed to.</p>
+
+<h3 class="function"><a name="pop-2">pop/2</a></h3>
+<div class="spec">
+<p><tt>pop(Backend::<a href="valvex.html#type-queue_backend">valvex:queue_backend()</a>, Q::<a href="valvex.html#type-valvex_ref">valvex:valvex_ref()</a>) -&gt; any()</tt><br></p>
+</div><p>This will pop the queue, depending on your backends behaviour
+  this can have different conotations see the documentation for your
+  specific backend for more info.</p>
+
+<h3 class="function"><a name="pop_r-2">pop_r/2</a></h3>
+<div class="spec">
+<p><tt>pop_r(Backend::<a href="valvex.html#type-queue_backend">valvex:queue_backend()</a>, Q::<a href="valvex.html#type-valvex_ref">valvex:valvex_ref()</a>) -&gt; any()</tt><br></p>
+</div><p>This will pop the queue but with the reverse operation of pop()
+  this can have different conotations depending on your backends
+  behaviour see the documentation for more info.</p>
+
+<h3 class="function"><a name="push-3">push/3</a></h3>
+<div class="spec">
+<p><tt>push(Backend::<a href="valvex.html#type-queue_backend">valvex:queue_backend()</a>, Q::<a href="valvex.html#type-valvex_ref">valvex:valvex_ref()</a>, Value::<a href="valvex.html#type-valvex_q_item">valvex:valvex_q_item()</a>) -&gt; ok</tt><br></p>
+</div><p>This will push a queue item to the queue, this can have different conotations
+  depending on your backend view its documentation for more information.</p>
+<p><b>See also:</b> <a href="valvex.html#type-valvex_q_item">valvex:valvex_q_item()</a>.</p>
+
+<h3 class="function"><a name="push_r-3">push_r/3</a></h3>
+<div class="spec">
+<p><tt>push_r(Backend::<a href="valvex.html#type-queue_backend">valvex:queue_backend()</a>, Q::<a href="valvex.html#type-valvex_ref">valvex:valvex_ref()</a>, Value::<a href="valvex.html#type-valvex_q_item">valvex:valvex_q_item()</a>) -&gt; ok</tt><br></p>
+</div><p>This will do the reverse operation of push, this can have different conotations
+  depending on your backend view its documentation for more information.</p>
+
+<h3 class="function"><a name="size-2">size/2</a></h3>
+<div class="spec">
+<p><tt>size(Backend::<a href="valvex.html#type-queue_backend">valvex:queue_backend()</a>, Q::<a href="valvex.html#type-valvex_ref">valvex:valvex_ref()</a>) -&gt; non_neg_integer()</tt><br></p>
+</div><p>This function should retrieve the current size of the queue, if for some reason
+  this is costly with your implementation make sure the user is notified this doesnt
+  work.</p>
+
+<h3 class="function"><a name="start_consumer-2">start_consumer/2</a></h3>
+<div class="spec">
+<p><tt>start_consumer(Backend::<a href="valvex.html#type-queue_backend">valvex:queue_backend()</a>, Q::<a href="valvex.html#type-valvex_ref">valvex:valvex_ref()</a>) -&gt; ok</tt><br></p>
+</div><p>This function should start your consumer, this will be a regularly run
+  function that slurps the queue.</p>
+
+<h3 class="function"><a name="start_link-3">start_link/3</a></h3>
+<div class="spec">
+<p><tt>start_link(Backend::<a href="valvex.html#type-queue_backend">valvex:queue_backend()</a>, Valvex::<a href="valvex.html#type-valvex_ref">valvex:valvex_ref()</a>, Q::<a href="valvex.html#type-valvex_queue">valvex:valvex_queue()</a>) -&gt; {ok, <a href="valvex.html#type-valvex_ref">valvex:valvex_ref()</a>}</tt><br></p>
+</div>
+
+<h3 class="function"><a name="stop_consumer-2">stop_consumer/2</a></h3>
+<div class="spec">
+<p><tt>stop_consumer(Backend::<a href="valvex.html#type-queue_backend">valvex:queue_backend()</a>, Q::<a href="valvex.html#type-valvex_ref">valvex:valvex_ref()</a>) -&gt; ok</tt><br></p>
+</div><p>This function should stop the consumer, note that it should not remove the queue
+  entirely.</p>
+
+<h3 class="function"><a name="tombstone-2">tombstone/2</a></h3>
+<div class="spec">
+<p><tt>tombstone(Backend::<a href="valvex.html#type-queue_backend">valvex:queue_backend()</a>, Q::<a href="valvex.html#type-valvex_ref">valvex:valvex_ref()</a>) -&gt; ok</tt><br></p>
+</div><p>This function marks the queue for deletion, once the queue is empty it should be removed
+  note a queue does not have to be locked to be tombstoned.</p>
+
+<h3 class="function"><a name="unlock-2">unlock/2</a></h3>
+<div class="spec">
+<p><tt>unlock(Backend::<a href="valvex.html#type-queue_backend">valvex:queue_backend()</a>, Q::<a href="valvex.html#type-valvex_ref">valvex:valvex_ref()</a>) -&gt; ok</tt><br></p>
+</div><p>This function unlocks a locked queue, it is idempotent.</p>
+<hr>
+
+<div class="navbar"><a name="#navbar_bottom"></a><table width="100%" border="0" cellspacing="0" cellpadding="2" summary="navigation bar"><tr><td><a href="overview-summary.html" target="overviewFrame">Overview</a></td><td><a href="http://www.erlang.org/"><img src="erlang.png" align="right" border="0" alt="erlang logo"></a></td></tr></table></div>
+<p><i>Generated by EDoc, Jun 20 2016, 22:28:26.</i></p>
+</body>
+</html>

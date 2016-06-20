@@ -7,7 +7,8 @@
 
 %% @doc Valvex - the ultimate tool for rate-limiting in erlang.
 %%
-%% This module provides the main interface to Valvex.
+%% This module provides the main interface to Valvex. For more information
+%% refer to the readme.
 
 %%%_* Module declaration =======================================================
 -module(valvex).
@@ -26,6 +27,7 @@
         , remove/3
         , remove_handler/3
         , start_link/1
+        , update/3
         ]).
 
 %%==============================================================================
@@ -41,9 +43,9 @@
 -type queue_timeout()    :: {timeout, non_neg_integer(), seconds}.
 
 %% Option / Behavioural modifier types
--type add_option()       :: crossover_on_existing              |
-                            crossover_on_existing_force_remove |
+-type add_option()       :: crossover_on_existing |
                             undefined.
+
 -type remove_option()    :: force_remove |
                             lock_queue   |
                             undefined.
@@ -205,8 +207,15 @@ notify(Valvex, Event) ->
 add_handler(Valvex, Module, Args) ->
   valvex_server:add_handler(Valvex, Module, Args).
 
+-spec remove_handler( valvex_ref()
+                    , module()
+                    , [any()]
+                    ) -> ok.
 remove_handler(Valvex, Module, Args) ->
   valvex_server:remove_handler(Valvex, Module, Args).
+
+update(Valvex, Key, NuQ) ->
+  valvex_server:update(Valvex, Key, NuQ).
 
 %%%_* Emacs ====================================================================
 %%% Local Variables:
