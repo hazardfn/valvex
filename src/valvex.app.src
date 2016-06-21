@@ -9,6 +9,7 @@
   {env,[ {queues,           []}
        , {pushback_enabled, true}
        , {workers, 10}
+       , {event_handlers, [{valvex_message_event_handler, [pid]}]}
        ]},
   {modules, [valvex]},
   {maintainers, ["Howard Beard-Marlowe <howardbm@live.se>"]},

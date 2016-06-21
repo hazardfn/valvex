@@ -103,29 +103,35 @@ init([ Valvex
        , {pushback, Pushback, seconds}
        , {poll_rate, Poll, ms}
        , _Backend
-       }
+       } = Q
      ]) ->
+  valvex:notify(Valvex, {queue_started, Q}),
   {ok, #{ key        => Key
         , threshold  => Threshold
         , timeout    => Timeout
         , pushback   => Pushback
         , backend    => ?MODULE
         , size       => 0
-        , poll_rate => Poll
+        , poll_rate  => Poll
         , queue      => queue:new()
+        , q          => Q
         , locked     => true
         , tombstoned => false
         , valvex     => Valvex
         , queue_pid  => self()
+        , consumer   => undefined
         }}.
 
 handle_call(pop, _From, #{ queue      := Q0
+                         , q          := RawQ
                          , size       := Size
                          , tombstoned := Tombstone
+                         , valvex     := Valvex
                          } = S) ->
   Value = queue:out_r(Q0),
   case Value of
-    {{value, {_Work, _Reply, _Timestamp}}, Q} ->
+    {{value, {_Work, _Timestamp}}, Q} ->
+      valvex:notify(Valvex, {queue_popped, RawQ, Value}),
       {reply, Value, update_state(Q, Size-1, S)};
     {empty, _}                                ->
       case Tombstone of
@@ -133,13 +139,16 @@ handle_call(pop, _From, #{ queue      := Q0
         true  -> {reply, {empty, tombstoned}, S}
       end
   end;
-handle_call(pop_r, _From, #{ queue := Q0
-                           , size  := Size
+handle_call(pop_r, _From, #{ queue      := Q0
+                           , q          := RawQ
+                           , size       := Size
                            , tombstoned := Tombstone
+                           , valvex     := Valvex
                            } = S) ->
   Value = queue:out(Q0),
   case Value of
-    {{value, {_Work, _Reply, _Timestamp}}, Q} ->
+    {{value, {_Work, _Timestamp}}, Q} ->
+      valvex:notify(Valvex, {queue_popped_r, RawQ, Value}),
       {reply, Value, update_state(Q, Size-1, S)};
     {empty, _}                                ->
       case Tombstone of
@@ -154,65 +163,84 @@ handle_call(is_tombstoned, _From, #{ tombstoned := Tombstoned } = S) ->
 handle_call(size, _From, #{ size := Size } = S) ->
   {reply, Size, S}.
 
-handle_cast({push, {_Work, Reply, _Timestamp} = Value}, #{ key       := Key
-                                                         , valvex    := Valvex
-                                                         , queue     := Q
-                                                         , threshold := Threshold
-                                                         , size      := Size
-                                                         , locked    := Locked
-                                                         } = S) ->
+handle_cast({push, {Work, _Timestamp} = Value}, #{ key       := Key
+                                                  , valvex    := Valvex
+                                                  , queue     := Q
+                                                  , q         := RawQ
+                                                  , threshold := Threshold
+                                                  , size      := Size
+                                                  , locked    := Locked
+                                                  } = S) ->
+  valvex:notify(Valvex, {queue_push, RawQ, Work}),
   case Locked of
-    true  -> {noreply, S};
+    true  ->
+      valvex:notify(Valvex, {push_to_locked_queue, RawQ, Work}),
+      {noreply, S};
     false ->
       case Size >= Threshold of
         true ->
-          valvex:pushback(Valvex, Key, Reply),
+          valvex:pushback(Valvex, Key),
           {noreply, S};
         false ->
+          valvex:notify(Valvex, {push_complete, RawQ, Work}),
           {noreply, update_state(queue:in(Value, Q), Size+1, S)}
       end
   end;
-handle_cast( {push_r, {_Work, Reply, _Timestamp} = Value}, #{ key       := Key
-                                                            , valvex    := Valvex
-                                                            , queue     := Q
-                                                            , threshold := Threshold
-                                                            , size      := Size
-                                                            , locked    := Locked
-                                                            } = S) ->
+handle_cast( {push_r, {Work, _Timestamp} = Value}, #{ key       := Key
+                                                     , valvex    := Valvex
+                                                     , queue     := Q
+                                                     , q         := RawQ
+                                                     , threshold := Threshold
+                                                     , size      := Size
+                                                     , locked    := Locked
+                                                     } = S) ->
+  valvex:notify(Valvex, {queue_push_r, RawQ, Work}),
   case Locked of
-    true  -> {noreply, S};
+    true  ->
+      valvex:notify(Valvex, {push_to_locked_queue, RawQ, Work}),
+      {noreply, S};
     false ->
       case Size >= Threshold of
         true ->
-          valvex:pushback(Valvex, Key, Reply),
+          valvex:pushback(Valvex, Key),
           {noreply, S};
         false ->
+          valvex:notify(Valvex, {push_complete, RawQ, Work}),
           {noreply, update_state(queue:in_r(Value, Q), Size+1, S)}
       end
   end;
-handle_cast(lock, S) ->
+handle_cast(lock, #{ valvex := Valvex, q := RawQ } = S) ->
+  valvex:notify(Valvex, {queue_locked, RawQ}),
   {noreply, S#{ locked := true }};
-handle_cast(unlock, S) ->
-  {noreply, S#{ locked := false}};
-handle_cast(tombstone, S) ->
+handle_cast(unlock, #{ valvex := Valvex, q := RawQ } = S) ->
+  valvex:notify(Valvex, {queue_unlocked, RawQ}),
+  {noreply, S#{ locked := false }};
+handle_cast(tombstone, #{ valvex := Valvex, q := RawQ } = S) ->
+  valvex:notify(Valvex, {queue_tombstoned, RawQ}),
   {noreply, S#{ tombstoned := true}};
 handle_cast(start_consumer, #{ valvex     := Valvex
                              , queue_pid  := QPid
                              , backend    := Backend
                              , key        := Key
                              , timeout    := Timeout
-                             , poll_rate := Poll
+                             , poll_rate  := Poll
+                             , q          := RawQ
                              } = S) ->
   {ok, TRef} = timer:apply_interval( Poll
                                    , ?MODULE
                                    , consume
                                    , [Valvex, QPid, Backend, Key, Timeout]
                                    ),
+  valvex:notify(Valvex, {queue_consumer_started, RawQ}),
   {noreply, S#{ consumer => TRef
               , locked   := false
               }};
-handle_cast(stop_consumer, #{ consumer := TRef } = S) ->
+handle_cast(stop_consumer, #{ consumer := TRef
+                            , q        := RawQ
+                            , valvex   := Valvex
+                            } = S) ->
   timer:cancel(TRef),
+  valvex:notify(Valvex, {queue_consumer_stopped, RawQ}),
   {noreply, S#{ consumer := undefined
               , locked   := true
               }}.
@@ -248,16 +276,16 @@ do_consume(Valvex, QPid, Backend, Key, Timeout) ->
   try
     QueueValue = gen_server:call(QPid, pop),
     case QueueValue of
-      {{value, {Work, Reply, Timestamp}}, _Q} ->
+      {{value, {Work, Timestamp}}, _Q} ->
         case is_stale(Timeout, Timestamp) of
           false ->
             gen_server:call(Valvex, { assign_work
-                                    , {Work, Reply, Timestamp}
+                                    , {Work, Timestamp}
                                     , {Key, QPid, Backend}
                                     }
                            );
           true  ->
-            Reply ! {error, timeout}
+            valvex:notify(Valvex, {timeout, Key})
         end,
         do_consume(Valvex, QPid, Backend, Key, Timeout);
       {empty, tombstoned} ->

@@ -4,12 +4,15 @@
 
 %% API exports
 -export([ add/3
+        , add_handler/3
         , remove/3
+        , remove_handler/3
         , push/3
         , get_available_workers/1
         , get_queue_size/2
         , start_link/1
-        , pushback/3
+        , notify/2
+        , pushback/2
         ]).
 
 -export([ code_change/3
@@ -66,10 +69,21 @@ get_queue_size(Valvex, Key) ->
 
 -spec pushback( valvex:valvex_ref()
               , valvex:queue_key()
-              , valvex:valvex_ref()
               ) -> ok.
-pushback(Valvex, Key, Reply) ->
-  do_pushback(Valvex, Key, Reply).
+pushback(Valvex, Key) ->
+  do_pushback(Valvex, Key).
+
+-spec notify( valvex:valvex_ref()
+            , any()
+            ) -> ok.
+notify(Valvex, Event) ->
+  do_notify(Valvex, Event).
+
+add_handler(Valvex, Module, Args) ->
+  do_add_handler(Valvex, Module, Args).
+
+remove_handler(Valvex, Module, Args) ->
+  do_remove_handler(Valvex, Module, Args).
 
 %%==============================================================================
 %% Gen Server Callbacks
@@ -77,9 +91,15 @@ pushback(Valvex, Key, Reply) ->
 
 init([ {queues, Queues}
      , {pushback_enabled, Pushback}
+     , {event_handlers, EventHandlers}
      , {workers, WorkerCount}
      ]) ->
   process_flag(trap_exit, true),
+  {ok, EventServer} = gen_event:start_link(),
+  HandlerFun = fun({EventModule, Args}) ->
+                   gen_event:add_handler(EventServer, EventModule, Args)
+               end,
+  lists:foreach(HandlerFun, EventHandlers),
   QueueFun = fun({ Key
                  , _Threshold
                  , _Timeout
@@ -96,15 +116,18 @@ init([ {queues, Queues}
         , queue_pids        => lists:flatmap(QueueFun, Queues)
         , pushback          => Pushback
         , workers           => Workers
+        , event_server      => EventServer
         , available_workers => Workers
         }};
 init([]) ->
   process_flag(trap_exit, true),
   Workers = start_workers(10),
+  {ok, EventServer} = gen_event:start_link(),
   {ok, #{ queues            => []
         , queue_pids        => []
         , pushback          => false
         , workers           => Workers
+        , event_server      => EventServer
         , available_workers => Workers
         }}.
 
@@ -122,8 +145,8 @@ handle_call({add, { Key
                   , _Pushback
                   , _Poll
                   , Backend
-                  } = Q, Option}, _From, #{ queues     := Queues
-                                          , queue_pids := QPids
+                  } = Q, Option}, _From, #{ queues       := Queues
+                                          , queue_pids   := QPids
                                           } = S) ->
   NewQueues = lists:append(Queues, [Q]),
   valvex_queue_sup:start_child([Backend, Key, Q]),
@@ -138,21 +161,22 @@ handle_call({add, { Key
                 }};
 handle_call(get_workers, _From, #{ available_workers := Workers } = S) ->
   {reply, Workers, S};
-handle_call( {assign_work, {Work, Reply, Timestamp}, {_Key, QPid, Backend}}
+handle_call( {assign_work, {Work, Timestamp}, {_Key, QPid, Backend}}
            , _From, #{ available_workers := Workers } = S) ->
   case Workers == [] of
     false ->
       [Worker | T] = Workers,
+      Valvex = self(),
       WorkFun = fun() ->
-                    case is_process_alive(Reply) of
-                      true  -> Reply ! Work();
-                      false -> caller_dead
+                    case is_process_alive(Worker) of
+                      true  -> valvex:notify(Valvex, {result, Work()});
+                      false -> valvex:notify(Valvex, {worker_dead, Worker})
                     end
                 end,
       gen_server:cast(Worker, {work, WorkFun}),
       {noreply, S#{ available_workers := T }};
     true ->
-      valvex_queue:push_r(Backend, QPid, {Work, Reply, Timestamp}),
+      valvex_queue:push_r(Backend, QPid, {Work, Timestamp}),
       {noreply, S}
   end;
 handle_call({remove, Key}, _From, #{ queues     := Queues
@@ -160,15 +184,28 @@ handle_call({remove, Key}, _From, #{ queues     := Queues
                                    } = S) ->
   {reply, ok, S#{ queues     := lists:keydelete(Key, 1, Queues)
                 , queue_pids := lists:keydelete(Key, 1, QPids)
-                }}.
+                }};
+handle_call( {add_handler, Module, Args}
+           , _From
+           , #{ event_server := EventServer} = S
+           ) ->
+  ok = gen_event:add_handler(EventServer, Module, Args),
+  {reply, ok, S};
+handle_call( {remove_handler, Module, Args}
+           , _From
+           , #{ event_server := EventServer} = S
+           ) ->
+  ok = gen_event:delete_handler(EventServer, Module, Args),
+  {reply, ok, S}.
 
-handle_cast({pushback, Key, Reply}, #{ queues := Queues } = S) ->
+handle_cast({pushback, Key}, #{ queues := Queues } = S) ->
   case lists:keyfind(Key, 1, Queues) of
-    {Key, _, _, {Pushback, seconds}, _, _} ->
+    {Key, _, _, {Pushback, seconds}, _, _} = Q ->
+      Valvex = self(),
       spawn(fun() ->
                 TimeoutMS = timer:seconds(Pushback),
                 timer:sleep(TimeoutMS),
-                Reply ! {error, threshold_hit}
+                notify(Valvex, {threshold_hit, Q})
             end),
       {noreply, S};
     false ->
@@ -178,14 +215,21 @@ handle_cast({push, Key, Value}, #{queue_pids := Queues} = S) ->
   ActiveQ = get_active_queues(Queues),
   case lists:keyfind(Key, 1, ActiveQ) of
     false ->
+      maybe_locked(Key, Value),
       {noreply, S};
     {Key, Backend} ->
       valvex_queue:push(Backend, Key, Value),
       {noreply, S}
   end;
-handle_cast({work_finished, WorkerPid}
+handle_cast( {work_finished, WorkerPid}
            , #{ available_workers := Workers } = S) ->
-  {noreply, S#{ available_workers := lists:append(Workers, [WorkerPid]) }}.
+  {noreply, S#{ available_workers := lists:append(Workers, [WorkerPid]) }};
+handle_cast({notify, Event}
+           , #{ event_server := EventServer } = S
+           ) ->
+  gen_event:notify(EventServer, Event),
+  {noreply, S}.
+
 
 handle_info(_Info, S) ->
   {noreply, S}.
@@ -275,8 +319,17 @@ do_get_queue_size(Valvex, Key) ->
       Error
   end.
 
-do_pushback(Valvex, Key, Reply) ->
-  gen_server:cast(Valvex, {pushback, Key, Reply}).
+do_pushback(Valvex, Key) ->
+  gen_server:cast(Valvex, {pushback, Key}).
+
+do_notify(Valvex, Event) ->
+  gen_server:cast(Valvex, {notify, Event}).
+
+do_add_handler(Valvex, Module, Args) ->
+  gen_server:call(Valvex, {add_handler, Module, Args}).
+
+do_remove_handler(Valvex, Module, Args) ->
+  gen_server:call(Valvex, {remove_handler, Module, Args}).
 
 get_active_queues(Queues) ->
   lists:filter(fun({Key, Backend}) ->
@@ -287,6 +340,12 @@ start_workers(WorkerCount) ->
   lists:flatmap(fun(_) ->
                     [valvex_worker:start_link(self())]
                 end, lists:seq(1, WorkerCount)).
+
+maybe_locked(Key, Value) ->
+  case whereis(Key) of
+    undefined -> ok;
+    _Pid -> valvex:notify(self(), {push_to_locked_queue, Key, Value})
+  end.
 
 %%%_* Emacs ====================================================================
 %%% Local Variables:
