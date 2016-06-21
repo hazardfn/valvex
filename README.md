@@ -247,6 +247,8 @@ Notifies any added handlers of an event.
 
 Valid events:
 
+* {queue_crossover, Q, NuQ} - Triggered when a crossover occurs, Q is
+  the old queue and NuQ is the new queue.
 * {queue_started, Q} - Triggered on start_link
 * {queue_popped, Q} - Triggered when pop is called
 * {queue_popped_r, Q} - Triggered when pop_r is called
@@ -255,6 +257,7 @@ Valid events:
 * {push_complete, Q, Work} - Triggered when the push operation was a success
 * {push_to_locked_queue, Q, Work} - Triggered when there's an attempt
   to push to a locked queue
+* {queue_removed, Key} - Triggered when a tombstoned queue is finally removed
 * {queue_tombstoned, Q} - Triggered when a queue is marked to die
 * {queue_locked, Q} - Triggered when a queue is locked
 * {queue_unlocked, Q} - Triggered when a queue is unlocked
