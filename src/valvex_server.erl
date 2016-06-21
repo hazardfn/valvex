@@ -154,6 +154,7 @@ init([ {queues, Queues}
         , event_server      => EventServer
         , available_workers => Workers
         }};
+%% @doc starts the server with default settings.
 init([]) ->
   process_flag(trap_exit, true),
   Workers = start_workers(10),
@@ -166,6 +167,13 @@ init([]) ->
         , available_workers => Workers
         }}.
 
+%% @doc see the "see also" section for a list of synchronous operations
+%% @see add()
+%% @see get_available_workers()
+%% @see remove()
+%% @see add_handler()
+%% @see remove_handler()
+%% @see update()
 handle_call({get_queue, Key}, _From, #{ queue_pids := Queues } = S) ->
   case lists:keyfind(Key, 1, Queues) of
     false ->
@@ -253,6 +261,7 @@ handle_call({update, Key, { Key
   NewQPids  = lists:append(lists:keydelete(Key, 1, QPids), [{Key, Backend}]),
   {reply, ok, S#{ queues     := NewQueues
                 , queue_pids := NewQPids }}.
+
 
 handle_cast({pushback, Key}, #{ queues := Queues } = S) ->
   case lists:keyfind(Key, 1, Queues) of

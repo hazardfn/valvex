@@ -75,7 +75,7 @@ is_locked(Q) ->
   gen_server:call(Q, is_locked).
 
 %% @doc returns true if the queue is queued for deletion, it will only be deleted
-%% once empty and can only be guaranteed to be empty when locked.
+%% once empty and can only be guaranteed to be eventually empty when locked.
 -spec is_tombstoned(valvex:valvex_ref()) -> true | false.
 is_tombstoned(Q) ->
   gen_server:call(Q, is_tombstoned).
@@ -85,13 +85,13 @@ is_tombstoned(Q) ->
 lock(Q) ->
   gen_server:cast(Q, lock).
 
-%% @doc pop the queue, in the case of this backend it's last in first out.
+%% @doc pop the queue, in the case of this backend it's first in first out.
 -spec pop(valvex:valvex_ref()) -> valvex:valvex_q_item().
 pop(Q) ->
   gen_server:call(Q, pop).
 
 %% @doc pop_r is the reverse operation of whatever pop is, in this case it's
-%% first in first out.
+%% last in first out.
 -spec pop_r(valvex:valvex_ref()) -> valvex:valvex_q_item().
 pop_r(Q) ->
   gen_server:call(Q, pop_r).
@@ -177,6 +177,12 @@ init([ Valvex, { Key
         , consumer   => undefined
         }}.
 
+%% @doc see the "see also" list for a list of synchronous operations
+%% @see pop()
+%% @see pop_r()
+%% @see is_locked()
+%% @see is_tombstoned()
+%% @see size()
 handle_call(pop, _From, #{ queue      := Q0
                          , q          := RawQ
                          , size       := Size
@@ -200,6 +206,15 @@ handle_call(is_tombstoned, _From, #{ tombstoned := Tombstoned } = S) ->
 handle_call(size, _From, #{ size := Size } = S) ->
   {reply, Size, S}.
 
+%% @doc See the "see also" list for a list of asynchronous operations.
+%% @see push()
+%% @see push_r()
+%% @see lock()
+%% @see unlock()
+%% @see tombstone()
+%% @see crossover()
+%% @see start_consumer()
+%% @see stop_consumer()
 handle_cast({push, {Work, _Timestamp} = Value}, #{ valvex    := Valvex
                                                  , q         := RawQ
                                                  , queue     := Q
@@ -285,12 +300,19 @@ handle_cast(stop_consumer, #{ consumer := TRef
   valvex:notify(Valvex, {queue_consumer_stopped, RawQ}),
   {noreply, S#{ consumer := undefined }}.
 
+%% @doc Info messages are discarded.
 handle_info(_Info, S) ->
   {noreply, S}.
 
+%% @doc Restarts the consumer only during a code change as this may be
+%% required if code within the consumer function has changed, it will
+%% only be restarted if it was running at the point of change.
 code_change(_Vsn, S, _Extra) ->
+  gen_server:cast(self(), restart_consumer),
   {ok, S}.
 
+%% @doc Performs cleanup by stopping the consumer and unregistering
+%% the queues key if it remains registered for whatever reason.
 terminate(_Reason, #{ consumer := Consumer
                     , key      := Key
                     }) ->
