@@ -167,8 +167,7 @@ init([]) ->
         }}.
 
 handle_call({get_queue, Key}, _From, #{ queue_pids := Queues } = S) ->
-  ActiveQ = get_active_queues(Queues),
-  case lists:keyfind(Key, 1, ActiveQ) of
+  case lists:keyfind(Key, 1, Queues) of
     false ->
       {reply, {error, key_not_found}, S};
     {Key, _Backend} = Queue ->
@@ -177,8 +176,7 @@ handle_call({get_queue, Key}, _From, #{ queue_pids := Queues } = S) ->
 handle_call({get_raw_queue, Key}, _From, #{ queue_pids := Queues
                                           , queues     := RawQueues
                                           } = S) ->
-  ActiveQ = get_active_queues(Queues),
-  case lists:keyfind(Key, 1, ActiveQ) of
+  case lists:keyfind(Key, 1, Queues) of
     false ->
       {reply, {error, key_not_found}, S};
     {Key, _Backend} ->
@@ -258,7 +256,7 @@ handle_call({update, Key, { Key
 
 handle_cast({pushback, Key}, #{ queues := Queues } = S) ->
   case lists:keyfind(Key, 1, Queues) of
-    {Key, _, _, {Pushback, seconds}, _, _} = Q ->
+    {Key, _, _, {pushback, Pushback, seconds}, _, _} = Q ->
       Valvex = self(),
       spawn(fun() ->
                 TimeoutMS = timer:seconds(Pushback),
@@ -270,14 +268,18 @@ handle_cast({pushback, Key}, #{ queues := Queues } = S) ->
       {noreply, S}
   end;
 handle_cast({push, Key, Value}, #{queue_pids := Queues} = S) ->
-  ActiveQ = get_active_queues(Queues),
-  case lists:keyfind(Key, 1, ActiveQ) of
+  case lists:keyfind(Key, 1, Queues) of
     false ->
-      maybe_locked(Key, Value),
       {noreply, S};
     {Key, Backend} ->
-      valvex_queue:push(Backend, Key, Value),
-      {noreply, S}
+      case maybe_locked(Key, Backend) of
+        false ->
+          valvex_queue:push(Backend, Key, Value),
+          {noreply, S};
+        true ->
+          valvex:notify(self(), {push_to_locked_queue, Key, Value}),
+          {noreply, S}
+      end
   end;
 handle_cast( {work_finished, WorkerPid}
            , #{ available_workers := Workers } = S) ->
@@ -378,20 +380,15 @@ do_remove_handler(Valvex, Module, Args) ->
 do_update(Valvex, Key, Q) ->
   gen_server:call(Valvex, {update, Key, Q}).
 
-get_active_queues(Queues) ->
-  lists:filter(fun({Key, Backend}) ->
-                 valvex_queue:is_locked(Backend, Key) == false
-               end, Queues).
-
 start_workers(WorkerCount) ->
   lists:flatmap(fun(_) ->
                     [valvex_worker:start_link(self())]
                 end, lists:seq(1, WorkerCount)).
 
-maybe_locked(Key, Value) ->
+maybe_locked(Key, Backend) ->
   case whereis(Key) of
-    undefined -> ok;
-    _Pid -> valvex:notify(self(), {push_to_locked_queue, Key, Value})
+    undefined -> false;
+    Pid -> valvex_queue:is_locked(Backend, Pid)
   end.
 
 %%%_* Emacs ====================================================================

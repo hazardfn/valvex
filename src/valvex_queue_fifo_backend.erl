@@ -331,6 +331,7 @@ do_consume(Valvex, QPid, Backend, Key, Timeout) ->
         end,
         do_consume(Valvex, QPid, Backend, Key, Timeout);
       {empty, tombstoned} ->
+        valvex:notify(Valvex, {queue_removed, Key}),
         valvex:remove(Valvex, Key, force_remove);
       {empty, _} ->
         ok
