@@ -19,7 +19,7 @@ start() ->
 start(_StartType, _StartArgs) ->
   case application:get_all_env(valvex) of
     undefined -> valvex_sup:start_link();
-    Options   ->
+    _Options   ->
      {ok, Queues}          = get_setting(valvex, queues),
      {ok, EventHandlers}   = get_setting(valvex, event_handlers),
      {ok, Workers}         = get_setting(valvex, workers),
