@@ -1,41 +1,32 @@
 <!DOCTYPE html>
-<html>
+<html lang="en-us">
   <head>
-    <meta charset='utf-8'>
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-
-    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="stylesheets/github-dark.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
-
+    <meta charset="UTF-8">
     <title>Valvex by hazardfn</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
   </head>
-
   <body>
+    <section class="page-header">
+      <h1 class="project-name">Valvex</h1>
+      <h2 class="project-tagline">A rate-limiter in erlang with pushback.</h2>
+      <a href="https://github.com/hazardfn/valvex" class="btn">View on GitHub</a>
+      <a href="https://github.com/hazardfn/valvex/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/hazardfn/valvex/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
 
-    <header>
-      <div class="container">
-        <h1>Valvex</h1>
-        <h2>A rate-limiter in erlang with pushback.</h2>
-
-        <section id="downloads">
-          <a href="https://github.com/hazardfn/valvex/zipball/master" class="btn">Download as .zip</a>
-          <a href="https://github.com/hazardfn/valvex/tarball/master" class="btn">Download as .tar.gz</a>
-          <a href="https://github.com/hazardfn/valvex" class="btn btn-github"><span class="icon"></span>View on GitHub</a>
-        </section>
-      </div>
-    </header>
-
-    <div class="container">
-      <section id="main_content">
-        <h1>
+    <section class="main-content">
+      <h1>
 <a id="overview--" class="anchor" href="#overview--" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Overview | <a href="https://travis-ci.org/hazardfn/valvex"><img src="https://travis-ci.org/hazardfn/valvex.svg" alt="Travis-CI"></a>
 </h1>
 
 <hr>
 
 <p>valveX is a rate-limiter written in erlang - it has a lot of tweakable
-options to ensure you get the best solution. For the technical documentation see <a href="/valvex/doc"> here </a></p>
+options to ensure you get the best solution.</p>
 
 <h2>
 <a id="features" class="anchor" href="#features" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Features</h2>
@@ -52,24 +43,33 @@ options to ensure you get the best solution. For the technical documentation see
 <h2>
 <a id="configuration" class="anchor" href="#configuration" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Configuration</h2>
 
-<p>Before you can use valvex you need to configure environment variables in your sys.config or you can use the API to change the settings/add queues at runtime.</p>
+<p>Before you can use valvex you need to configure environment variables in your sys.config or you can use the API to change the settings/add queues at runtime.
+For more technical information view the technical docs <a href="http://hazardfn.github.io/valvex/doc">here</a>.</p>
 
 <h2>
 <a id="usage" class="anchor" href="#usage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Usage</h2>
 
 <p>Simply start valvex through the supervisor, it will then be registered
-as valvex to be used throughout your application.</p>
+as <code>valvex</code> to be used throughout your application.</p>
 
-<div class="highlight highlight-source-erlang"><pre><span class="pl-smi">Pid</span> <span class="pl-k">=</span> <span class="pl-en">valvex_sup</span>:<span class="pl-en">start_link</span>([]).</pre></div>
+<div class="highlight highlight-source-erlang"><pre><span class="pl-smi">Pid</span> <span class="pl-k">=</span> <span class="pl-en">valvex_sup</span>:<span class="pl-en">start_link</span>().</pre></div>
 
 <p>Here is an example of how to create a queue at run time and push work to it then listen for the reply.</p>
 
 <div class="highlight highlight-source-erlang"><pre><span class="pl-c">%% Add a queue with the key randomqueue that has a threshold of 1, a</span>
 <span class="pl-c1">timeout</span> <span class="pl-k">of</span> <span class="pl-c1">10</span> <span class="pl-c1">seconds</span>, <span class="pl-c1">a</span> <span class="pl-c1">pushback</span> <span class="pl-k">of</span> <span class="pl-c1">10</span> <span class="pl-c1">seconds</span>, <span class="pl-c1">a</span> <span class="pl-c1">poll</span> <span class="pl-c1">rate</span> <span class="pl-k">of</span> <span class="pl-c1">100</span><span class="pl-c1">ms</span>
-<span class="pl-c">%% and uses the valvex_queue_fifo_backend. there are various options you can supply to add to change the behaviour,</span>
-<span class="pl-c">%% read the API docs for more info.</span>
+<span class="pl-c">%% and uses the valvex_queue_fifo_backend. there are various options </span>
+<span class="pl-c">%% you can supply to add to change the behaviour, read the API </span>
+<span class="pl-c">%% docs for more info.</span>
+<span class="pl-c">%%</span>
+<span class="pl-c">%% We shall use the message_event_handler which is not recommended as</span>
+<span class="pl-c">%% order is not guaranteed and it can be hard to get the result of</span>
+<span class="pl-c">%% your work - the below example should work but if not extend the</span>
+<span class="pl-c">%% sleep.</span>
 
-<span class="pl-smi">Pid</span> <span class="pl-k">=</span> <span class="pl-en">valvex_sup</span>:<span class="pl-en">start_link</span>([]),
+
+<span class="pl-smi">Pid</span> <span class="pl-k">=</span> <span class="pl-en">valvex_sup</span>:<span class="pl-en">start_link</span>(),
+<span class="pl-en">valvex</span>:<span class="pl-en">add_handler</span>(<span class="pl-c1">valvex</span>, <span class="pl-c1">valvex_message_event_handler</span>, [<span class="pl-en">self</span>()]),
 
 <span class="pl-smi">Key</span>       <span class="pl-k">=</span> <span class="pl-c1">randomqueue</span>,
 <span class="pl-smi">Threshold</span> <span class="pl-k">=</span> {<span class="pl-c1">threshold</span>, <span class="pl-c1">1</span>},
@@ -80,21 +80,53 @@ as valvex to be used throughout your application.</p>
 <span class="pl-smi">Queue</span>     <span class="pl-k">=</span> {<span class="pl-smi">Key</span>, <span class="pl-smi">Threshold</span>, <span class="pl-smi">Timeout</span>, <span class="pl-smi">Pushback</span>, <span class="pl-smi">Poll</span>, <span class="pl-smi">Backend</span>},
 <span class="pl-en">valvex</span>:<span class="pl-en">add</span>(<span class="pl-c1">valvex</span>, <span class="pl-smi">Queue</span>),
 <span class="pl-smi">RandomFun</span> <span class="pl-k">=</span> <span class="pl-k">fun</span>() -&gt;
-             <span class="pl-en">timer</span>:<span class="pl-en">sleep</span>(<span class="pl-c1">1000</span>),
-             {<span class="pl-c1">expected_reply</span>, <span class="pl-c1">1000</span>}
+             <span class="pl-en">timer</span>:<span class="pl-en">sleep</span>(<span class="pl-c1">5000</span>),
+             {<span class="pl-c1">expected_reply</span>, <span class="pl-c1">5000</span>}
             <span class="pl-k">end</span>,
-<span class="pl-en">valvex</span>:<span class="pl-en">push</span>(<span class="pl-c1">valvex</span>, <span class="pl-smi">Key</span>, <span class="pl-en">self</span>(), <span class="pl-smi">RandomFun</span>),
+<span class="pl-en">valvex</span>:<span class="pl-en">push</span>(<span class="pl-c1">valvex</span>, <span class="pl-smi">Key</span>, <span class="pl-smi">RandomFun</span>),
+<span class="pl-en">flush</span>(),
 <span class="pl-k">receive</span>
-  {<span class="pl-c1">expected_reply</span>, <span class="pl-smi">Value</span>} -&gt;
-    <span class="pl-en">io</span>:<span class="pl-en">format</span>(<span class="pl-s"><span class="pl-pds">"</span>Value: <span class="pl-c1">~p</span><span class="pl-pds">"</span></span>, [<span class="pl-smi">Value</span>]);
-  {<span class="pl-c1">error</span>, <span class="pl-c1">timeout</span>} -&gt;
+  {<span class="pl-c1">result</span>, {<span class="pl-c1">expected_reply</span>, <span class="pl-smi">Value</span>}} -&gt;
+    <span class="pl-en">io</span>:<span class="pl-en">format</span>(<span class="pl-s"><span class="pl-pds">"</span>Value: <span class="pl-c1">~p~n</span><span class="pl-pds">"</span></span>, [<span class="pl-smi">Value</span>]);
+  {<span class="pl-c1">timeout</span>, <span class="pl-smi">Key</span>} -&gt;
     <span class="pl-en">io</span>:<span class="pl-en">format</span>(<span class="pl-s"><span class="pl-pds">"</span>The timeout has been hit<span class="pl-pds">"</span></span>);
-  {<span class="pl-c1">error</span>, <span class="pl-c1">threshold_hit</span>} -&gt;
+  {<span class="pl-c1">threshold_hit</span>, <span class="pl-smi">_Q</span>} -&gt;
     <span class="pl-en">io</span>:<span class="pl-en">format</span>(<span class="pl-s"><span class="pl-pds">"</span>The amount of work exceeded the threshold<span class="pl-pds">"</span></span>)
 <span class="pl-k">after</span>
   <span class="pl-c1">15000</span> -&gt;
     <span class="pl-en">io</span>:<span class="pl-en">format</span>(<span class="pl-s"><span class="pl-pds">"</span>Some hard timeout was reached indicating something seriously went wrong<span class="pl-pds">"</span></span>)
-<span class="pl-k">end</span>.</pre></div>
+<span class="pl-k">end</span>,
+ <span class="pl-en">valvex</span>:<span class="pl-en">remove_handler</span>(<span class="pl-c1">valvex</span>, <span class="pl-c1">valvex_message_event_handler</span>, []).</pre></div>
+
+<p>Output:</p>
+
+<pre><code>Shell got {queue_started,{randomqueue,{threshold,1},
+                                      {timeout,10,seconds},
+                                      {pushback,10,seconds},
+                                      {poll_rate,100,ms},
+                                      valvex_queue_fifo_backend}}
+Shell got {queue_consumer_started,
+              {randomqueue,
+                  {threshold,1},
+                  {timeout,10,seconds},
+                  {pushback,10,seconds},
+                  {poll_rate,100,ms},
+                  valvex_queue_fifo_backend}}
+Shell got {queue_push,{randomqueue,{threshold,1},
+                                   {timeout,10,seconds},
+                                   {pushback,10,seconds},
+                                   {poll_rate,100,ms},
+                                   valvex_queue_fifo_backend},
+                      #Fun&lt;erl_eval.20.54118792&gt;}
+Shell got {push_complete,{randomqueue,{threshold,1},
+                                      {timeout,10,seconds},
+                                      {pushback,10,seconds},
+                                      {poll_rate,100,ms},
+                                      valvex_queue_fifo_backend},
+                         #Fun&lt;erl_eval.20.54118792&gt;}
+Value: 5000
+ok
+</code></pre>
 
 <h2>
 <a id="api" class="anchor" href="#api" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>API</h2>
@@ -184,7 +216,7 @@ as valvex to be used throughout your application.</p>
 <p><code>lock_queue</code> will remove as normal but prevent the queue from receiving new work, while in most cases safe your code can crash if you have forgot to remove all instances where the queue being removed is used.</p>
 
 <h3>
-<a id="push-identifier-queue-key-reply-identifier-work---ok" class="anchor" href="#push-identifier-queue-key-reply-identifier-work---ok" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>push (Identifier, Queue Key, Reply Identifier, Work) -&gt; ok.</code>
+<a id="push-identifier-queue-key-work---ok" class="anchor" href="#push-identifier-queue-key-work---ok" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>push (Identifier, Queue Key, Work) -&gt; ok.</code>
 </h3>
 
 <hr>
@@ -199,9 +231,7 @@ as valvex to be used throughout your application.</p>
 
 <p><strong>Identifier:</strong> Pid or registered atom of the valve server.</p>
 
-<p><strong>Queue Key:</strong> A unique atom identifying the queue. </p>
-
-<p><strong>Reply Identifier:</strong> Pid of the process that is awaiting the result of the work.</p>
+<p><strong>Queue Key:</strong> A unique atom identifying the queue.</p>
 
 <p><strong>Work:</strong> A fun() of stuff to do.</p>
 
@@ -253,10 +283,10 @@ as valvex to be used throughout your application.</p>
 
 <p><strong>Identifier:</strong> Pid or registered atom of the valve server.</p>
 
-<p><strong>Queue Key:</strong> A unique atom identifying the queue. </p>
+<p><strong>Queue Key:</strong> A unique atom identifying the queue.</p>
 
 <h3>
-<a id="pushback-identifier-queue-key-reply-identifier---ok" class="anchor" href="#pushback-identifier-queue-key-reply-identifier---ok" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>pushback (Identifier, Queue Key, Reply Identifier) -&gt; ok.</code>
+<a id="pushback-identifier-queue-key---ok" class="anchor" href="#pushback-identifier-queue-key---ok" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>pushback (Identifier, Queue Key) -&gt; ok.</code>
 </h3>
 
 <hr>
@@ -264,19 +294,70 @@ as valvex to be used throughout your application.</p>
 <h4>
 <a id="description-6" class="anchor" href="#description-6" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Description:</h4>
 
-<p>Simply waits for the pushback limit of the specified queue and responds {error, threshold_hit} to the Reply Identifier</p>
+<p>Simply waits for the pushback limit of the specified queue and
+responds {threshold_hit, _Q} via eventing.</p>
 
 <h4>
 <a id="spec-6" class="anchor" href="#spec-6" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Spec:</h4>
 
 <p><strong>Identifier:</strong> Pid or registered atom of the valve server.</p>
 
-<p><strong>Queue Key:</strong> A unique atom identifying the queue. </p>
+<p><strong>Queue Key:</strong> A unique atom identifying the queue.</p>
 
-<p><strong>Reply Identifier:</strong> Pid of the process that is awaiting the result of the work.</p>
-      </section>
-    </div>
+<h3>
+<a id="notify-identifier-event---ok" class="anchor" href="#notify-identifier-event---ok" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>notify (Identifier, Event) -&gt; ok.</code>
+</h3>
 
-    
+<hr>
+
+<h4>
+<a id="description-7" class="anchor" href="#description-7" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Description:</h4>
+
+<p>Notifies any added handlers of an event.</p>
+
+<h4>
+<a id="spec-7" class="anchor" href="#spec-7" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Spec:</h4>
+
+<p><strong>Identifier:</strong> Pid or registered atom of the valve server.</p>
+
+<p><strong>Queue Key:</strong> An event (see list of valid events in notes)</p>
+
+<h4>
+<a id="notes-2" class="anchor" href="#notes-2" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Notes:</h4>
+
+<p>Valid events:</p>
+
+<ul>
+<li>{queue_crossover, Q, NuQ} - Triggered when a crossover occurs, Q is
+the old queue and NuQ is the new queue.</li>
+<li>{queue_started, Q} - Triggered on start_link</li>
+<li>{queue_popped, Q} - Triggered when pop is called</li>
+<li>{queue_popped_r, Q} - Triggered when pop_r is called</li>
+<li>{queue_push, Q, Work} - Triggered when push is called, regardless of outcome</li>
+<li>{queue_push_r, Q, Work} - See push.</li>
+<li>{push_complete, Q, Work} - Triggered when the push operation was a success</li>
+<li>{push_to_locked_queue, Q, Work} - Triggered when there's an attempt
+to push to a locked queue</li>
+<li>{queue_removed, Key} - Triggered when a tombstoned queue is finally removed</li>
+<li>{queue_tombstoned, Q} - Triggered when a queue is marked to die</li>
+<li>{queue_locked, Q} - Triggered when a queue is locked</li>
+<li>{queue_unlocked, Q} - Triggered when a queue is unlocked</li>
+<li>{queue_consumer_started, Q} - Triggered when the consumer is started</li>
+<li>{queue_consumer_stopped, Q} - Triggered when the consumer is stopped</li>
+<li>{timeout, QKey} - Triggered when the work goes stale</li>
+<li>{result, Result} - Triggered when work is finally over</li>
+<li>{threshold_hit, Q} - Triggered when a push is attempted but there's
+already too many items.</li>
+</ul>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/hazardfn/valvex">Valvex</a> is maintained by <a href="https://github.com/hazardfn">hazardfn</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
   </body>
 </html>
