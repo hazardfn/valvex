@@ -1,4 +1,4 @@
 [{<<"common_eunit">>,
   {git,"https://github.com/permelin/common_eunit.git",
        {ref,"6ed79f086bea8f7ade5f7ffc82b20a80a9ebe1e9"}},
-  0}].
+  0},
