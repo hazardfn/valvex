@@ -63,7 +63,14 @@ handle_event({result, _Result} = Event, #{ receiver := Pid } = S) ->
   {ok, S};
 handle_event({threshold_hit, _Q} = Event, #{ receiver := Pid } = S) ->
   Pid ! Event,
+  {ok, S};
+handle_event({queue_crossover, _Q, _NuQ} = Event, #{ receiver := Pid } = S) ->
+  Pid ! Event,
+  {ok, S};
+handle_event({queue_removed, _Key} = Event, #{ receiver := Pid } = S) ->
+  Pid ! Event,
   {ok, S}.
+
 
 handle_info(_, State) ->
   {ok, State}.

@@ -2,6 +2,7 @@
  [{description, "A fully customizeable rate-limiter for erlang"},
   {vsn, "0.1.0"},
   {registered, [valvex]},
+  {mod, {valvex_app, []}},
   {applications,
    [kernel,
     stdlib

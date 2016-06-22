@@ -58,11 +58,11 @@ end_per_suite(Config) ->
   Config.
 
 init_per_testcase(TestCase, Config) ->
-  {ok, _VSupPid}      = valvex_sup:start_link(),
-  QFifo               = get_queue_from_config(test_fifo, Config),
-  QLifo               = get_queue_from_config(test_lifo, Config),
-  ok                  = valvex:add(valvex, QFifo, manual_start),
-  ok                  = valvex:add(valvex, QLifo, manual_start),
+  {ok, _VSupPid} = valvex_sup:start_link(),
+  QFifo          = valvex_test_utils:get_queue_from_config(test_fifo, Config),
+  QLifo          = valvex_test_utils:get_queue_from_config(test_lifo, Config),
+  ok             = valvex:add(valvex, QFifo, manual_start),
+  ok             = valvex:add(valvex, QLifo, manual_start),
   ?MODULE:TestCase({init, Config}).
 
 end_per_testcase(TestCase, Config)  ->
@@ -275,6 +275,11 @@ test_queue_consumer_fifo(Config) when is_list(Config)   ->
   end,
   valvex_queue:stop_consumer(valvex_queue_fifo_backend, test_fifo),
   ok = queue_consumer_stopped(),
+  valvex_queue:lock(valvex_queue_fifo_backend, test_fifo),
+  receive
+    {queue_locked, _} ->
+      ok
+  end,
   ?assert(valvex_queue:is_locked(valvex_queue_fifo_backend, test_fifo)),
   valvex:push(valvex, test_fifo, FirstTestFun),
   ok = push_flow_locked(FirstTestFun, false),
@@ -318,6 +323,11 @@ test_queue_consumer_lifo(Config) when is_list(Config)   ->
   end,
   valvex_queue:stop_consumer(valvex_queue_lifo_backend, test_lifo),
   ok = queue_consumer_stopped(),
+  valvex_queue:lock(valvex_queue_lifo_backend, test_lifo),
+  receive
+    {queue_locked, _} ->
+      ok
+  end,
   ?assert(valvex_queue:is_locked(valvex_queue_lifo_backend, test_lifo)),
   valvex:push(valvex, test_lifo, FirstTestFun),
   ok = push_flow_locked(FirstTestFun, false),
@@ -417,6 +427,11 @@ test_queue_lock_fifo(doc)                           ->
 test_queue_lock_fifo(Config) when is_list(Config)   ->
   valvex:add_handler(valvex, valvex_message_event_handler, [self()]),
   c:flush(),
+  valvex_queue:lock(valvex_queue_fifo_backend, test_fifo),
+  receive
+    {queue_locked, _} ->
+      ok
+  end,
   ?assert(valvex_queue:is_locked(valvex_queue_fifo_backend, test_fifo)),
   FirstTestFun  = fun() ->
                       "First Test Complete"
@@ -466,6 +481,11 @@ test_queue_lock_lifo(doc)                           ->
 test_queue_lock_lifo(Config) when is_list(Config)   ->
   valvex:add_handler(valvex, valvex_message_event_handler, [self()]),
   c:flush(),
+    valvex_queue:lock(valvex_queue_lifo_backend, test_lifo),
+  receive
+    {queue_locked, _} ->
+      ok
+  end,
   ?assert(valvex_queue:is_locked(valvex_queue_lifo_backend, test_lifo)),
   FirstTestFun  = fun() ->
                       "First Test Complete"
@@ -631,13 +651,6 @@ queue_popped(Item, Reversed) ->
   HandlerFun().
 
 %%%_* Internals ================================================================
-
-get_queue_from_config(Key, Config) ->
-  {queues, Queues} = lists:keyfind(queues, 1, Config),
-  Q                = lists:keyfind(Key, 1, Queues),
-  ?assertNotEqual(false, Q),
-  ?assert(is_tuple(Q)),
-  Q.
 
 get_child_spec_from_Q({ Key
                       , _Threshold

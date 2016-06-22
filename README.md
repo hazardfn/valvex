@@ -15,24 +15,33 @@ Features
 Configuration
 --------
 Before you can use valvex you need to configure environment variables in your sys.config or you can use the API to change the settings/add queues at runtime.
+For more technical information view the technical docs [here](http://hazardfn.github.io/valvex/doc).
 
 Usage
 --------
 Simply start valvex through the supervisor, it will then be registered
-as valvex to be used throughout your application.
+as `valvex` to be used throughout your application.
 
 ````erlang
-Pid = valvex_sup:start_link([]).
+Pid = valvex_sup:start_link().
 ````
 Here is an example of how to create a queue at run time and push work to it then listen for the reply.
 
 ````erlang
 %% Add a queue with the key randomqueue that has a threshold of 1, a
 timeout of 10 seconds, a pushback of 10 seconds, a poll rate of 100ms
-%% and uses the valvex_queue_fifo_backend. there are various options you can supply to add to change the behaviour,
-%% read the API docs for more info.
+%% and uses the valvex_queue_fifo_backend. there are various options 
+%% you can supply to add to change the behaviour, read the API 
+%% docs for more info.
+%%
+%% We shall use the message_event_handler which is not recommended as
+%% order is not guaranteed and it can be hard to get the result of
+%% your work - the below example should work but if not extend the
+%% sleep.
 
-Pid = valvex_sup:start_link([]),
+
+Pid = valvex_sup:start_link(),
+valvex:add_handler(valvex, valvex_message_event_handler, [self()]),
 
 Key       = randomqueue,
 Threshold = {threshold, 1},
@@ -43,21 +52,53 @@ Backend   = valvex_queue_fifo_backend,
 Queue     = {Key, Threshold, Timeout, Pushback, Poll, Backend},
 valvex:add(valvex, Queue),
 RandomFun = fun() ->
-             timer:sleep(1000),
-             {expected_reply, 1000}
+             timer:sleep(5000),
+             {expected_reply, 5000}
             end,
-valvex:push(valvex, Key, self(), RandomFun),
+valvex:push(valvex, Key, RandomFun),
+flush(),
 receive
-  {expected_reply, Value} ->
-    io:format("Value: ~p", [Value]);
-  {error, timeout} ->
+  {result, {expected_reply, Value}} ->
+    io:format("Value: ~p~n", [Value]);
+  {timeout, Key} ->
     io:format("The timeout has been hit");
-  {error, threshold_hit} ->
+  {threshold_hit, _Q} ->
     io:format("The amount of work exceeded the threshold")
 after
   15000 ->
     io:format("Some hard timeout was reached indicating something seriously went wrong")
-end.
+end,
+ valvex:remove_handler(valvex, valvex_message_event_handler, []).
+````
+Output:
+
+````
+Shell got {queue_started,{randomqueue,{threshold,1},
+                                      {timeout,10,seconds},
+                                      {pushback,10,seconds},
+                                      {poll_rate,100,ms},
+                                      valvex_queue_fifo_backend}}
+Shell got {queue_consumer_started,
+              {randomqueue,
+                  {threshold,1},
+                  {timeout,10,seconds},
+                  {pushback,10,seconds},
+                  {poll_rate,100,ms},
+                  valvex_queue_fifo_backend}}
+Shell got {queue_push,{randomqueue,{threshold,1},
+                                   {timeout,10,seconds},
+                                   {pushback,10,seconds},
+                                   {poll_rate,100,ms},
+                                   valvex_queue_fifo_backend},
+                      #Fun<erl_eval.20.54118792>}
+Shell got {push_complete,{randomqueue,{threshold,1},
+                                      {timeout,10,seconds},
+                                      {pushback,10,seconds},
+                                      {poll_rate,100,ms},
+                                      valvex_queue_fifo_backend},
+                         #Fun<erl_eval.20.54118792>}
+Value: 5000
+ok
 ````
 
 API
@@ -133,7 +174,7 @@ By default remove is a safe operation, it will merely mark a queue for removal a
 
 `lock_queue` will remove as normal but prevent the queue from receiving new work, while in most cases safe your code can crash if you have forgot to remove all instances where the queue being removed is used.
 
-### `push (Identifier, Queue Key, Reply Identifier, Work) -> ok.`
+### `push (Identifier, Queue Key, Work) -> ok.`
 ---
 #### Description:
 
@@ -143,9 +184,7 @@ Pushes work to the queue with the queue key you specified. Will not error if the
 
 **Identifier:** Pid or registered atom of the valve server.
 
-**Queue Key:** A unique atom identifying the queue. 
-
-**Reply Identifier:** Pid of the process that is awaiting the result of the work.
+**Queue Key:** A unique atom identifying the queue.
 
 **Work:** A fun() of stuff to do.
 
@@ -179,18 +218,54 @@ Gets the current number of items in a specified queue.
 
 **Identifier:** Pid or registered atom of the valve server.
 
-**Queue Key:** A unique atom identifying the queue. 
+**Queue Key:** A unique atom identifying the queue.
 
-### `pushback (Identifier, Queue Key, Reply Identifier) -> ok.`
+### `pushback (Identifier, Queue Key) -> ok.`
 ---
 #### Description:
 
-Simply waits for the pushback limit of the specified queue and responds {error, threshold_hit} to the Reply Identifier
+Simply waits for the pushback limit of the specified queue and
+responds {threshold_hit, _Q} via eventing.
 
 #### Spec:
 
 **Identifier:** Pid or registered atom of the valve server.
 
-**Queue Key:** A unique atom identifying the queue. 
+**Queue Key:** A unique atom identifying the queue.
 
-**Reply Identifier:** Pid of the process that is awaiting the result of the work.
+### `notify (Identifier, Event) -> ok.`
+---
+#### Description:
+
+Notifies any added handlers of an event.
+
+#### Spec:
+
+**Identifier:** Pid or registered atom of the valve server.
+
+**Queue Key:** An event (see list of valid events in notes)
+
+#### Notes:
+
+Valid events:
+
+* {queue_crossover, Q, NuQ} - Triggered when a crossover occurs, Q is
+  the old queue and NuQ is the new queue.
+* {queue_started, Q} - Triggered on start_link
+* {queue_popped, Q} - Triggered when pop is called
+* {queue_popped_r, Q} - Triggered when pop_r is called
+* {queue_push, Q, Work} - Triggered when push is called, regardless of outcome
+* {queue_push_r, Q, Work} - See push.
+* {push_complete, Q, Work} - Triggered when the push operation was a success
+* {push_to_locked_queue, Q, Work} - Triggered when there's an attempt
+  to push to a locked queue
+* {queue_removed, Key} - Triggered when a tombstoned queue is finally removed
+* {queue_tombstoned, Q} - Triggered when a queue is marked to die
+* {queue_locked, Q} - Triggered when a queue is locked
+* {queue_unlocked, Q} - Triggered when a queue is unlocked
+* {queue_consumer_started, Q} - Triggered when the consumer is started
+* {queue_consumer_stopped, Q} - Triggered when the consumer is stopped
+* {timeout, QKey} - Triggered when the work goes stale
+* {result, Result} - Triggered when work is finally over
+* {threshold_hit, Q} - Triggered when a push is attempted but there's
+  already too many items.
