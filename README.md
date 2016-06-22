@@ -15,6 +15,7 @@ Features
 Configuration
 --------
 Before you can use valvex you need to configure environment variables in your sys.config or you can use the API to change the settings/add queues at runtime.
+For more technical information view the technical docs [here](http://hazardfn.github.io/valvex/doc).
 
 Usage
 --------
@@ -29,8 +30,9 @@ Here is an example of how to create a queue at run time and push work to it then
 ````erlang
 %% Add a queue with the key randomqueue that has a threshold of 1, a
 timeout of 10 seconds, a pushback of 10 seconds, a poll rate of 100ms
-%% and uses the valvex_queue_fifo_backend. there are various options you can supply to add to change the behaviour,
-%% read the API docs for more info.
+%% and uses the valvex_queue_fifo_backend. there are various options 
+%% you can supply to add to change the behaviour, read the API 
+%% docs for more info.
 %%
 %% We shall use the message_event_handler which is not recommended as
 %% order is not guaranteed and it can be hard to get the result of
