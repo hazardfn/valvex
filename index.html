@@ -57,9 +57,9 @@ as <code>valvex</code> to be used throughout your application.</p>
 <p>Here is an example of how to create a queue at run time and push work to it then listen for the reply.</p>
 
 <div class="highlight highlight-source-erlang"><pre><span class="pl-c">%% Add a queue with the key randomqueue that has a threshold of 1, a</span>
-<span class="pl-c1">timeout</span> <span class="pl-k">of</span> <span class="pl-c1">10</span> <span class="pl-c1">seconds</span>, <span class="pl-c1">a</span> <span class="pl-c1">pushback</span> <span class="pl-k">of</span> <span class="pl-c1">10</span> <span class="pl-c1">seconds</span>, <span class="pl-c1">a</span> <span class="pl-c1">poll</span> <span class="pl-c1">rate</span> <span class="pl-k">of</span> <span class="pl-c1">100</span><span class="pl-c1">ms</span>
-<span class="pl-c">%% and uses the valvex_queue_fifo_backend. there are various options </span>
-<span class="pl-c">%% you can supply to add to change the behaviour, read the API </span>
+<span class="pl-c">%% timeout of 10 seconds, a pushback of 10 seconds, a poll rate of </span>
+<span class="pl-c">%% 100ms and uses the valvex_queue_fifo_backend. there are various </span>
+<span class="pl-c">%% options you can supply to add to change the behaviour, read the API </span>
 <span class="pl-c">%% docs for more info.</span>
 <span class="pl-c">%%</span>
 <span class="pl-c">%% We shall use the message_event_handler which is not recommended as</span>
