@@ -1,0 +1,204 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Module valvex</title>
+<link rel="stylesheet" type="text/css" href="stylesheet.css" title="EDoc">
+</head>
+<body bgcolor="white">
+<div class="navbar"><a name="#navbar_top"></a><table width="100%" border="0" cellspacing="0" cellpadding="2" summary="navigation bar"><tr><td><a href="overview-summary.html" target="overviewFrame">Overview</a></td><td><a href="http://www.erlang.org/"><img src="erlang.png" align="right" border="0" alt="erlang logo"></a></td></tr></table></div>
+<hr>
+
+<h1>Module valvex</h1>
+<ul class="index"><li><a href="#description">Description</a></li><li><a href="#types">Data Types</a></li><li><a href="#index">Function Index</a></li><li><a href="#functions">Function Details</a></li></ul>Valvex - the ultimate tool for rate-limiting in erlang.
+<p>Copyright © 2016 Howard Beard-Marlowe</p>
+
+<p><b>Version:</b> 0.1.0</p>
+<p><b>Authors:</b> Howard Beard-Marlowe (<a href="mailto:howardbm@live.se"><tt>howardbm@live.se</tt></a>).</p>
+
+<h2><a name="description">Description</a></h2><p>Valvex - the ultimate tool for rate-limiting in erlang.</p>
+ 
+  This module provides the main interface to Valvex. For more information
+  refer to the readme.
+<h2><a name="types">Data Types</a></h2>
+
+<h3 class="typedecl"><a name="type-add_option">add_option()</a></h3>
+<p><tt>add_option() = crossover_on_existing | manual_start | undefined</tt></p>
+
+
+<h3 class="typedecl"><a name="type-key_find_error">key_find_error()</a></h3>
+<p><tt>key_find_error() = {error, key_not_found}</tt></p>
+
+
+<h3 class="typedecl"><a name="type-queue_backend">queue_backend()</a></h3>
+<p><tt>queue_backend() = module() | {module, list()}</tt></p>
+
+
+<h3 class="typedecl"><a name="type-queue_key">queue_key()</a></h3>
+<p><tt>queue_key() = atom()</tt></p>
+
+
+<h3 class="typedecl"><a name="type-queue_poll_rate">queue_poll_rate()</a></h3>
+<p><tt>queue_poll_rate() = {poll_rate, non_neg_integer(), ms}</tt></p>
+
+
+<h3 class="typedecl"><a name="type-queue_pushback">queue_pushback()</a></h3>
+<p><tt>queue_pushback() = {pushback, non_neg_integer(), seconds}</tt></p>
+
+
+<h3 class="typedecl"><a name="type-queue_threshold">queue_threshold()</a></h3>
+<p><tt>queue_threshold() = {threshold, non_neg_integer()}</tt></p>
+
+
+<h3 class="typedecl"><a name="type-queue_timeout">queue_timeout()</a></h3>
+<p><tt>queue_timeout() = {timeout, non_neg_integer(), seconds}</tt></p>
+
+
+<h3 class="typedecl"><a name="type-remove_option">remove_option()</a></h3>
+<p><tt>remove_option() = force_remove | lock_queue | undefined</tt></p>
+
+
+<h3 class="typedecl"><a name="type-unique_key_error">unique_key_error()</a></h3>
+<p><tt>unique_key_error() = {error, key_not_unique}</tt></p>
+
+
+<h3 class="typedecl"><a name="type-valvex_options">valvex_options()</a></h3>
+<p><tt>valvex_options() = [{atom(), any()}]</tt></p>
+
+
+<h3 class="typedecl"><a name="type-valvex_q_item">valvex_q_item()</a></h3>
+<p><tt>valvex_q_item() = {function(), <a href="erlang.html#type-timestamp">erlang:timestamp()</a>} | {empty, any()}</tt></p>
+
+
+<h3 class="typedecl"><a name="type-valvex_queue">valvex_queue()</a></h3>
+<p><tt>valvex_queue() = {<a href="#type-queue_key">queue_key()</a>, <a href="#type-queue_threshold">queue_threshold()</a>, <a href="#type-queue_timeout">queue_timeout()</a>, <a href="#type-queue_pushback">queue_pushback()</a>, <a href="#type-queue_poll_rate">queue_poll_rate()</a>, <a href="#type-queue_backend">queue_backend()</a>}</tt></p>
+
+
+<h3 class="typedecl"><a name="type-valvex_ref">valvex_ref()</a></h3>
+<p><tt>valvex_ref() = pid() | atom()</tt></p>
+
+
+<h3 class="typedecl"><a name="type-valvex_workers">valvex_workers()</a></h3>
+<p><tt>valvex_workers() = [pid()]</tt></p>
+
+
+<h2><a name="index">Function Index</a></h2>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#add-2">add/2</a></td><td>Adds a queue to valvex using the default option undefined.</td></tr>
+<tr><td valign="top"><a href="#add-3">add/3</a></td><td>Adds a queue to valvex.</td></tr>
+<tr><td valign="top"><a href="#add_handler-3">add_handler/3</a></td><td>Adds an event handler which can intercept events from valvex
+  and do various things.</td></tr>
+<tr><td valign="top"><a href="#get_available_workers-1">get_available_workers/1</a></td><td>Gets the list of workers that are currently not undertaking work.</td></tr>
+<tr><td valign="top"><a href="#get_available_workers_count-1">get_available_workers_count/1</a></td><td>Gets the mumber of workers that are currently not undertaking work.</td></tr>
+<tr><td valign="top"><a href="#get_queue_size-2">get_queue_size/2</a></td><td>Gets the size of the queue with the given key.</td></tr>
+<tr><td valign="top"><a href="#notify-2">notify/2</a></td><td>Notifies those listening via gen_event of various events happening
+  inside valvex.</td></tr>
+<tr><td valign="top"><a href="#push-3">push/3</a></td><td>Pushes an item to the queue with the given key.</td></tr>
+<tr><td valign="top"><a href="#pushback-2">pushback/2</a></td><td>Pushes back a set amount of time in order to prevent spamming.</td></tr>
+<tr><td valign="top"><a href="#remove-2">remove/2</a></td><td>removes a queue from valvex with the default setting.</td></tr>
+<tr><td valign="top"><a href="#remove-3">remove/3</a></td><td>Removes a queue from valvex.</td></tr>
+<tr><td valign="top"><a href="#remove_handler-3">remove_handler/3</a></td><td>Removes a previously added handler.</td></tr>
+<tr><td valign="top"><a href="#start_link-1">start_link/1</a></td><td>Starts a link with the valvex gen_server.</td></tr>
+<tr><td valign="top"><a href="#update-3">update/3</a></td><td>Updates a key with a new set of queue settings.</td></tr>
+</table>
+
+<h2><a name="functions">Function Details</a></h2>
+
+<h3 class="function"><a name="add-2">add/2</a></h3>
+<div class="spec">
+<p><tt>add(Valvex::<a href="#type-valvex_ref">valvex_ref()</a>, Q::<a href="#type-valvex_queue">valvex_queue()</a>) -&gt; ok | <a href="#type-unique_key_error">unique_key_error()</a></tt><br></p>
+</div><p>Adds a queue to valvex using the default option undefined.</p>
+<p><b>See also:</b> <a href="#add-3">add/3</a>.</p>
+
+<h3 class="function"><a name="add-3">add/3</a></h3>
+<div class="spec">
+<p><tt>add(Valvex::<a href="#type-valvex_ref">valvex_ref()</a>, Q::<a href="#type-valvex_queue">valvex_queue()</a>, Option::<a href="#type-add_option">add_option()</a>) -&gt; ok</tt><br></p>
+</div><p>Adds a queue to valvex. There are a few options that aliter slightly
+  the behaviour of the add:
+  <br><br>
+  <ul>
+  <li> manual_start - adds the queue but does not immediately start the consumer </li>
+  <li> crossover_on_existing - adds the queue, if a queue of the same key exists it will swap out the old settings
+  for the new </li>
+  <li> undefined - default behaviour which is to add the queue or error if
+  the key is not unique </li>
+  </ul>.</p>
+<p><b>See also:</b> <a href="#type-add_option">add_option()</a>.</p>
+
+<h3 class="function"><a name="add_handler-3">add_handler/3</a></h3>
+<div class="spec">
+<p><tt>add_handler(Valvex::<a href="#type-valvex_ref">valvex_ref()</a>, Module::module(), Args::[any()]) -&gt; ok</tt><br></p>
+</div><p>Adds an event handler which can intercept events from valvex
+  and do various things.</p>
+
+<h3 class="function"><a name="get_available_workers-1">get_available_workers/1</a></h3>
+<div class="spec">
+<p><tt>get_available_workers(Valvex::<a href="#type-valvex_ref">valvex_ref()</a>) -&gt; <a href="#type-valvex_workers">valvex_workers()</a></tt><br></p>
+</div><p>Gets the list of workers that are currently not undertaking work.</p>
+
+<h3 class="function"><a name="get_available_workers_count-1">get_available_workers_count/1</a></h3>
+<div class="spec">
+<p><tt>get_available_workers_count(Valvex::<a href="#type-valvex_ref">valvex_ref()</a>) -&gt; non_neg_integer()</tt><br></p>
+</div><p>Gets the mumber of workers that are currently not undertaking work.</p>
+
+<h3 class="function"><a name="get_queue_size-2">get_queue_size/2</a></h3>
+<div class="spec">
+<p><tt>get_queue_size(Valvex::<a href="#type-valvex_ref">valvex_ref()</a>, Key::<a href="#type-queue_key">queue_key()</a>) -&gt; non_neg_integer() | <a href="#type-key_find_error">key_find_error()</a></tt><br></p>
+</div><p>Gets the size of the queue with the given key.</p>
+
+<h3 class="function"><a name="notify-2">notify/2</a></h3>
+<div class="spec">
+<p><tt>notify(Valvex::<a href="#type-valvex_ref">valvex_ref()</a>, Event::any()) -&gt; ok</tt><br></p>
+</div><p>Notifies those listening via gen_event of various events happening
+  inside valvex.</p>
+
+<h3 class="function"><a name="push-3">push/3</a></h3>
+<div class="spec">
+<p><tt>push(Valvex::<a href="#type-valvex_ref">valvex_ref()</a>, Key::<a href="#type-queue_key">queue_key()</a>, Work::function()) -&gt; ok</tt><br></p>
+</div><p>Pushes an item to the queue with the given key. Work can be any
+  0 arity function.</p>
+
+<h3 class="function"><a name="pushback-2">pushback/2</a></h3>
+<div class="spec">
+<p><tt>pushback(Valvex::<a href="#type-valvex_ref">valvex_ref()</a>, Key::<a href="#type-queue_key">queue_key()</a>) -&gt; ok</tt><br></p>
+</div><p>Pushes back a set amount of time in order to prevent spamming.</p>
+
+<h3 class="function"><a name="remove-2">remove/2</a></h3>
+<div class="spec">
+<p><tt>remove(Valvex::<a href="#type-valvex_ref">valvex_ref()</a>, Key::<a href="#type-queue_key">queue_key()</a>) -&gt; ok | <a href="#type-key_find_error">key_find_error()</a></tt><br></p>
+</div><p>removes a queue from valvex with the default setting. see remove/3 for more info.</p>
+<p><b>See also:</b> <a href="#remove-3">remove/3</a>.</p>
+
+<h3 class="function"><a name="remove-3">remove/3</a></h3>
+<div class="spec">
+<p><tt>remove(Valvex::<a href="#type-valvex_ref">valvex_ref()</a>, Key::<a href="#type-queue_key">queue_key()</a>, Option::<a href="#type-remove_option">remove_option()</a>) -&gt; ok | <a href="#type-key_find_error">key_find_error()</a></tt><br></p>
+</div><p>Removes a queue from valvex. There are a few options that alter the way
+  a remove behaves:
+  <br><br>
+  <ul>
+  <li> force_remove - Removes the queue by force regardless of items in it </li>
+  <li> lock_queue - Locks the queue and marks it for deletion meaning it will be removed when empty and
+  no new things can be placed in it </li>
+  <li> undefined - marks the queue for deletion but new items can flow in, it won't be removed until empty </li>
+  </ul>.</p>
+<p><b>See also:</b> <a href="#type-remove_option">remove_option()</a>.</p>
+
+<h3 class="function"><a name="remove_handler-3">remove_handler/3</a></h3>
+<div class="spec">
+<p><tt>remove_handler(Valvex::<a href="#type-valvex_ref">valvex_ref()</a>, Module::module(), Args::[any()]) -&gt; ok</tt><br></p>
+</div><p>Removes a previously added handler.</p>
+
+<h3 class="function"><a name="start_link-1">start_link/1</a></h3>
+<div class="spec">
+<p><tt>start_link(Options::<a href="#type-valvex_options">valvex_options()</a>) -&gt; {ok, <a href="#type-valvex_ref">valvex_ref()</a>}</tt><br></p>
+</div><p>Starts a link with the valvex gen_server.</p>
+
+<h3 class="function"><a name="update-3">update/3</a></h3>
+<div class="spec">
+<p><tt>update(Valvex, Key, NuQ) -&gt; any()</tt></p>
+</div><p>Updates a key with a new set of queue settings.</p>
+<hr>
+
+<div class="navbar"><a name="#navbar_bottom"></a><table width="100%" border="0" cellspacing="0" cellpadding="2" summary="navigation bar"><tr><td><a href="overview-summary.html" target="overviewFrame">Overview</a></td><td><a href="http://www.erlang.org/"><img src="erlang.png" align="right" border="0" alt="erlang logo"></a></td></tr></table></div>
+<p><i>Generated by EDoc, Jun 22 2016, 11:00:56.</i></p>
+</body>
+</html>

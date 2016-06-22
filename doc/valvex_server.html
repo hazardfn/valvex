@@ -1,0 +1,152 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Module valvex_server</title>
+<link rel="stylesheet" type="text/css" href="stylesheet.css" title="EDoc">
+</head>
+<body bgcolor="white">
+<div class="navbar"><a name="#navbar_top"></a><table width="100%" border="0" cellspacing="0" cellpadding="2" summary="navigation bar"><tr><td><a href="overview-summary.html" target="overviewFrame">Overview</a></td><td><a href="http://www.erlang.org/"><img src="erlang.png" align="right" border="0" alt="erlang logo"></a></td></tr></table></div>
+<hr>
+
+<h1>Module valvex_server</h1>
+<ul class="index"><li><a href="#description">Description</a></li><li><a href="#types">Data Types</a></li><li><a href="#index">Function Index</a></li><li><a href="#functions">Function Details</a></li></ul>Valvex Server.
+<p>Copyright © 2016 Howard Beard-Marlowe</p>
+
+<p><b>Version:</b> 0.1.0</p>
+<p><b>Behaviours:</b> <a href="gen_server.html"><tt>gen_server</tt></a>.</p>
+<p><b>Authors:</b> Howard Beard-Marlowe (<a href="mailto:howardbm@live.se"><tt>howardbm@live.se</tt></a>).</p>
+
+<h2><a name="description">Description</a></h2><p>Valvex Server</p>
+ 
+  The server is responsible for queue management as well
+  as sending events and pushback.
+<h2><a name="types">Data Types</a></h2>
+
+<h3 class="typedecl"><a name="type-valvex_state">valvex_state()</a></h3>
+<p><tt>valvex_state() = #{queues =&gt; [<a href="valvex.html#type-valvex_queue">valvex:valvex_queue()</a>], queue_pids =&gt; [tuple()], pushback =&gt; true | false, workers =&gt; [pid()], event_server =&gt; <a href="valvex.html#type-valvex_ref">valvex:valvex_ref()</a>, available_workers =&gt; [pid()]}</tt></p>
+
+
+<h2><a name="index">Function Index</a></h2>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#add-3">add/3</a></td><td>Adds a queue to valvex, there are some alternative options
+  that can be used to alter the behaviour of add.</td></tr>
+<tr><td valign="top"><a href="#add_handler-3">add_handler/3</a></td><td>Adds a handler which will receive events from valvex, view
+  the readme for more info on events.</td></tr>
+<tr><td valign="top"><a href="#code_change-3">code_change/3</a></td><td></td></tr>
+<tr><td valign="top"><a href="#get_available_workers-1">get_available_workers/1</a></td><td>Gets available workers, as in those that aren't currently
+  undertaking work.</td></tr>
+<tr><td valign="top"><a href="#get_queue_size-2">get_queue_size/2</a></td><td>Gets the current size of the queue with the given key.</td></tr>
+<tr><td valign="top"><a href="#handle_call-3">handle_call/3</a></td><td>see the "see also" section for a list of synchronous operations.</td></tr>
+<tr><td valign="top"><a href="#handle_cast-2">handle_cast/2</a></td><td></td></tr>
+<tr><td valign="top"><a href="#handle_info-2">handle_info/2</a></td><td></td></tr>
+<tr><td valign="top"><a href="#init-1">init/1</a></td><td>Inititalizes valvex with predefined queues, settings and
+  event handlers.</td></tr>
+<tr><td valign="top"><a href="#notify-2">notify/2</a></td><td>Notifies all registered event handlers of an event
+  within valvex, read the readme for more info.</td></tr>
+<tr><td valign="top"><a href="#push-3">push/3</a></td><td>Pushes an item to a queue with a specific key.</td></tr>
+<tr><td valign="top"><a href="#pushback-2">pushback/2</a></td><td>Pushes back on the client forcing them to wait
+  this prevents spamming if enabled.</td></tr>
+<tr><td valign="top"><a href="#remove-3">remove/3</a></td><td>Removes a queue from valvex, there are some alternative options
+  that can be used to alter the behaviour of remove.</td></tr>
+<tr><td valign="top"><a href="#remove_handler-3">remove_handler/3</a></td><td>Removes a handler so it will no longer receive events.</td></tr>
+<tr><td valign="top"><a href="#start_link-1">start_link/1</a></td><td>Starts a link to the valvex server.</td></tr>
+<tr><td valign="top"><a href="#terminate-2">terminate/2</a></td><td></td></tr>
+</table>
+
+<h2><a name="functions">Function Details</a></h2>
+
+<h3 class="function"><a name="add-3">add/3</a></h3>
+<div class="spec">
+<p><tt>add(Valvex::<a href="valvex.html#type-valvex_ref">valvex:valvex_ref()</a>, Q::<a href="valvex.html#type-valvex_queue">valvex:valvex_queue()</a>, Option::<a href="valvex.html#type-add_option">valvex:add_option()</a>) -&gt; ok | <a href="valvex.html#type-unique_key_error">valvex:unique_key_error()</a></tt><br></p>
+</div><p>Adds a queue to valvex, there are some alternative options
+  that can be used to alter the behaviour of add.</p>
+<p><b>See also:</b> <a href="valvex.html#type-add_option">valvex:add_option()</a>.</p>
+
+<h3 class="function"><a name="add_handler-3">add_handler/3</a></h3>
+<div class="spec">
+<p><tt>add_handler(Valvex::<a href="valvex.html#type-valvex_ref">valvex:valvex_ref()</a>, Module::module(), Args::list()) -&gt; ok</tt><br></p>
+</div><p>Adds a handler which will receive events from valvex, view
+  the readme for more info on events.</p>
+
+<h3 class="function"><a name="code_change-3">code_change/3</a></h3>
+<div class="spec">
+<p><tt>code_change(Vsn, S, Extra) -&gt; any()</tt></p>
+</div>
+
+<h3 class="function"><a name="get_available_workers-1">get_available_workers/1</a></h3>
+<div class="spec">
+<p><tt>get_available_workers(Valvex::<a href="valvex.html#type-valvex_ref">valvex:valvex_ref()</a>) -&gt; <a href="valvex.html#type-valvex_workers">valvex:valvex_workers()</a></tt><br></p>
+</div><p>Gets available workers, as in those that aren't currently
+  undertaking work.</p>
+
+<h3 class="function"><a name="get_queue_size-2">get_queue_size/2</a></h3>
+<div class="spec">
+<p><tt>get_queue_size(Valvex::<a href="valvex.html#type-valvex_ref">valvex:valvex_ref()</a>, Key::<a href="valvex.html#type-queue_key">valvex:queue_key()</a>) -&gt; non_neg_integer() | <a href="valvex.html#type-key_find_error">valvex:key_find_error()</a></tt><br></p>
+</div><p>Gets the current size of the queue with the given key.</p>
+
+<h3 class="function"><a name="handle_call-3">handle_call/3</a></h3>
+<div class="spec">
+<p><tt>handle_call(X1, From, S) -&gt; any()</tt></p>
+</div><p>see the "see also" section for a list of synchronous operations</p>
+<p><b>See also:</b> <a href="#type-add">add()</a>, <a href="#type-add_handler">add_handler()</a>, <a href="#type-get_available_workers">get_available_workers()</a>, <a href="#type-remove">remove()</a>, <a href="#type-remove_handler">remove_handler()</a>, <a href="#type-update">update()</a>.</p>
+
+<h3 class="function"><a name="handle_cast-2">handle_cast/2</a></h3>
+<div class="spec">
+<p><tt>handle_cast(X1, S) -&gt; any()</tt></p>
+</div>
+
+<h3 class="function"><a name="handle_info-2">handle_info/2</a></h3>
+<div class="spec">
+<p><tt>handle_info(Info, S) -&gt; any()</tt></p>
+</div>
+
+<h3 class="function"><a name="init-1">init/1</a></h3>
+<div class="spec">
+<p><tt>init(X1::[tuple()]) -&gt; {ok, <a href="#type-valvex_state">valvex_state()</a>}</tt><br></p>
+</div><p>Inititalizes valvex with predefined queues, settings and
+  event handlers</p>
+
+<h3 class="function"><a name="notify-2">notify/2</a></h3>
+<div class="spec">
+<p><tt>notify(Valvex::<a href="valvex.html#type-valvex_ref">valvex:valvex_ref()</a>, Event::any()) -&gt; ok</tt><br></p>
+</div><p>Notifies all registered event handlers of an event
+  within valvex, read the readme for more info.</p>
+
+<h3 class="function"><a name="push-3">push/3</a></h3>
+<div class="spec">
+<p><tt>push(Valvex::<a href="valvex.html#type-valvex_ref">valvex:valvex_ref()</a>, Key::<a href="valvex.html#type-queue_key">valvex:queue_key()</a>, Value::<a href="valvex.html#type-valvex_q_item">valvex:valvex_q_item()</a>) -&gt; ok</tt><br></p>
+</div><p>Pushes an item to a queue with a specific key.</p>
+
+<h3 class="function"><a name="pushback-2">pushback/2</a></h3>
+<div class="spec">
+<p><tt>pushback(Valvex::<a href="valvex.html#type-valvex_ref">valvex:valvex_ref()</a>, Key::<a href="valvex.html#type-queue_key">valvex:queue_key()</a>) -&gt; ok</tt><br></p>
+</div><p>Pushes back on the client forcing them to wait
+  this prevents spamming if enabled.</p>
+
+<h3 class="function"><a name="remove-3">remove/3</a></h3>
+<div class="spec">
+<p><tt>remove(Valvex::<a href="valvex.html#type-valvex_ref">valvex:valvex_ref()</a>, Key::<a href="valvex.html#type-queue_key">valvex:queue_key()</a>, Option::<a href="valvex.html#type-remove_option">valvex:remove_option()</a>) -&gt; ok | <a href="valvex.html#type-key_find_error">valvex:key_find_error()</a></tt><br></p>
+</div><p>Removes a queue from valvex, there are some alternative options
+  that can be used to alter the behaviour of remove.</p>
+<p><b>See also:</b> <a href="valvex.html#type-remove_option">valvex:remove_option()</a>.</p>
+
+<h3 class="function"><a name="remove_handler-3">remove_handler/3</a></h3>
+<div class="spec">
+<p><tt>remove_handler(Valvex::<a href="valvex.html#type-valvex_ref">valvex:valvex_ref()</a>, Module::module(), Args::list()) -&gt; ok</tt><br></p>
+</div><p>Removes a handler so it will no longer receive events.</p>
+
+<h3 class="function"><a name="start_link-1">start_link/1</a></h3>
+<div class="spec">
+<p><tt>start_link(Options::<a href="valvex.html#type-valvex_options">valvex:valvex_options()</a>) -&gt; <a href="valvex.html#type-valvex_ref">valvex:valvex_ref()</a></tt><br></p>
+</div><p>Starts a link to the valvex server</p>
+
+<h3 class="function"><a name="terminate-2">terminate/2</a></h3>
+<div class="spec">
+<p><tt>terminate(Reason, S) -&gt; any()</tt></p>
+</div>
+<hr>
+
+<div class="navbar"><a name="#navbar_bottom"></a><table width="100%" border="0" cellspacing="0" cellpadding="2" summary="navigation bar"><tr><td><a href="overview-summary.html" target="overviewFrame">Overview</a></td><td><a href="http://www.erlang.org/"><img src="erlang.png" align="right" border="0" alt="erlang logo"></a></td></tr></table></div>
+<p><i>Generated by EDoc, Jun 22 2016, 11:00:56.</i></p>
+</body>
+</html>
