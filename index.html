@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-dark.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+
+    <title>Valvex by hazardfn</title>
+  </head>
+
+  <body>
+
+    <header>
+      <div class="container">
+        <h1>Valvex</h1>
+        <h2>A rate-limiter in erlang with pushback.</h2>
+
+        <section id="downloads">
+          <a href="https://github.com/hazardfn/valvex/zipball/master" class="btn">Download as .zip</a>
+          <a href="https://github.com/hazardfn/valvex/tarball/master" class="btn">Download as .tar.gz</a>
+          <a href="https://github.com/hazardfn/valvex" class="btn btn-github"><span class="icon"></span>View on GitHub</a>
+        </section>
+      </div>
+    </header>
+
+    <div class="container">
+      <section id="main_content">
+        <h1>
+<a id="overview--" class="anchor" href="#overview--" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Overview | <a href="https://travis-ci.org/hazardfn/valvex"><img src="https://travis-ci.org/hazardfn/valvex.svg" alt="Travis-CI"></a>
+</h1>
+
+<hr>
+
+<p>valveX is a rate-limiter written in erlang - it has a lot of tweakable
+options to ensure you get the best solution.</p>
+
+<h2>
+<a id="features" class="anchor" href="#features" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Features</h2>
+
+<ul>
+<li>Support for unlimited queues (within the erlang process limit)</li>
+<li>Each queue has independent state, allowing separate rules for each queue</li>
+<li>Choose from different queue types, FIFO and LIFO are supported out the box using erlangs queue - create your own if these don't appeal to you.</li>
+<li>Extensibility through the use of backends - each queue can use a different backend</li>
+<li>Queues are supervised and restarted</li>
+<li>Configurable threshold allowing for pushback under high load</li>
+</ul>
+
+<h2>
+<a id="configuration" class="anchor" href="#configuration" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Configuration</h2>
+
+<p>Before you can use valvex you need to configure environment variables in your sys.config or you can use the API to change the settings/add queues at runtime.</p>
+
+<h2>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Usage</h2>
+
+<p>Simply start valvex through the supervisor, it will then be registered
+as valvex to be used throughout your application.</p>
+
+<div class="highlight highlight-source-erlang"><pre><span class="pl-smi">Pid</span> <span class="pl-k">=</span> <span class="pl-en">valvex_sup</span>:<span class="pl-en">start_link</span>([]).</pre></div>
+
+<p>Here is an example of how to create a queue at run time and push work to it then listen for the reply.</p>
+
+<div class="highlight highlight-source-erlang"><pre><span class="pl-c">%% Add a queue with the key randomqueue that has a threshold of 1, a</span>
+<span class="pl-c1">timeout</span> <span class="pl-k">of</span> <span class="pl-c1">10</span> <span class="pl-c1">seconds</span>, <span class="pl-c1">a</span> <span class="pl-c1">pushback</span> <span class="pl-k">of</span> <span class="pl-c1">10</span> <span class="pl-c1">seconds</span>, <span class="pl-c1">a</span> <span class="pl-c1">poll</span> <span class="pl-c1">rate</span> <span class="pl-k">of</span> <span class="pl-c1">100</span><span class="pl-c1">ms</span>
+<span class="pl-c">%% and uses the valvex_queue_fifo_backend. there are various options you can supply to add to change the behaviour,</span>
+<span class="pl-c">%% read the API docs for more info.</span>
+
+<span class="pl-smi">Pid</span> <span class="pl-k">=</span> <span class="pl-en">valvex_sup</span>:<span class="pl-en">start_link</span>([]),
+
+<span class="pl-smi">Key</span>       <span class="pl-k">=</span> <span class="pl-c1">randomqueue</span>,
+<span class="pl-smi">Threshold</span> <span class="pl-k">=</span> {<span class="pl-c1">threshold</span>, <span class="pl-c1">1</span>},
+<span class="pl-smi">Timeout</span>   <span class="pl-k">=</span> {<span class="pl-c1">timeout</span>, <span class="pl-c1">10</span>, <span class="pl-c1">seconds</span>},
+<span class="pl-smi">Pushback</span>  <span class="pl-k">=</span> {<span class="pl-c1">pushback</span>, <span class="pl-c1">10</span>, <span class="pl-c1">seconds</span>},
+<span class="pl-smi">Poll</span>      <span class="pl-k">=</span> {<span class="pl-c1">poll_rate</span>, <span class="pl-c1">100</span>, <span class="pl-c1">ms</span>},
+<span class="pl-smi">Backend</span>   <span class="pl-k">=</span> <span class="pl-c1">valvex_queue_fifo_backend</span>,
+<span class="pl-smi">Queue</span>     <span class="pl-k">=</span> {<span class="pl-smi">Key</span>, <span class="pl-smi">Threshold</span>, <span class="pl-smi">Timeout</span>, <span class="pl-smi">Pushback</span>, <span class="pl-smi">Poll</span>, <span class="pl-smi">Backend</span>},
+<span class="pl-en">valvex</span>:<span class="pl-en">add</span>(<span class="pl-c1">valvex</span>, <span class="pl-smi">Queue</span>),
+<span class="pl-smi">RandomFun</span> <span class="pl-k">=</span> <span class="pl-k">fun</span>() -&gt;
+             <span class="pl-en">timer</span>:<span class="pl-en">sleep</span>(<span class="pl-c1">1000</span>),
+             {<span class="pl-c1">expected_reply</span>, <span class="pl-c1">1000</span>}
+            <span class="pl-k">end</span>,
+<span class="pl-en">valvex</span>:<span class="pl-en">push</span>(<span class="pl-c1">valvex</span>, <span class="pl-smi">Key</span>, <span class="pl-en">self</span>(), <span class="pl-smi">RandomFun</span>),
+<span class="pl-k">receive</span>
+  {<span class="pl-c1">expected_reply</span>, <span class="pl-smi">Value</span>} -&gt;
+    <span class="pl-en">io</span>:<span class="pl-en">format</span>(<span class="pl-s"><span class="pl-pds">"</span>Value: <span class="pl-c1">~p</span><span class="pl-pds">"</span></span>, [<span class="pl-smi">Value</span>]);
+  {<span class="pl-c1">error</span>, <span class="pl-c1">timeout</span>} -&gt;
+    <span class="pl-en">io</span>:<span class="pl-en">format</span>(<span class="pl-s"><span class="pl-pds">"</span>The timeout has been hit<span class="pl-pds">"</span></span>);
+  {<span class="pl-c1">error</span>, <span class="pl-c1">threshold_hit</span>} -&gt;
+    <span class="pl-en">io</span>:<span class="pl-en">format</span>(<span class="pl-s"><span class="pl-pds">"</span>The amount of work exceeded the threshold<span class="pl-pds">"</span></span>)
+<span class="pl-k">after</span>
+  <span class="pl-c1">15000</span> -&gt;
+    <span class="pl-en">io</span>:<span class="pl-en">format</span>(<span class="pl-s"><span class="pl-pds">"</span>Some hard timeout was reached indicating something seriously went wrong<span class="pl-pds">"</span></span>)
+<span class="pl-k">end</span>.</pre></div>
+
+<h2>
+<a id="api" class="anchor" href="#api" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>API</h2>
+
+<p>This sections attempts to document the API and it's behaviour under certain scenarios.</p>
+
+<h3>
+<a id="add-identifier-queue-key-threshold-timeout-pushback-poll-queue-backend-option---ok--error-key_not_unique" class="anchor" href="#add-identifier-queue-key-threshold-timeout-pushback-poll-queue-backend-option---ok--error-key_not_unique" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>add (Identifier, {Queue Key, Threshold, Timeout, Pushback, Poll, Queue Backend}, Option) -&gt; ok | {error, key_not_unique}.</code>
+</h3>
+
+<hr>
+
+<h4>
+<a id="description" class="anchor" href="#description" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Description:</h4>
+
+<p>Adds a queue at runtime. An add/2 operation also exists removing the need for options.</p>
+
+<h4>
+<a id="spec" class="anchor" href="#spec" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Spec:</h4>
+
+<p><strong>Identifier:</strong> Pid or registered atom of the valve server.</p>
+
+<p><strong>Queue Key:</strong> A unique atom identifying the queue.</p>
+
+<p><strong>Threshold:</strong> Count of work items allowed on the queue before it starts to push back.</p>
+
+<p><strong>Timeout:</strong> A value that indicates when the work this queue will receive has gone on too long - this value is also used as part of the pushback.</p>
+
+<p><strong>Pushback:</strong> In the event of the threshold being hit valvex will wait x seconds before responding to the client, this prevents users from receiving an instant response decreasing the chance that they will constantly spam refresh your page causing more work / requests.</p>
+
+<p><strong>Poll:</strong> A value that indicates how often the queue should be polled.</p>
+
+<p><strong>Option:</strong> An atom which can change how add works:</p>
+
+<p><code>crossover_on_existing</code></p>
+
+<p><code>crossover_on_existing_force_remove</code></p>
+
+<p><strong>Queue Backend:</strong> A module that uses the queue behaviour you need, there are some defaults:</p>
+
+<p><code>valvex_fifo_queue_backend</code></p>
+
+<p><code>valvex_lifo_queue_backend</code></p>
+
+<p>Feel free to create your own with any additional features you may need.</p>
+
+<h4>
+<a id="notes" class="anchor" href="#notes" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Notes:</h4>
+
+<p>The functionality of add differs depending on the option you supply, by default if you try to add a key that isn't unique you will receive an <code>{error, key_not_unique}</code> back.</p>
+
+<p><code>crossover_on_existing</code> will create your new queue regardless of key uniqueness and all future requests will go to that queue, the old one will be tombstoned and locked - this means it will process any work it has left using old values (Timeout, Pushback etc.) then kill itself. This is good when you want to change queue settings but not disturb ongoing requests.</p>
+
+<p><code>crossover_on_existing_force_remove</code> will add your new queue and immediately kill the old queue regardless of contents - this can be highly disruptive and is only useful in some corner cases.</p>
+
+<h3>
+<a id="remove-identifier-queue-key-option---ok--error-key_not_found" class="anchor" href="#remove-identifier-queue-key-option---ok--error-key_not_found" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>remove (Identifier, Queue Key, Option) -&gt; ok | {error, key_not_found}.</code>
+</h3>
+
+<hr>
+
+<h4>
+<a id="description-1" class="anchor" href="#description-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Description:</h4>
+
+<p>Triggers a queue removal at runtime. A remove/2 operation also exists removing the need for options.</p>
+
+<h4>
+<a id="spec-1" class="anchor" href="#spec-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Spec:</h4>
+
+<p><strong>Identifier:</strong> Pid or registered atom of the valve server.</p>
+
+<p><strong>Queue Key:</strong> A unique atom identifying the queue.</p>
+
+<p><strong>Option:</strong> An atom that can change how remove works:</p>
+
+<p><code>force_remove</code></p>
+
+<p><code>lock_queue</code></p>
+
+<h4>
+<a id="notes-1" class="anchor" href="#notes-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Notes:</h4>
+
+<p>By default remove is a safe operation, it will merely mark a queue for removal and only remove it when it has no remaining work - it can still continue to receive work however, this is by design to prevent crashes. If a queue marked for removal is continuing to receive work it will print a warning. You can specify options to change this behaviour.</p>
+
+<p><code>force_remove</code> will kill a queue regardless of it's contents, again please use this carefully.</p>
+
+<p><code>lock_queue</code> will remove as normal but prevent the queue from receiving new work, while in most cases safe your code can crash if you have forgot to remove all instances where the queue being removed is used.</p>
+
+<h3>
+<a id="push-identifier-queue-key-reply-identifier-work---ok" class="anchor" href="#push-identifier-queue-key-reply-identifier-work---ok" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>push (Identifier, Queue Key, Reply Identifier, Work) -&gt; ok.</code>
+</h3>
+
+<hr>
+
+<h4>
+<a id="description-2" class="anchor" href="#description-2" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Description:</h4>
+
+<p>Pushes work to the queue with the queue key you specified. Will not error if the queue does not exist.</p>
+
+<h4>
+<a id="spec-2" class="anchor" href="#spec-2" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Spec:</h4>
+
+<p><strong>Identifier:</strong> Pid or registered atom of the valve server.</p>
+
+<p><strong>Queue Key:</strong> A unique atom identifying the queue. </p>
+
+<p><strong>Reply Identifier:</strong> Pid of the process that is awaiting the result of the work.</p>
+
+<p><strong>Work:</strong> A fun() of stuff to do.</p>
+
+<h3>
+<a id="get_available_workers-identifier---pid" class="anchor" href="#get_available_workers-identifier---pid" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>get_available_workers (Identifier) -&gt; [pid()].</code>
+</h3>
+
+<hr>
+
+<h4>
+<a id="description-3" class="anchor" href="#description-3" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Description:</h4>
+
+<p>Gets a list of pid's that represent your available workers.</p>
+
+<h4>
+<a id="spec-3" class="anchor" href="#spec-3" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Spec:</h4>
+
+<p><strong>Identifier:</strong> Pid or registered atom of the valve server.</p>
+
+<h3>
+<a id="get_available_workers_count-identifier---non_neg_integer" class="anchor" href="#get_available_workers_count-identifier---non_neg_integer" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>get_available_workers_count (Identifier) -&gt; non_neg_integer()</code>
+</h3>
+
+<hr>
+
+<h4>
+<a id="description-4" class="anchor" href="#description-4" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Description:</h4>
+
+<p>Gets the number of workers currently available (not processing work).</p>
+
+<h4>
+<a id="spec-4" class="anchor" href="#spec-4" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Spec:</h4>
+
+<p><strong>Identifier:</strong> Pid or registered atom of the valve server.</p>
+
+<h3>
+<a id="get_queue_size-identifier-queue-key---non_neg_integer--error-key_not_found" class="anchor" href="#get_queue_size-identifier-queue-key---non_neg_integer--error-key_not_found" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>get_queue_size (Identifier, Queue Key) -&gt; non_neg_integer() | {error, key_not_found}.</code>
+</h3>
+
+<hr>
+
+<h4>
+<a id="description-5" class="anchor" href="#description-5" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Description:</h4>
+
+<p>Gets the current number of items in a specified queue.</p>
+
+<h4>
+<a id="spec-5" class="anchor" href="#spec-5" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Spec:</h4>
+
+<p><strong>Identifier:</strong> Pid or registered atom of the valve server.</p>
+
+<p><strong>Queue Key:</strong> A unique atom identifying the queue. </p>
+
+<h3>
+<a id="pushback-identifier-queue-key-reply-identifier---ok" class="anchor" href="#pushback-identifier-queue-key-reply-identifier---ok" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>pushback (Identifier, Queue Key, Reply Identifier) -&gt; ok.</code>
+</h3>
+
+<hr>
+
+<h4>
+<a id="description-6" class="anchor" href="#description-6" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Description:</h4>
+
+<p>Simply waits for the pushback limit of the specified queue and responds {error, threshold_hit} to the Reply Identifier</p>
+
+<h4>
+<a id="spec-6" class="anchor" href="#spec-6" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Spec:</h4>
+
+<p><strong>Identifier:</strong> Pid or registered atom of the valve server.</p>
+
+<p><strong>Queue Key:</strong> A unique atom identifying the queue. </p>
+
+<p><strong>Reply Identifier:</strong> Pid of the process that is awaiting the result of the work.</p>
+      </section>
+    </div>
+
+    
+  </body>
+</html>
