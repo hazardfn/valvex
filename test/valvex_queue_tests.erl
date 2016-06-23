@@ -244,12 +244,12 @@ test_queue_consumer_fifo(Config) when is_list(Config)   ->
   ok = queue_popped(FirstTestFun, false),
   receive
     FirstItem ->
-      ?assertEqual(FirstItem, {result, "First Test Complete"})
+      ?assertEqual(FirstItem, {result, "First Test Complete", test_fifo})
   end,
   ok = queue_popped(SecondTestFun, false),
   receive
     SecondItem ->
-      ?assertEqual(SecondItem, {result, "Second Test Complete"})
+      ?assertEqual(SecondItem, {result, "Second Test Complete", test_fifo})
   end,
   valvex_queue:stop_consumer(valvex_queue_fifo_backend, test_fifo),
   ok = queue_consumer_stopped(),
@@ -291,12 +291,12 @@ test_queue_consumer_lifo(Config) when is_list(Config)   ->
   ok = queue_popped(SecondTestFun, false),
   receive
     SecondItem ->
-      ?assertEqual(SecondItem, {result, "Second Test Complete"})
+      ?assertEqual(SecondItem, {result, "Second Test Complete", test_lifo})
   end,
   ok = queue_popped(FirstTestFun, false),
   receive
     FirstItem ->
-      ?assertEqual(FirstItem, {result, "First Test Complete"})
+      ?assertEqual(FirstItem, {result, "First Test Complete", test_lifo})
   end,
   valvex_queue:stop_consumer(valvex_queue_lifo_backend, test_lifo),
   ok = queue_consumer_stopped(),
@@ -344,12 +344,12 @@ test_queue_tombstone_fifo(Config) when is_list(Config)   ->
   ok = queue_popped(FirstTestFun, false),
   receive
     FirstItem ->
-      ?assertEqual(FirstItem, {result, "First Test Complete"})
+      ?assertEqual(FirstItem, {result, "First Test Complete", test_fifo})
   end,
   ok = queue_popped(SecondTestFun, false),
   receive
     SecondItem ->
-      ?assertEqual(SecondItem, {result, "Second Test Complete"})
+      ?assertEqual(SecondItem, {result, "Second Test Complete", test_fifo})
   end,
   wait_until_killed(test_fifo),
   ?assertEqual(undefined, whereis(test_fifo)),
@@ -383,12 +383,12 @@ test_queue_tombstone_lifo(Config) when is_list(Config)   ->
   ok = queue_popped(SecondTestFun, false),
   receive
     SecondItem ->
-      ?assertEqual(SecondItem, {result, "Second Test Complete"})
+      ?assertEqual(SecondItem, {result, "Second Test Complete", test_lifo})
   end,
   ok = queue_popped(FirstTestFun, false),
   receive
     FirstItem ->
-      ?assertEqual(FirstItem, {result, "First Test Complete"})
+      ?assertEqual(FirstItem, {result, "First Test Complete", test_lifo})
   end,
   wait_until_killed(test_lifo),
   ?assertEqual(undefined, whereis(test_lifo)),
