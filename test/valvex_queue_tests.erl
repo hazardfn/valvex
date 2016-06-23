@@ -52,6 +52,7 @@ init_per_testcase(TestCase, Config) ->
 
 end_per_testcase(TestCase, Config)  ->
   application:stop(valvex),
+  c:flush(),
   ?MODULE:TestCase({'end', Config}).
 
 all()      ->
@@ -321,7 +322,6 @@ test_queue_tombstone_fifo(doc)                           ->
   ["Test that a tombstoned queue dies"];
 test_queue_tombstone_fifo(Config) when is_list(Config)   ->
   valvex:add_handler(valvex, valvex_message_event_handler, [self()]),
-
   FirstTestFun  = fun() ->
                       "First Test Complete"
                   end,
@@ -361,7 +361,6 @@ test_queue_tombstone_lifo(doc)                           ->
   ["Test that a tombstoned queue dies"];
 test_queue_tombstone_lifo(Config) when is_list(Config)   ->
   valvex:add_handler(valvex, valvex_message_event_handler, [self()]),
-
   FirstTestFun  = fun() ->
                       "First Test Complete"
                   end,
@@ -401,7 +400,6 @@ test_queue_lock_fifo(doc)                           ->
   ["Test that a locked queue has expected behaviour"];
 test_queue_lock_fifo(Config) when is_list(Config)   ->
   valvex:add_handler(valvex, valvex_message_event_handler, [self()]),
-
   valvex_queue:lock(valvex_queue_fifo_backend, test_fifo),
   receive
     {queue_locked, _} ->
@@ -455,8 +453,7 @@ test_queue_lock_lifo(doc)                           ->
   ["Test that a locked queue has expected behaviour"];
 test_queue_lock_lifo(Config) when is_list(Config)   ->
   valvex:add_handler(valvex, valvex_message_event_handler, [self()]),
-
-    valvex_queue:lock(valvex_queue_lifo_backend, test_lifo),
+  valvex_queue:lock(valvex_queue_lifo_backend, test_lifo),
   receive
     {queue_locked, _} ->
       ok
@@ -524,8 +521,8 @@ queue_consumer_stopped() ->
   receive
     {queue_consumer_stopped, _} ->
       ok;
-    _ ->
-      throw(unexpected_message)
+    Msg ->
+      throw({unexpected_message, Msg})
   end.
 
 queue_unlocked() ->
