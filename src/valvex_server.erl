@@ -286,7 +286,7 @@ handle_cast({push, Key, Value}, #{queue_pids := Queues} = S) ->
           valvex_queue:push(Backend, Key, Value),
           {noreply, S};
         true ->
-          valvex:notify(self(), {push_to_locked_queue, Key, Value}),
+          valvex:notify(self(), {push_to_locked_queue, Key}),
           {noreply, S}
       end
   end;

@@ -220,10 +220,10 @@ handle_cast({push, {Work, _Timestamp} = Value}, #{ valvex    := Valvex
                                                  , queue     := Q
                                                  , locked    := Locked
                                                  } = S) ->
-  valvex:notify(Valvex, {queue_push, RawQ, Work}),
+  valvex:notify(Valvex, {queue_push, RawQ}),
   case Locked of
     true  ->
-      valvex:notify(Valvex, {push_to_locked_queue, RawQ, Work}),
+      valvex:notify(Valvex, {push_to_locked_queue, RawQ}),
       {noreply, S};
     false ->
       evaluate_push(S, queue:in(Value, Q), Work)
@@ -233,10 +233,10 @@ handle_cast( {push_r, {Work, _Timestamp} = Value}, #{ valvex    := Valvex
                                                     , queue     := Q
                                                     , locked    := Locked
                                                     } = S) ->
-  valvex:notify(Valvex, {queue_push_r, RawQ, Work}),
+  valvex:notify(Valvex, {queue_push_r, RawQ}),
   case Locked of
     true  ->
-      valvex:notify(Valvex, {push_to_locked_queue, RawQ, Work}),
+      valvex:notify(Valvex, {push_to_locked_queue, RawQ}),
       {noreply, S};
     false ->
       evaluate_push(S, queue:in_r(Value, Q), Work)
@@ -368,7 +368,7 @@ update_state(Q, Size, S) ->
 evaluate_value(Valvex, Tombstone, Size, RawQ, Value, Event, S) ->
   case Value of
     {{value, {_Work, _Timestamp}}, Q} ->
-      valvex:notify(Valvex, {Event, RawQ, Value}),
+      valvex:notify(Valvex, {Event, RawQ}),
       {reply, Value, update_state(Q, Size-1, S)};
     {empty, _}                                ->
       case Tombstone of
@@ -382,13 +382,13 @@ evaluate_push(#{ key       := Key
                , q         := RawQ
                , threshold := Threshold
                , size      := Size
-               } = S, Q, Work) ->
+               } = S, Q, _Work) ->
   case Size >= Threshold of
     true ->
       valvex:pushback(Valvex, Key),
       {noreply, S};
     false ->
-      valvex:notify(Valvex, {push_complete, RawQ, Work}),
+      valvex:notify(Valvex, {push_complete, RawQ}),
       {noreply, update_state(Q, Size+1, S)}
   end.
 

@@ -22,22 +22,22 @@ init([Pid]) ->
 handle_event({queue_started, _Q} = Event, #{ receiver := Pid } = S) ->
   Pid ! Event,
   {ok, S};
-handle_event({queue_popped, _Q, _Value} = Event, #{ receiver := Pid } = S) ->
+handle_event({queue_popped, _Q} = Event, #{ receiver := Pid } = S) ->
   Pid ! Event,
   {ok, S};
-handle_event({queue_popped_r, _Q, _Value} = Event, #{ receiver := Pid } = S) ->
+handle_event({queue_popped_r, _Q} = Event, #{ receiver := Pid } = S) ->
   Pid ! Event,
   {ok, S};
-handle_event({queue_push, _Q, _Value} = Event, #{ receiver := Pid } = S) ->
+handle_event({queue_push, _Q} = Event, #{ receiver := Pid } = S) ->
   Pid ! Event,
   {ok, S};
-handle_event({queue_push_r, _Q, _Value} = Event, #{ receiver := Pid } = S) ->
+handle_event({queue_push_r, _Q} = Event, #{ receiver := Pid } = S) ->
   Pid ! Event,
   {ok, S};
-handle_event({push_complete, _Q, _Value} = Event, #{ receiver := Pid} = S) ->
+handle_event({push_complete, _Q} = Event, #{ receiver := Pid} = S) ->
   Pid ! Event,
   {ok, S};
-handle_event({push_to_locked_queue, _Q, _Value} = Event, #{ receiver := Pid} = S) ->
+handle_event({push_to_locked_queue, _Q} = Event, #{ receiver := Pid} = S) ->
   Pid ! Event,
   {ok, S};
 handle_event({queue_tombstoned, _Q} = Event, #{ receiver := Pid } = S) ->

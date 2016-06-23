@@ -29,40 +29,17 @@ suite() ->
   [{timetrap, {seconds, 10}}].
 
 init_per_suite(Config) ->
-  Config ++
-     [ {queues, [ { test_fifo
-                  , {threshold, 1}
-                  , {timeout, 1, seconds}
-                  , {pushback, 5, seconds}
-                  , {poll_rate, 100, ms}
-                  , valvex_queue_fifo_backend
-                  }
-                , { test_lifo
-                  , {threshold, 300}
-                  , {timeout, 1, seconds}
-                  , {pushback, 5, seconds}
-                  , {poll_rate, 100, ms}
-                  , valvex_queue_lifo_backend
-                  }
-                ]
-       }
-     , {pushback_enabled, true}
-     , {workers, 1}
-     , {event_handlers, []}
-     ].
+  Config.
+
 end_per_suite(Config) ->
   Config.
 
 init_per_testcase(TestCase, Config) ->
-  {ok, _VSupPid}      = valvex_sup:start_link(Config),
+  application:ensure_all_started(valvex),
   ?MODULE:TestCase({init, Config}).
 
 end_per_testcase(TestCase, Config)  ->
-  valvex:remove(valvex, test_fifo, force_remove),
-  valvex:remove(valvex, test_lifo, force_remove),
-  gen_server:stop(whereis(valvex)),
-  gen_server:stop(whereis(valvex_queue_sup)),
-  gen_server:stop(whereis(valvex_sup)),
+  application:stop(valvex),
   ?MODULE:TestCase({'end', Config}).
 
 all()      ->
@@ -130,28 +107,28 @@ test_remove_options(doc)                           ->
 test_remove_options(Config) when is_list(Config)   ->
   ?assertEqual(ok, valvex:remove(valvex, test_lifo, force_remove)),
   ?assertEqual({error, key_not_found}, gen_server:call(valvex, {get_raw_queue, test_lifo})),
-  ?assertEqual(ok, valvex_queue:stop_consumer(valvex_queue_fifo_backend, test_fifo)),
-  ?assertEqual(ok, valvex:push(valvex, test_fifo, fun() -> timer:sleep(1000) end)),
-  ?assertEqual(ok, valvex:remove(valvex, test_fifo, lock_queue)),
-  ?assert(valvex_queue:is_locked(valvex_queue_fifo_backend, test_fifo)),
-  ?assert(valvex_queue:is_tombstoned(valvex_queue_fifo_backend, test_fifo)),
-  ?assertMatch( { test_fifo
+  ?assertEqual(ok, valvex_queue:stop_consumer(valvex_queue_fifo_backend, test_threshold_pushback)),
+  ?assertEqual(ok, valvex:push(valvex, test_threshold_pushback, fun() -> timer:sleep(1000) end)),
+  ?assertEqual(ok, valvex:remove(valvex, test_threshold_pushback, lock_queue)),
+  ?assert(valvex_queue:is_locked(valvex_queue_fifo_backend, test_threshold_pushback)),
+  ?assert(valvex_queue:is_tombstoned(valvex_queue_fifo_backend, test_threshold_pushback)),
+  ?assertMatch( { test_threshold_pushback
                   , {threshold, 1}
                   , {timeout, 1, seconds}
                   , {pushback, 5, seconds}
                   , {poll_rate, 100, ms}
                   , valvex_queue_fifo_backend
-                  }, gen_server:call(valvex, {get_raw_queue, test_fifo})),
-  ?assertEqual(1, valvex:get_queue_size(valvex, test_fifo)),
-  ?assertEqual(ok, valvex_queue:start_consumer(valvex_queue_fifo_backend, test_fifo)),
+                  }, gen_server:call(valvex, {get_raw_queue, test_threshold_pushback})),
+  ?assertEqual(1, valvex:get_queue_size(valvex, test_threshold_pushback)),
+  ?assertEqual(ok, valvex_queue:start_consumer(valvex_queue_fifo_backend, test_threshold_pushback)),
   valvex:add_handler(valvex, valvex_message_event_handler, [self()]),
   receive
-    {queue_popped, _, _} ->
+    {queue_popped, _} ->
       ok
   end,
   receive
-    {queue_removed, test_fifo} ->
-      ?assertMatch({error, key_not_found}, gen_server:call(valvex, {get_raw_queue, test_fifo}))
+    {queue_removed, test_threshold_pushback} ->
+      ?assertMatch({error, key_not_found}, gen_server:call(valvex, {get_raw_queue, test_threshold_pushback}))
   end,
   valvex:remove_handler(valvex, valvex_message_event_handler, []).
 
@@ -161,9 +138,9 @@ test_pushback({'end', _Config})              -> ok;
 test_pushback(doc)                           ->
   ["Test that the client gets pushed back"];
 test_pushback(Config) when is_list(Config)   ->
-  ?assertEqual(ok, valvex_queue:stop_consumer(valvex_queue_fifo_backend, test_fifo)),
-  ?assertEqual(ok, valvex:push(valvex, test_fifo, fun() -> timer:sleep(1000) end)),
-  ?assertEqual(ok, valvex:push(valvex, test_fifo, fun() -> timer:sleep(1000) end)),
+  ?assertEqual(ok, valvex_queue:stop_consumer(valvex_queue_fifo_backend, test_threshold_pushback)),
+  ?assertEqual(ok, valvex:push(valvex, test_threshold_pushback, fun() -> timer:sleep(1000) end)),
+  ?assertEqual(ok, valvex:push(valvex, test_threshold_pushback, fun() -> timer:sleep(1000) end)),
   valvex:add_handler(valvex, valvex_message_event_handler, [self()]),
   receive
     {threshold_hit, _Key} ->

@@ -27,7 +27,8 @@ start(_StartType, _StartArgs) ->
      valvex_sup:start_link([ {queues, Queues}
                            , {pushback_enabled, PushbackEnabled}
                            , {workers, Workers}
-                           , {event_handlers, EventHandlers}])
+                           , {event_handlers, EventHandlers}
+                           ])
   end.
 
 %%----------------------------------------------------------------------------------------------------------------------

@@ -36,41 +36,22 @@ suite() ->
   [{timetrap, {seconds, 10}}].
 
 init_per_suite(Config) ->
-  Config ++
-     [ {queues, [ { test_fifo
-                  , {threshold, 3}
-                  , {timeout, 10, seconds}
-                  , {pushback, 10, seconds}
-                  , {poll_rate, 100, ms}
-                  , valvex_queue_fifo_backend
-                  }
-                , { test_lifo
-                  , {threshold, 3}
-                  , {timeout, 10, seconds}
-                  , {pushback, 10, seconds}
-                  , {poll_rate, 100, ms}
-                  , valvex_queue_lifo_backend
-                  }
-                ]
-       }
-     ].
+  Config.
 end_per_suite(Config) ->
   Config.
 
 init_per_testcase(TestCase, Config) ->
-  {ok, _VSupPid} = valvex_sup:start_link(),
-  QFifo          = valvex_test_utils:get_queue_from_config(test_fifo, Config),
-  QLifo          = valvex_test_utils:get_queue_from_config(test_lifo, Config),
-  ok             = valvex:add(valvex, QFifo, manual_start),
-  ok             = valvex:add(valvex, QLifo, manual_start),
+  application:ensure_all_started(valvex),
+  valvex:add_handler(valvex, valvex_message_event_handler, [self()]),
+  valvex_queue:stop_consumer(valvex_queue_fifo_backend, test_fifo),
+  ok = queue_consumer_stopped(),
+  valvex_queue:stop_consumer(valvex_queue_lifo_backend, test_lifo),
+  ok = queue_consumer_stopped(),
+  valvex:remove_handler(valvex, valvex_message_event_handler, []),
   ?MODULE:TestCase({init, Config}).
 
 end_per_testcase(TestCase, Config)  ->
-  valvex:remove(valvex, test_fifo, force_remove),
-  valvex:remove(valvex, test_lifo, force_remove),
-  gen_server:stop(whereis(valvex)),
-  gen_server:stop(whereis(valvex_queue_sup)),
-  gen_server:stop(whereis(valvex_sup)),
+  application:stop(valvex),
   ?MODULE:TestCase({'end', Config}).
 
 all()      ->
@@ -118,7 +99,6 @@ test_queue_push_fifo(doc)                           ->
   ["Test pushing to the queue creates a queue item and handles it correctly"];
 test_queue_push_fifo(Config) when is_list(Config)   ->
   valvex:add_handler(valvex, valvex_message_event_handler, [self()]),
-  c:flush(),
   FirstTestFun  = fun() ->
                       "First Test Complete"
                   end,
@@ -151,7 +131,6 @@ test_queue_push_lifo(doc)                           ->
   ["Test pushing to the queue creates a queue item and handles it correctly"];
 test_queue_push_lifo(Config) when is_list(Config)   ->
   valvex:add_handler(valvex, valvex_message_event_handler, [self()]),
-  c:flush(),
   FirstTestFun  = fun() ->
                       "First Test Complete"
                   end,
@@ -184,7 +163,6 @@ test_queue_push_r_fifo(doc)                           ->
   ["Test r-pushing to the queue creates a queue item and handles it correctly"];
 test_queue_push_r_fifo(Config) when is_list(Config)   ->
   valvex:add_handler(valvex, valvex_message_event_handler, [self()]),
-  c:flush(),
   FirstTestFun  = fun() ->
                       "First Test Complete"
                   end,
@@ -217,7 +195,6 @@ test_queue_push_r_lifo(doc)                           ->
   ["Test r-pushing to the queue creates a queue item and handles it correctly"];
 test_queue_push_r_lifo(Config) when is_list(Config)   ->
   valvex:add_handler(valvex, valvex_message_event_handler, [self()]),
-  c:flush(),
   FirstTestFun  = fun() ->
                       "First Test Complete"
                   end,
@@ -250,7 +227,6 @@ test_queue_consumer_fifo(doc)                           ->
   ["Test the consumer works"];
 test_queue_consumer_fifo(Config) when is_list(Config)   ->
   valvex:add_handler(valvex, valvex_message_event_handler, [self()]),
-  c:flush(),
   valvex_queue:start_consumer(valvex_queue_fifo_backend, test_fifo),
   ok = queue_consumer_started(),
   FirstTestFun  = fun() ->
@@ -298,7 +274,6 @@ test_queue_consumer_lifo(doc)                           ->
   ["Test the consumer works"];
 test_queue_consumer_lifo(Config) when is_list(Config)   ->
   valvex:add_handler(valvex, valvex_message_event_handler, [self()]),
-  c:flush(),
   valvex_queue:start_consumer(valvex_queue_lifo_backend, test_lifo),
   ok = queue_consumer_started(),
   FirstTestFun  = fun() ->
@@ -346,7 +321,7 @@ test_queue_tombstone_fifo(doc)                           ->
   ["Test that a tombstoned queue dies"];
 test_queue_tombstone_fifo(Config) when is_list(Config)   ->
   valvex:add_handler(valvex, valvex_message_event_handler, [self()]),
-  c:flush(),
+
   FirstTestFun  = fun() ->
                       "First Test Complete"
                   end,
@@ -386,7 +361,7 @@ test_queue_tombstone_lifo(doc)                           ->
   ["Test that a tombstoned queue dies"];
 test_queue_tombstone_lifo(Config) when is_list(Config)   ->
   valvex:add_handler(valvex, valvex_message_event_handler, [self()]),
-  c:flush(),
+
   FirstTestFun  = fun() ->
                       "First Test Complete"
                   end,
@@ -426,7 +401,7 @@ test_queue_lock_fifo(doc)                           ->
   ["Test that a locked queue has expected behaviour"];
 test_queue_lock_fifo(Config) when is_list(Config)   ->
   valvex:add_handler(valvex, valvex_message_event_handler, [self()]),
-  c:flush(),
+
   valvex_queue:lock(valvex_queue_fifo_backend, test_fifo),
   receive
     {queue_locked, _} ->
@@ -480,7 +455,7 @@ test_queue_lock_lifo(doc)                           ->
   ["Test that a locked queue has expected behaviour"];
 test_queue_lock_lifo(Config) when is_list(Config)   ->
   valvex:add_handler(valvex, valvex_message_event_handler, [self()]),
-  c:flush(),
+
     valvex_queue:lock(valvex_queue_lifo_backend, test_lifo),
   receive
     {queue_locked, _} ->
@@ -557,30 +532,30 @@ queue_unlocked() ->
   receive
     {queue_unlocked, _} ->
       ok;
-    _ ->
-      throw(unexpected_message)
+    Msg ->
+      throw(Msg)
   end.
 
 queue_locked() ->
   receive
     {queue_locked, _} ->
       ok;
-    _ ->
-      throw(unexpected_message)
+    Msg ->
+      throw(Msg)
   end.
 
-push_flow_unlocked(Item, Reversed) ->
+push_flow_unlocked(_Item, Reversed) ->
   HandlerFun = case Reversed of
                  true ->
                    fun() ->
                        receive
-                         {queue_push_r, _, Item} ->
+                         {queue_push_r, _} ->
                            ok;
                          Msg1 ->
                            throw({unexpected_message, Msg1})
                        end,
                        receive
-                         {push_complete, _, Item} ->
+                         {push_complete, _} ->
                            ok;
                          Msg2 ->
                            throw({unexpected_message, Msg2})
@@ -589,13 +564,13 @@ push_flow_unlocked(Item, Reversed) ->
                  false ->
                    fun() ->
                        receive
-                         {queue_push, _, Item} ->
+                         {queue_push, _} ->
                            ok;
                          Msg1 ->
                            throw({unexpected_message, Msg1})
                        end,
                        receive
-                         {push_complete, _, Item} ->
+                         {push_complete, _} ->
                            ok;
                          Msg2 ->
                            throw({unexpected_message, Msg2})
@@ -604,47 +579,47 @@ push_flow_unlocked(Item, Reversed) ->
                end,
   HandlerFun().
 
-push_flow_locked(Item, Reversed) ->
+push_flow_locked(_Item, Reversed) ->
   HandlerFun = case Reversed of
                  true ->
                    fun() ->
                        receive
-                         {push_to_locked_queue, _, {Item, _}} ->
+                         {push_to_locked_queue, _} ->
                            ok;
                          Msg ->
-                           throw({"unexpected_message:", Msg, "Item:", Item})
+                           throw({"unexpected_message:", Msg})
                        end
                    end;
                  false ->
                    fun() ->
                        receive
-                         {push_to_locked_queue, _, {Item, _}} ->
+                         {push_to_locked_queue, _} ->
                            ok;
                          Msg ->
-                           throw({"unexpected_message:", Msg, "Item:", Item})
+                           throw({"unexpected_message:", Msg})
                        end
                    end
                end,
   HandlerFun().
 
-queue_popped(Item, Reversed) ->
+queue_popped(_Item, Reversed) ->
   HandlerFun = case Reversed of
                  true ->
                    fun() ->
                        receive
-                         {queue_popped_r, _Q, {{value, {Item, _Time}}, _ }} ->
+                         {queue_popped_r, _Q} ->
                            ok;
                          Msg ->
-                           throw({"unexpected_message:", Msg, "Item:", Item})
+                           throw({"unexpected_message:", Msg})
                        end
                    end;
                  false ->
                    fun() ->
                        receive
-                         {queue_popped, _Q, {{value, {Item, _Time}}, _ }} ->
+                         {queue_popped, _Q} ->
                            ok;
                          Msg ->
-                           throw({"unexpected_message:", Msg, "Item:", Item})
+                           throw({"unexpected_message:", Msg})
                        end
                    end
                end,
