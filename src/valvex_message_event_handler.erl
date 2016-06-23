@@ -58,7 +58,7 @@ handle_event({queue_consumer_stopped, _Q} = Event, #{ receiver := Pid } = S) ->
 handle_event({timeout, _Key} = Event, #{ receiver := Pid } = S) ->
   Pid ! Event,
   {ok, S};
-handle_event({result, _Result} = Event, #{ receiver := Pid } = S) ->
+handle_event({result, _Result, _Key} = Event, #{ receiver := Pid } = S) ->
   Pid ! Event,
   {ok, S};
 handle_event({threshold_hit, _Q} = Event, #{ receiver := Pid } = S) ->

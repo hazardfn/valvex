@@ -172,9 +172,10 @@ handle_event({timeout, Key}, #{ gun := Gun } = S) ->
             },
   gun:ws_send(Gun, jsonify(Event)),
   {ok, S};
-handle_event({result, Result}, #{ gun := Gun } = S) ->
-  Event  = #{ result    => lists:flatten(io_lib:format("~s", [Result]))
-            , event     => result
+handle_event({result, Result, Key}, #{ gun := Gun } = S) ->
+  Event  = #{ key    => Key 
+            , result => lists:flatten(io_lib:format("~s", [Result]))
+            , event  => result
             },
   gun:ws_send(Gun, jsonify(Event)),
   {ok, S};
