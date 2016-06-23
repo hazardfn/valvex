@@ -7,7 +7,7 @@
    [kernel,
     stdlib,
     gun,
-    jsone
+    jsx
    ]},
   {env,[ {queues,           []}
        , {pushback_enabled, true}

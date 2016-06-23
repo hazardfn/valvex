@@ -5,7 +5,6 @@ otp_release:
   - 18.2
   - 18.2.1
 script:
-  - ./rebar3 dialyzer
-  - ./rebar3 xref
+  - make check
   - make test
-  - ./rebar3 edoc
+  - make docs

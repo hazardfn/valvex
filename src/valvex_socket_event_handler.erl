@@ -105,13 +105,8 @@ handle_event({push_complete, {Key, {threshold, Threshold}, {timeout, Timeout, se
             },
   gun:ws_send(Gun, jsonify(Event)),
   {ok, S};
-handle_event({push_to_locked_queue, {Key, {threshold, Threshold}, {timeout, Timeout, seconds}, {pushback, Pushback, seconds}, {poll_rate, Poll, ms}, Backend}}, #{ gun := Gun} = S) ->
+handle_event({push_to_locked_queue, Key}, #{ gun := Gun} = S) ->
   Event  = #{ key => Key
-            , threshold => Threshold
-            , timeout   => Timeout
-            , pushback  => Pushback
-            , poll_rate => Poll
-            , backend   => Backend
             , event     => push_to_locked_queue
             },
   gun:ws_send(Gun, jsonify(Event)),
@@ -178,7 +173,7 @@ handle_event({timeout, Key}, #{ gun := Gun } = S) ->
   gun:ws_send(Gun, jsonify(Event)),
   {ok, S};
 handle_event({result, Result}, #{ gun := Gun } = S) ->
-  Event  = #{ result    => Result
+  Event  = #{ result    => lists:flatten(io_lib:format("~s", [Result]))
             , event     => result
             },
   gun:ws_send(Gun, jsonify(Event)),
@@ -232,7 +227,7 @@ terminate(_Reason, #{ gun := Gun }) ->
   gun:shutdown(Gun).
 
 jsonify(Event) ->
-  {binary, jsone:encode(Event)}.
+  {binary, jsx:encode(Event)}.
 
 %%%_* Emacs ====================================================================
 %%% Local Variables:
