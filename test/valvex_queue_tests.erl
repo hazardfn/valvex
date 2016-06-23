@@ -48,6 +48,7 @@ init_per_testcase(TestCase, Config) ->
   valvex_queue:stop_consumer(valvex_queue_lifo_backend, test_lifo),
   ok = queue_consumer_stopped(),
   valvex:remove_handler(valvex, valvex_message_event_handler, []),
+  c:flush(),
   ?MODULE:TestCase({init, Config}).
 
 end_per_testcase(TestCase, Config)  ->
