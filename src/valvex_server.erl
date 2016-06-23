@@ -212,17 +212,14 @@ handle_call({add, { Key
                 }};
 handle_call(get_workers, _From, #{ available_workers := Workers } = S) ->
   {reply, Workers, S};
-handle_call( {assign_work, {Work, Timestamp}, {_Key, QPid, Backend}}
+handle_call( {assign_work, {Work, Timestamp}, {Key, QPid, Backend}}
            , _From, #{ available_workers := Workers } = S) ->
   case Workers == [] of
     false ->
       [Worker | T] = Workers,
       Valvex = self(),
       WorkFun = fun() ->
-                    case is_process_alive(Worker) of
-                      true  -> valvex:notify(Valvex, {result, Work()});
-                      false -> valvex:notify(Valvex, {worker_dead, Worker})
-                    end
+                    valvex:notify(Valvex, {result, Work(), Key})
                 end,
       gen_server:cast(Worker, {work, WorkFun}),
       {noreply, S#{ available_workers := T }};

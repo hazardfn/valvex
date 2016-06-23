@@ -29,9 +29,9 @@ Here is an example of how to create a queue at run time and push work to it then
 
 ````erlang
 %% Add a queue with the key randomqueue that has a threshold of 1, a
-%% timeout of 10 seconds, a pushback of 10 seconds, a poll rate of 
-%% 100ms and uses the valvex_queue_fifo_backend. there are various 
-%% options you can supply to add to change the behaviour, read the API 
+%% timeout of 10 seconds, a pushback of 10 seconds, a poll rate of
+%% 100ms and uses the valvex_queue_fifo_backend. there are various
+%% options you can supply to add to change the behaviour, read the API
 %% docs for more info.
 %%
 %% We shall use the message_event_handler which is not recommended as
@@ -254,10 +254,10 @@ Valid events:
 * {queue_started, Q} - Triggered on start_link
 * {queue_popped, Q} - Triggered when pop is called
 * {queue_popped_r, Q} - Triggered when pop_r is called
-* {queue_push, Q, Work} - Triggered when push is called, regardless of outcome
-* {queue_push_r, Q, Work} - See push.
-* {push_complete, Q, Work} - Triggered when the push operation was a success
-* {push_to_locked_queue, Q, Work} - Triggered when there's an attempt
+* {queue_push, Q} - Triggered when push is called, regardless of outcome
+* {queue_push_r, Q} - See push.
+* {push_complete, Q} - Triggered when the push operation was a success
+* {push_to_locked_queue, Q} - Triggered when there's an attempt
   to push to a locked queue
 * {queue_removed, Key} - Triggered when a tombstoned queue is finally removed
 * {queue_tombstoned, Q} - Triggered when a queue is marked to die
@@ -265,7 +265,7 @@ Valid events:
 * {queue_unlocked, Q} - Triggered when a queue is unlocked
 * {queue_consumer_started, Q} - Triggered when the consumer is started
 * {queue_consumer_stopped, Q} - Triggered when the consumer is stopped
-* {timeout, QKey} - Triggered when the work goes stale
-* {result, Result} - Triggered when work is finally over
+* {timeout, Key} - Triggered when the work goes stale
+* {result, Result, Key} - Triggered when work is finally over
 * {threshold_hit, Q} - Triggered when a push is attempted but there's
   already too many items.
