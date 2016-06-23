@@ -508,6 +508,8 @@ queue_consumer_started() ->
       ok;
     _ ->
       throw(unexpected_message)
+    after 1000 ->
+     ok
   end.
 
 queue_tombstoned() ->
@@ -522,6 +524,8 @@ queue_consumer_stopped() ->
   receive
     {queue_consumer_stopped, _} ->
       ok;
+    {queue_consumer_started, _} ->
+      ok = queue_consumer_stopped();
     Msg ->
       throw({unexpected_message, Msg})
   end.
