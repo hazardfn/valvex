@@ -7,5 +7,5 @@ otp_release:
 script:
   - ./rebar3 dialyzer
   - ./rebar3 xref
-  - ./rebar3 eunit
+  - make test
   - ./rebar3 edoc
