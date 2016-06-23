@@ -48,12 +48,12 @@ init_per_testcase(TestCase, Config) ->
   valvex_queue:stop_consumer(valvex_queue_lifo_backend, test_lifo),
   ok = queue_consumer_stopped(),
   valvex:remove_handler(valvex, valvex_message_event_handler, []),
-  c:flush(),
+  flush(),
   ?MODULE:TestCase({init, Config}).
 
 end_per_testcase(TestCase, Config)  ->
   application:stop(valvex),
-  c:flush(),
+  flush(),
   ?MODULE:TestCase({'end', Config}).
 
 all()      ->
@@ -662,6 +662,14 @@ wait_until_killed(Key) ->
       wait_until_killed(Key)
   end.
 
+flush() ->
+    receive
+        M -> 
+            io:format("Shell got ~p~n",[M]),
+            flush()
+    after 0 ->
+        ok
+    end.
 
 %%%_* Emacs ============================================================
 %%% Local Variables:
