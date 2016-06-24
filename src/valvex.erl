@@ -89,6 +89,7 @@
 -spec start_link(valvex_options()) -> {ok, valvex_ref()}.
 start_link(Options) ->
   Pid = valvex_server:start_link(Options),
+  lager:info("Valvex server started: ~p", [Pid]),
   {ok, Pid}.
 
 %% @doc Adds a queue to valvex using the default option undefined.

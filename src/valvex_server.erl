@@ -179,6 +179,7 @@ handle_call({get_queue, Key}, _From, #{ queue_pids := Queues } = S) ->
     false ->
       {reply, {error, key_not_found}, S};
     {Key, _Backend} = Queue ->
+      lager:info("get_queue found: ~p", [Queue]),
       {reply, Queue, S}
   end;
 handle_call({get_raw_queue, Key}, _From, #{ queue_pids := Queues
@@ -188,7 +189,9 @@ handle_call({get_raw_queue, Key}, _From, #{ queue_pids := Queues
     false ->
       {reply, {error, key_not_found}, S};
     {Key, _Backend} ->
-      {reply, lists:keyfind(Key, 1, RawQueues), S}
+      RawQ = lists:keyfind(Key, 1, RawQueues),
+      lager:info("get_raw_queue found: ~p", [RawQ]),
+      {reply, RawQ, S}
   end;
 handle_call({add, { Key
                   , _Threshold
@@ -207,10 +210,12 @@ handle_call({add, { Key
     true -> ok
   end,
   NewQPids  = lists:append(QPids, [{Key, Backend}]),
+  lager:info("queue added: ~p", [Q]),
   {reply, ok, S#{ queues     := NewQueues
                 , queue_pids := NewQPids
                 }};
 handle_call(get_workers, _From, #{ available_workers := Workers } = S) ->
+  lager:info("List of workers requested: ~p", [Workers]),
   {reply, Workers, S};
 handle_call( {assign_work, {Work, Timestamp}, {Key, QPid, Backend}}
            , _From, #{ available_workers := Workers } = S) ->
@@ -240,12 +245,14 @@ handle_call( {add_handler, Module, Args}
            , _From
            , #{ event_server := EventServer} = S
            ) ->
+  lager:info("Handler added Module:~p, Args:~p", [Module, Args]),
   ok = gen_event:add_handler(EventServer, Module, Args),
   {reply, ok, S};
 handle_call( {remove_handler, Module, Args}
            , _From
            , #{ event_server := EventServer} = S
            ) ->
+  lager:info("Handler removed Module:~p, Args:~p", [Module, Args]),
   ok = gen_event:delete_handler(EventServer, Module, Args),
   {reply, ok, S};
 handle_call({update, Key, { Key
@@ -256,6 +263,7 @@ handle_call({update, Key, { Key
                           , Backend} = Q}, _From, #{ queues     := Queues
                                                   , queue_pids := QPids
                                                   } = S) ->
+  lager:info("Queue options updated Key:~p, Update:~p", [Key, Q]),
   NewQueues = lists:append(lists:keydelete(Key, 1, Queues), [Q]),
   NewQPids  = lists:append(lists:keydelete(Key, 1, QPids), [{Key, Backend}]),
   {reply, ok, S#{ queues     := NewQueues
@@ -282,19 +290,23 @@ handle_cast({push, Key, Value}, #{queue_pids := Queues} = S) ->
     {Key, Backend} ->
       case maybe_locked(Key, Backend) of
         false ->
+          lager:info("Work pushed - Key:~p, Value:~p", [Key, Value]),
           valvex_queue:push(Backend, Key, Value),
           {noreply, S};
         true ->
+          lager:warning("Pushed to a locked queue: ~p", [Key]),
           valvex:notify(self(), {push_to_locked_queue, Key}),
           {noreply, S}
       end
   end;
 handle_cast( {work_finished, WorkerPid}
            , #{ available_workers := Workers } = S) ->
+  lager:info("Work has finished and a worker has been free'd: ~p", [WorkerPid]),
   {noreply, S#{ available_workers := lists:append(Workers, [WorkerPid]) }};
 handle_cast({notify, Event}
            , #{ event_server := EventServer } = S
            ) ->
+  lager:info("Event sent to subscribers: ~p", [Event]),
   gen_event:notify(EventServer, Event),
   {noreply, S}.
 
@@ -319,6 +331,7 @@ do_add(Valvex, {Key, _, _, _, _, _} = Q, undefined) ->
     {error, key_not_found} ->
       gen_server:call(Valvex, {add, Q, undefined});
     _ ->
+      lager:error("Attempted to add a non-unique key: ~p", [Key]),
       {error, key_not_unique}
   end;
 do_add(Valvex, {Key, _, _, _, _, Backend} = Q, crossover_on_existing) ->
@@ -326,13 +339,17 @@ do_add(Valvex, {Key, _, _, _, _, Backend} = Q, crossover_on_existing) ->
     {error, key_not_found} ->
       do_add(Valvex, Q, undefined);
     {Key, Backend} ->
-      valvex_queue:crossover(Backend, Key, Q)
+      valvex_queue:crossover(Backend, Key, Q);
+    _ ->
+      lager:error("Attempted to switch backend/key - operation not supported"),
+      {error, backend_key_crossover_not_supported}
   end;
 do_add(Valvex, {Key, _, _, _, _, Backend} = Q, manual_start) ->
   case get_queue(Valvex, Key) of
     {error, key_not_found} ->
       gen_server:call(Valvex, {add, Q, manual_start});
     {Key, Backend} ->
+      lager:error("Attempted to add a non-unique key: ~p", [Key]),
       {error, key_not_unique}
   end.
 
