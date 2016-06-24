@@ -229,14 +229,14 @@ handle_event({queue_removed, Key}, #{ gun := Gun } = S) ->
             },
   gun:ws_send(Gun, jsonify(Event)),
   {ok, S};
-handle_event({work_requeued, Key, AvailableWorkers} = Event, #{ gun := Gun } = S) ->
+handle_event({work_requeued, Key, AvailableWorkers}, #{ gun := Gun } = S) ->
   Event = #{ key => Key
            , available_workers => AvailableWorkers
            , event => work_requeued
            },
   gun:ws_send(Gun, jsonify(Event)),
   {ok, S};
-handle_event({worker_assigned, Key, AvailableWorkers} = Event, #{ gun := Gun } = S) ->
+handle_event({worker_assigned, Key, AvailableWorkers}, #{ gun := Gun } = S) ->
   Event = #{ key => Key
            , available_workers => AvailableWorkers
            , event => work_assigned
