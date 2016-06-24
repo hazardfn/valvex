@@ -242,9 +242,7 @@ handle_event({worker_assigned, Key, AvailableWorkers} = Event, #{ gun := Gun } =
            , event => work_assigned
            },
   gun:ws_send(Gun, jsonify(Event)),
-  {ok, S};
-
-
+  {ok, S}.
 
 handle_info(_, State) ->
   {ok, State}.
