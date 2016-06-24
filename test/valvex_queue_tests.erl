@@ -242,11 +242,13 @@ test_queue_consumer_fifo(Config) when is_list(Config)   ->
   valvex:push(valvex, test_fifo, SecondTestFun),
   ok = push_flow_unlocked(SecondTestFun, false),
   ok = queue_popped(FirstTestFun, false),
+  ok = worker_assigned(),
   receive
     FirstItem ->
       ?assertEqual(FirstItem, {result, "First Test Complete", test_fifo})
   end,
   ok = queue_popped(SecondTestFun, false),
+  ok = worker_assigned(),
   receive
     SecondItem ->
       ?assertEqual(SecondItem, {result, "Second Test Complete", test_fifo})
@@ -289,11 +291,13 @@ test_queue_consumer_lifo(Config) when is_list(Config)   ->
   valvex:push(valvex, test_lifo, SecondTestFun),
   ok = push_flow_unlocked(SecondTestFun, false),
   ok = queue_popped(SecondTestFun, false),
+  ok = worker_assigned(),
   receive
     SecondItem ->
       ?assertEqual(SecondItem, {result, "Second Test Complete", test_lifo})
   end,
   ok = queue_popped(FirstTestFun, false),
+  ok = worker_assigned(),
   receive
     FirstItem ->
       ?assertEqual(FirstItem, {result, "First Test Complete", test_lifo})
@@ -342,11 +346,13 @@ test_queue_tombstone_fifo(Config) when is_list(Config)   ->
   valvex_queue:start_consumer(valvex_queue_fifo_backend, test_fifo),
   ok = queue_consumer_started(),
   ok = queue_popped(FirstTestFun, false),
+  ok = worker_assigned(),
   receive
     FirstItem ->
       ?assertEqual(FirstItem, {result, "First Test Complete", test_fifo})
   end,
   ok = queue_popped(SecondTestFun, false),
+  ok = worker_assigned(),
   receive
     SecondItem ->
       ?assertEqual(SecondItem, {result, "Second Test Complete", test_fifo})
@@ -381,11 +387,13 @@ test_queue_tombstone_lifo(Config) when is_list(Config)   ->
   valvex_queue:start_consumer(valvex_queue_lifo_backend, test_lifo),
   ok = queue_consumer_started(),
   ok = queue_popped(SecondTestFun, false),
+  ok = worker_assigned(),
   receive
     SecondItem ->
       ?assertEqual(SecondItem, {result, "Second Test Complete", test_lifo})
   end,
   ok = queue_popped(FirstTestFun, false),
+  ok = worker_assigned(),
   receive
     FirstItem ->
       ?assertEqual(FirstItem, {result, "First Test Complete", test_lifo})
@@ -536,6 +544,14 @@ queue_unlocked() ->
       ok;
     Msg ->
       throw(Msg)
+  end.
+
+worker_assigned() ->
+  receive
+    {worker_assigned, _, _} ->
+      ok;
+    Msg ->
+      throw({unexpected_msg, Msg})
   end.
 
 queue_locked() ->

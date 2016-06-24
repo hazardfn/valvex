@@ -64,6 +64,12 @@ handle_event({result, _Result, _Key} = Event, #{ receiver := Pid } = S) ->
 handle_event({threshold_hit, _Q} = Event, #{ receiver := Pid } = S) ->
   Pid ! Event,
   {ok, S};
+handle_event({work_requeued, _Key, _AvailableWorkers} = Event, #{ receiver := Pid } = S) ->
+  Pid ! Event,
+  {ok, S};
+handle_event({worker_assigned, _Key, _AvailableWorkers} = Event, #{ receiver := Pid } = S) ->
+  Pid ! Event,
+  {ok, S};
 handle_event({queue_crossover, _Q, _NuQ} = Event, #{ receiver := Pid } = S) ->
   Pid ! Event,
   {ok, S};

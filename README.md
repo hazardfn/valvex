@@ -101,6 +101,40 @@ Value: 5000
 ok
 ````
 
+Concepts
+--------
+
+This section gives you a brief overview of the terminology used in
+valvex.
+
+#### Locking:
+
+A locked queue cannot be pushed to, pushing to a locked queue will
+stil however yield the response ok as it's an asynchronous
+operation. Lock a queue when you are deprecating it, all work that is
+on the queue once locked will be processed as normal.
+
+#### Tombstone:
+
+A tombstoned queue is queued for deletion and will be removed once it
+is empty - a locked and tombstoned queue is the only true guarantee a
+queue will be removed, you can tombstone a queue without locking it
+meaning it will stay up as long as it continues to receive work but
+will die once empty.
+
+#### Crossover:
+
+A crossover is a fancy name for replacing options of one queue with a
+new set of options, when I say options I am talking about everything
+except the backend and key. If the backend and key are not the same
+the crossover operation will fail.
+
+If you wish to change the key simply create a new queue and begin
+using that and tombstone the old one.
+
+To change the backend you will have to add a new queue with a
+different key (see above) and the changed backend and use that instead.
+
 API
 --------
 
@@ -269,3 +303,7 @@ Valid events:
 * {result, Result, Key} - Triggered when work is finally over
 * {threshold_hit, Q} - Triggered when a push is attempted but there's
   already too many items.
+* {work_requeued, Key, AvailableWorkers} - Triggered when work is
+  requeued
+* {work_assigned, Key, AvailableWorkers} - Triggered when a worker is
+  assigned work

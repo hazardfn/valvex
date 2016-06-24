@@ -4,6 +4,7 @@
 
 -export([ start_link/1
         , stop/1
+        , work/2
         ]).
 
 -export([ code_change/3
@@ -21,6 +22,9 @@
 start_link(Valvex) ->
   {ok, Pid} = gen_server:start_link(?MODULE, Valvex, []),
   Pid.
+
+work(Worker, Work) ->
+  gen_server:cast(Worker, Work).
 
 -spec stop(valvex:valvex_ref()) -> ok.
 stop(Valvex) ->

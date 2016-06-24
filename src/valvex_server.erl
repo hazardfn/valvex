@@ -221,9 +221,11 @@ handle_call( {assign_work, {Work, Timestamp}, {Key, QPid, Backend}}
       WorkFun = fun() ->
                     valvex:notify(Valvex, {result, Work(), Key})
                 end,
-      gen_server:cast(Worker, {work, WorkFun}),
+      valvex:notify(Valvex, {worker_assigned, Worker, T}),
+      valvex_worker:work(Worker, {work, WorkFun}),
       {noreply, S#{ available_workers := T }};
     true ->
+      valvex:notify(self(), {work_requeued, Key, []}),
       valvex_queue:push_r(Backend, QPid, {Work, Timestamp}),
       {noreply, S}
   end;
@@ -319,7 +321,7 @@ do_add(Valvex, {Key, _, _, _, _, _} = Q, undefined) ->
     _ ->
       {error, key_not_unique}
   end;
-do_add(Valvex, {Key, _, _, _, _, _} = Q, crossover_on_existing) ->
+do_add(Valvex, {Key, _, _, _, _, Backend} = Q, crossover_on_existing) ->
   case get_queue(Valvex, Key) of
     {error, key_not_found} ->
       do_add(Valvex, Q, undefined);
