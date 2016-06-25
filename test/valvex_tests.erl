@@ -137,8 +137,8 @@ test_consumer(Config) when is_list(Config)   ->
   Seq = lists:seq(0, 10),
   lists:foreach(LifoPushFun, Seq),
   lists:foreach(FifoPushFun, Seq),
-  ?assertEqual(ok, do_until(LifoSizeFun, 0, 10000)),
-  ?assertEqual(ok, do_until(FifoSizeFun, 0, 10000)),
+  ?assertEqual(ok, do_until(LifoSizeFun, 0, 999999)),
+  ?assertEqual(ok, do_until(FifoSizeFun, 0, 999999)),
   %% Ensure stopping the consumer twice doesn't cause errors
   ?assertEqual(ok, valvex_queue:stop_consumer(valvex_queue_lifo_backend, KeyLifo)),
   ?assertEqual(ok, valvex_queue:stop_consumer(valvex_queue_fifo_backend, KeyFifo)),
@@ -195,8 +195,8 @@ test_crossover(Config) when is_list(Config)   ->
   valvex:add(Valvex, UpdatedQLifo, crossover_on_existing),
   valvex:add(Valvex, UpdatedQFifo, crossover_on_existing),
   %% Verify the queues are updated
-  ?assertEqual(ok, do_until(RawLifoFun, UpdatedQLifo, 30)),
-  ?assertEqual(ok, do_until(RawFifoFun, UpdatedQFifo, 30)).
+  ?assertEqual(ok, do_until(RawLifoFun, UpdatedQLifo, 999999)),
+  ?assertEqual(ok, do_until(RawFifoFun, UpdatedQFifo, 999999)).
 
 test_crossover_errors(suite)                         -> [];
 test_crossover_errors({init, Config})                -> Config;
@@ -294,8 +294,8 @@ test_crossover_errors(Config) when is_list(Config)   ->
               , valvex:add(Valvex, UpdatedBothQFifo, crossover_on_existing)),
 
   %% Verify the queues are the same as when we started
-  ?assertEqual(ok, do_until(RawLifoFun, RawQLifo, 30)),
-  ?assertEqual(ok, do_until(RawFifoFun, RawQFifo, 30)).
+  ?assertEqual(ok, do_until(RawLifoFun, RawQLifo, 999999)),
+  ?assertEqual(ok, do_until(RawFifoFun, RawQFifo, 999999)).
 
 test_get_available_workers(suite)                         -> [];
 test_get_available_workers({init, Config})                -> Config;
@@ -354,12 +354,12 @@ test_locking(Config) when is_list(Config)   ->
   %% Test once they are unlocked they can be pushed to
   ?assertEqual(ok, valvex_queue:stop_consumer(valvex_queue_lifo_backend, KeyLifo)),
   ?assertEqual(ok, valvex_queue:stop_consumer(valvex_queue_fifo_backend, KeyFifo)),
-  ?assertEqual(ok, do_until(LifoConFun, false, 30)),
-  ?assertEqual(ok, do_until(FifoConFun, false, 30)),
+  ?assertEqual(ok, do_until(LifoConFun, false, 999999)),
+  ?assertEqual(ok, do_until(FifoConFun, false, 999999)),
   ?assertEqual(ok, valvex:push(Valvex, KeyLifo, WorkFun)),
   ?assertEqual(ok, valvex:push(Valvex, KeyFifo, WorkFun)),
-  ?assertEqual(ok, do_until(LifoSizeFun, 1, 30)),
-  ?assertEqual(ok, do_until(FifoSizeFun, 1, 30)).
+  ?assertEqual(ok, do_until(LifoSizeFun, 1, 999999)),
+  ?assertEqual(ok, do_until(FifoSizeFun, 1, 999999)).
 
 test_pop(suite)                         -> [];
 test_pop({init, Config})                -> Config;
@@ -391,8 +391,8 @@ test_pop(Config) when is_list(Config)   ->
   ?assertEqual(ok, valvex:push(Valvex, KeyLifo, SecondWorkFun)),
   ?assertEqual(ok, valvex:push(Valvex, KeyFifo, FirstWorkFun)),
   ?assertEqual(ok, valvex:push(Valvex, KeyFifo, SecondWorkFun)),
-  ?assertEqual(ok, do_until(LifoSizeFun, 2, 30)),
-  ?assertEqual(ok, do_until(FifoSizeFun, 2, 30)),
+  ?assertEqual(ok, do_until(LifoSizeFun, 2, 999999)),
+  ?assertEqual(ok, do_until(FifoSizeFun, 2, 999999)),
   %% Pop queues and check correct order
   ?assertMatch({{value, {SecondWorkFun, _}}, _}, valvex_queue:pop(valvex_queue_lifo_backend, KeyLifo)),
   ?assertMatch({{value, {FirstWorkFun, _}}, _}, valvex_queue:pop(valvex_queue_lifo_backend, KeyLifo)),
@@ -429,8 +429,8 @@ test_pop_r(Config) when is_list(Config)   ->
   ?assertEqual(ok, valvex:push(Valvex, KeyLifo, SecondWorkFun)),
   ?assertEqual(ok, valvex:push(Valvex, KeyFifo, FirstWorkFun)),
   ?assertEqual(ok, valvex:push(Valvex, KeyFifo, SecondWorkFun)),
-  ?assertEqual(ok, do_until(LifoSizeFun, 2, 30)),
-  ?assertEqual(ok, do_until(FifoSizeFun, 2, 30)),
+  ?assertEqual(ok, do_until(LifoSizeFun, 2, 999999)),
+  ?assertEqual(ok, do_until(FifoSizeFun, 2, 999999)),
   %% Pop queues and check correct order
   ?assertMatch({{value, {FirstWorkFun, _}}, _}, valvex_queue:pop_r(valvex_queue_lifo_backend, KeyLifo)),
   ?assertMatch({{value, {SecondWorkFun, _}}, _}, valvex_queue:pop_r(valvex_queue_lifo_backend, KeyLifo)),
@@ -506,29 +506,29 @@ test_remove(Config) when is_list(Config)   ->
   %% Stop the consumer of the lifo queue so we can test it hangs around
   %% when a normal remove is done
   ?assertEqual(ok, valvex_queue:stop_consumer(valvex_queue_lifo_backend, KeyLifo)),
-  ?assertEqual(ok, do_until(LifoConFun, false, 30)),
+  ?assertEqual(ok, do_until(LifoConFun, false, 999999)),
   ?assertEqual(ok, valvex:push(Valvex, KeyLifo, RawLifoFun)),
-  ?assertEqual(ok, do_until(LifoSizeFun, 1, 30)),
+  ?assertEqual(ok, do_until(LifoSizeFun, 1, 999999)),
   ?assertEqual(ok, valvex:remove(Valvex, KeyLifo)),
   ?assertEqual(true, valvex_queue:is_tombstoned(valvex_queue_lifo_backend, KeyLifo)),
   ?assertEqual(ok, valvex_queue:start_consumer(valvex_queue_lifo_backend, KeyLifo)),
-  ?assertEqual(ok, do_until(LifoConFun, true, 30)),
-  ?assertEqual(ok, do_until(LifoSizeFun, 0, 1000)),
-  ?assertEqual(ok, do_until(RawLifoFun, {error, key_not_found}, 1000)),
+  ?assertEqual(ok, do_until(LifoConFun, true, 999999)),
+  ?assertEqual(ok, do_until(LifoSizeFun, 0, 999999)),
+  ?assertEqual(ok, do_until(RawLifoFun, {error, key_not_found}, 999999)),
   %% Stop the consumer of the fifo queue so we can test locking
   ?assertEqual(ok, valvex_queue:stop_consumer(valvex_queue_fifo_backend, KeyFifo)),
-  ?assertEqual(ok, do_until(FifoConFun, false, 30)),
+  ?assertEqual(ok, do_until(FifoConFun, false, 9999999)),
   ?assertEqual(ok, valvex:push(Valvex, KeyFifo, RawFifoFun)),
-  ?assertEqual(ok, do_until(FifoSizeFun, 1, 30)),
+  ?assertEqual(ok, do_until(FifoSizeFun, 1, 9999999)),
   ?assertEqual(ok, valvex:remove(Valvex, KeyFifo, lock_queue)),
   ?assert(valvex_queue:is_locked(valvex_queue_fifo_backend, KeyFifo)),
   %% Push work to the PBTest queue so we can be sure force remove doesn't care
   ?assertEqual(ok, valvex_queue:stop_consumer(valvex_queue_fifo_backend, KeyPBTest)),
-  ?assertEqual(ok, do_until(PBTestConFun, false, 30)),
+  ?assertEqual(ok, do_until(PBTestConFun, false, 999999)),
   ?assertEqual(ok, valvex:push(Valvex, KeyPBTest, RawPBTestFun)),
-  ?assertEqual(ok, do_until(FifoSizeFun, 1, 30)),
+  ?assertEqual(ok, do_until(FifoSizeFun, 1, 9999999)),
   ?assertEqual(ok, valvex:remove(Valvex, KeyPBTest, force_remove)),
-  ?assertEqual(ok, do_until(RawPBTestFun, {error, key_not_found}, 1000)).
+  ?assertEqual(ok, do_until(RawPBTestFun, {error, key_not_found}, 999999)).
 
 test_tombstone(suite)                         -> [];
 test_tombstone({init, Config})                -> Config;
