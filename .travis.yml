@@ -8,3 +8,7 @@ script:
   - make check
   - make test
   - make docs
+env:
+  global:
+  - ENCRYPTION_LABEL: "a083722bc806"
+  - COMMIT_AUTHOR_EMAIL: "travis@valvex.io"

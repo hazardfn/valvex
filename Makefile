@@ -11,7 +11,7 @@ rel:
 xref:
 	./rebar3 xref
 docs:
-	./rebar3 edoc
+	./update-docs
 
 check: compile dialyzer xref
 
