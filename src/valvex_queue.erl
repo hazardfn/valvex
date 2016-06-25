@@ -13,6 +13,7 @@
 -module(valvex_queue).
 
 -export([ crossover/3
+        , is_consuming/2
         , is_locked/2
         , is_tombstoned/2
         , lock/2
@@ -56,6 +57,8 @@
 
 -callback crossover(Q :: valvex:valvex_ref(), NuQ :: valvex:valvex_queue()) -> ok.
 
+-callback is_consuming(Q :: valvex:valvex_ref() ) -> true | false.
+
 -callback is_locked(Q :: valvex:valvex_ref() ) -> true | false.
 
 -callback is_tombstoned(Q :: valvex:valvex_ref() ) -> true | false.
@@ -92,6 +95,11 @@
 -spec crossover(valvex:queue_backend(), valvex:valvex_ref(), valvex:valvex_queue()) -> ok.
 crossover(Backend, Q, NuQ) ->
   Backend:crossover(Q, NuQ).
+
+%% @doc Returns true if the consumer is started, false otherwise.
+-spec is_consuming(valvex:queue_backend(), valvex:valvex_ref()) -> true | false.
+is_consuming(Backend, Q) ->
+  Backend:is_consuming(Q).
 
 %% @doc Whenever needed this should reply true or false depending on if
 %% the queue is locked, a locked queue is one that cannot be pushed to

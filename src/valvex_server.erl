@@ -357,7 +357,8 @@ do_remove(Valvex, Key, undefined) ->
   case get_queue(Valvex, Key) of
     {Key, Backend} ->
       valvex_queue:tombstone(Backend, Key);
-    Error ->
+    {error, key_not_found} = Error ->
+      lager:error("Attempted to remove a non-existing key: ~p", [Key]),
       Error
   end;
 do_remove(Valvex, Key, lock_queue) ->
@@ -365,7 +366,8 @@ do_remove(Valvex, Key, lock_queue) ->
     {Key, Backend} ->
       valvex_queue:lock(Backend, Key),
       valvex_queue:tombstone(Backend, Key);
-    Error ->
+    {error, key_not_found} = Error ->
+      lager:error("Attempted to remove a non-existing key: ~p", [Key]),
       Error
   end;
 do_remove(Valvex, Key, force_remove) ->
@@ -373,6 +375,7 @@ do_remove(Valvex, Key, force_remove) ->
     {Key, _Backend}          ->
       gen_server:call(Valvex, {remove, Key});
     {error, key_not_found} = Error ->
+      lager:error("Attempted to remove a non-existing key: ~p", [Key]),
       Error
   end.
 

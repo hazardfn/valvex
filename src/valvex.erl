@@ -127,21 +127,7 @@ add(Valvex, { _Key
             , {poll_rate, _Poll, ms}
             , _Backend
             } = Q, Option) ->
-  valvex_server:add(Valvex, Q, Option);
-add(Valvex, { Key
-            , Threshold
-            , Timeout
-            , Pushback
-            , Poll
-            , Backend
-            }, Option) ->
-  valvex:add(Valvex, { Key
-                     , {threshold, Threshold}
-                     , {timeout, Timeout, seconds}
-                     , {pushback, Pushback, seconds}
-                     , {poll_rate, Poll, ms}
-                     , Backend
-                     }, Option).
+  valvex_server:add(Valvex, Q, Option).
 
 %% @doc removes a queue from valvex with the default setting. see remove/3 for more info.
 %% @see remove/3
@@ -227,6 +213,7 @@ remove_handler(Valvex, Module, Args) ->
   valvex_server:remove_handler(Valvex, Module, Args).
 
 %% @doc Updates a key with a new set of queue settings.
+-spec update(valvex_ref(), queue_key(), valvex_queue()) -> ok.
 update(Valvex, Key, NuQ) ->
   valvex_server:update(Valvex, Key, NuQ).
 

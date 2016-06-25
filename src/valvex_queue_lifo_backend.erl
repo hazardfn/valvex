@@ -21,6 +21,7 @@
 
 -export([ consume/5
         , crossover/2
+        , is_consuming/1
         , is_locked/1
         , is_tombstoned/1
         , lock/1
@@ -67,6 +68,11 @@ consume(Valvex, QPid, Backend, Key, Timeout) ->
 crossover(Q, NuQ) ->
   gen_server:cast(Q, {crossover, NuQ}),
   gen_server:cast(Q, restart_consumer).
+
+%% @doc returns true if the consumer is active.
+-spec is_consuming(valvex:valvex_ref()) -> true | false.
+is_consuming(Q) ->
+  gen_server:call(Q, is_consuming).
 
 %% @doc returns true if the queue is locked, more details about what that means
 %% exist in the readme.
@@ -199,6 +205,11 @@ handle_call(pop_r, _From, #{ queue      := Q0
                            } = S) ->
   Value = queue:out(Q0),
   evaluate_value(Valvex, Tombstone, Size, RawQ, Value, queue_popped_r, S);
+handle_call(is_consuming, _From, #{ consumer := Consumer} = S) ->
+  case Consumer of
+    undefined -> {reply, false, S};
+    _         -> {reply, true, S}
+    end;
 handle_call(is_locked, _From, #{ locked := Locked } = S) ->
   {reply, Locked, S};
 handle_call(is_tombstoned, _From, #{ tombstoned := Tombstoned } = S) ->
@@ -218,29 +229,15 @@ handle_call(size, _From, #{ size := Size } = S) ->
 handle_cast({push, {Work, _Timestamp} = Value}, #{ valvex    := Valvex
                                                  , q         := RawQ
                                                  , queue     := Q
-                                                 , locked    := Locked
                                                  } = S) ->
   valvex:notify(Valvex, {queue_push, RawQ}),
-  case Locked of
-    true  ->
-      valvex:notify(Valvex, {push_to_locked_queue, RawQ}),
-      {noreply, S};
-    false ->
-      evaluate_push(S, queue:in(Value, Q), Work)
-  end;
+  evaluate_push(S, queue:in(Value, Q), Work);
 handle_cast( {push_r, {Work, _Timestamp} = Value}, #{ valvex    := Valvex
                                                     , q         := RawQ
                                                     , queue     := Q
-                                                    , locked    := Locked
                                                     } = S) ->
   valvex:notify(Valvex, {queue_push_r, RawQ}),
-  case Locked of
-    true  ->
-      valvex:notify(Valvex, {push_to_locked_queue, RawQ}),
-      {noreply, S};
-    false ->
-      evaluate_push(S, queue:in_r(Value, Q), Work)
-  end;
+  evaluate_push(S, queue:in_r(Value, Q), Work);
 handle_cast(lock, #{ valvex := Valvex, q := RawQ } = S) ->
   valvex:notify(Valvex, {queue_locked, RawQ}),
   {noreply, S#{ locked := true }};
@@ -257,11 +254,16 @@ handle_cast({crossover, NuQ}, #{ key      := Key
                                } = S) ->
   valvex:notify(Valvex, {queue_crossover, RawQ, NuQ}),
   case TRef of
-    undefined -> ok;
-    _ ->  stop_consumer(Key)
-  end,
-  valvex:update(Valvex, Key, NuQ),
-  do_crossover(NuQ, S);
+    undefined ->
+      valvex:update(Valvex, Key, NuQ),
+      do_crossover(NuQ, S);
+    _ ->
+      stop_consumer(Key),
+      valvex:update(Valvex, Key, NuQ),
+      Reply = do_crossover(NuQ, S),
+      start_consumer(Key),
+      Reply
+  end;
 handle_cast(start_consumer, #{ valvex     := Valvex
                              , queue_pid  := QPid
                              , backend    := Backend
