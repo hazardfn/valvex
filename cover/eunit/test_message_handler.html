@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/eunit/test_message_handler.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/test_message_handler.erl by COVER 2016-06-26 at 16:00:13
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/test_message_handler.erl by COVER 2016-06-26 at 16:04:08
 
 ****************************************************************************
 
@@ -13,13 +13,13 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  -export([loop/0]).
         |  
         |  loop() -&gt;
-   496..|      receive
+   510..|      receive
         |          {queue_started, _Q} -&gt;
     12..|              ok,
     12..|              loop();
         |          {queue_popped, _Q} -&gt;
-    84..|              ok,
-    84..|              loop();
+    88..|              ok,
+    88..|              loop();
         |          {queue_popped_r, _Q} -&gt;
      8..|              ok,
      8..|              loop();
@@ -27,11 +27,11 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
     70..|              ok,
     70..|              loop();
         |          {queue_push_r, _Q} -&gt;
-    34..|              ok,
-    34..|              loop();
+    38..|              ok,
+    38..|              loop();
         |          {push_complete, _Q} -&gt;
-   100..|              ok,
-   100..|              loop();
+   104..|              ok,
+   104..|              loop();
         |          {push_to_locked_queue, _Q} -&gt;
      4..|              ok,
      4..|              loop();
@@ -45,8 +45,8 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
      4..|              ok,
      4..|              loop();
         |          {queue_consumer_started, _Q} -&gt;
-    22..|              ok,
-    22..|              loop();
+    20..|              ok,
+    20..|              loop();
         |          {queue_consumer_stopped, _Q} -&gt;
     26..|              ok,
     26..|              loop();
@@ -60,8 +60,8 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
      8..|              ok,
      8..|              loop();
         |          {work_requeued, _Key, _AvailableWorkers} -&gt;
-    34..|              ok,
-    34..|              loop();
+    38..|              ok,
+    38..|              loop();
         |          {worker_assigned, _Key, _AvailableWorkers} -&gt;
      4..|              ok,
      4..|              loop();

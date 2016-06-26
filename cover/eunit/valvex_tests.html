@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/eunit/valvex_tests.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/test/valvex_tests.erl by COVER 2016-06-26 at 16:00:13
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/test/valvex_tests.erl by COVER 2016-06-26 at 16:04:08
 
 ****************************************************************************
 
@@ -496,10 +496,10 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/te
      2..|    KeyFifo     = test_fifo,
      2..|    KeyPBTest   = test_threshold_pushback,
      2..|    RawLifoFun  = fun() -&gt;
-    54..|                      gen_server:call(Valvex, {get_raw_queue, KeyLifo})
+    52..|                      gen_server:call(Valvex, {get_raw_queue, KeyLifo})
         |                  end,
      2..|    LifoSizeFun = fun() -&gt;
-    28..|                      valvex:get_queue_size(Valvex, KeyLifo)
+    30..|                      valvex:get_queue_size(Valvex, KeyLifo)
         |                  end,
      2..|    LifoConFun  = fun() -&gt;
      4..|                      valvex_queue:is_consuming(valvex_queue_lifo_backend, KeyLifo)
@@ -560,7 +560,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/te
      2..|    KeyLifo    = test_lifo,
      2..|    KeyFifo    = test_fifo,
      2..|    RawLifoFun = fun() -&gt;
-    42..|                     gen_server:call(Valvex, {get_raw_queue, KeyLifo})
+    46..|                     gen_server:call(Valvex, {get_raw_queue, KeyLifo})
         |                 end,
      2..|    RawFifoFun = fun() -&gt;
      2..|                     gen_server:call(Valvex, {get_raw_queue, KeyFifo})
@@ -579,13 +579,13 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/te
         |  do_until(Fun, ExpectedResult, 0) -&gt;
 <font color=red>     0..|    throw({unexpected_result, Fun(), ExpectedResult});</font>
         |  do_until(Fun, ExpectedResult, N) -&gt;
- 28278..|    case Fun() of
+ 35220..|    case Fun() of
         |      ExpectedResult -&gt;
     52..|        lager:info("Expected Result was given: ~p", [ExpectedResult]),
     52..|        ok;
         |      Other              -&gt;
- 28226..|        lager:info("Unxpected Result was given attempting again: ~p", [Other]),
- 28226..|        do_until(Fun, ExpectedResult, N-1)
+ 35168..|        lager:info("Unxpected Result was given attempting again: ~p", [Other]),
+ 35168..|        do_until(Fun, ExpectedResult, N-1)
         |    end.
         |  
         |  %%%_* Emacs ============================================================

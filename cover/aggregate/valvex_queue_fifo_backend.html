@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/aggregate/valvex_queue_fifo_backend.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_queue_fifo_backend.erl by COVER 2016-06-26 at 16:00:13
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_queue_fifo_backend.erl by COVER 2016-06-26 at 16:04:08
 
 ****************************************************************************
 
@@ -206,8 +206,8 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |                           , tombstoned := Tombstone
         |                           , valvex     := Valvex
         |                           } = S) -&gt;
-   129..|    Value = queue:out(Q0),
-   129..|    evaluate_value(Valvex, Tombstone, Size, RawQ, Value, queue_popped, S);
+   128..|    Value = queue:out(Q0),
+   128..|    evaluate_value(Valvex, Tombstone, Size, RawQ, Value, queue_popped, S);
         |  handle_call(pop_r, _From, #{ queue      := Q0
         |                             , q          := RawQ
         |                             , size       := Size
@@ -340,42 +340,42 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
     21..|    erlang:unregister(Key).
         |  
         |  do_consume(Valvex, QPid, Backend, Key, Timeout) -&gt;
-10906194|    try
-10906189|      QueueValue = gen_server:call(QPid, pop),
-   127..|      case QueueValue of
+10488685|    try
+10488678|      QueueValue = gen_server:call(QPid, pop),
+   126..|      case QueueValue of
         |        {{value, {Work, Timestamp}}, _Q} -&gt;
     19..|          case is_stale(Timeout, Timestamp) of
         |            false -&gt;
-     9..|              gen_server:call(Valvex, { assign_work
+    10..|              gen_server:call(Valvex, { assign_work
         |                                      , {Work, Timestamp}
         |                                      , {Key, QPid, Backend}
         |                                      }
         |                             );
         |            true  -&gt;
-    10..|              valvex:notify(Valvex, {timeout, Key})
+     9..|              valvex:notify(Valvex, {timeout, Key})
         |          end,
-    10..|          do_consume(Valvex, QPid, Backend, Key, Timeout);
+     9..|          do_consume(Valvex, QPid, Backend, Key, Timeout);
         |        {empty, tombstoned} -&gt;
      1..|          valvex:notify(Valvex, {queue_removed, Key}),
      1..|          valvex:remove(Valvex, Key, force_remove);
         |        {empty, _} -&gt;
-   107..|          ok
+   106..|          ok
         |      end
         |    catch _Error:_Reason -&gt;
-10904469|        do_consume(Valvex, QPid, Backend, Key, Timeout)
+10486603|        do_consume(Valvex, QPid, Backend, Key, Timeout)
         |    end.
         |  
         |  update_state(Q, Size, S) -&gt;
     49..|    S#{ size := Size, queue := Q }.
         |  
         |  evaluate_value(Valvex, Tombstone, Size, RawQ, Value, Event, S) -&gt;
-   131..|    case Value of
+   130..|    case Value of
         |      {{value, {_Work, _Timestamp}}, Q} -&gt;
     23..|        valvex:notify(Valvex, {Event, RawQ}),
     23..|        {reply, Value, update_state(Q, Size-1, S)};
         |      {empty, _}                                -&gt;
-   108..|        case Tombstone of
-   107..|          false -&gt; {reply, Value, S};
+   107..|        case Tombstone of
+   106..|          false -&gt; {reply, Value, S};
      1..|          true  -&gt; {reply, {empty, tombstoned}, S}
         |        end
         |    end.
