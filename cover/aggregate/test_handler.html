@@ -1,0 +1,45 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<title>/home/travis/build/hazardfn/valvex/_build/test/cover/aggregate/test_handler.html</title>
+</head><body style='background-color: white; color: black'>
+<pre>
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/test_handler.erl by COVER 2016-06-26 at 15:53:12
+
+****************************************************************************
+
+        |  -module(test_handler).
+        |  -export([init/2]).
+        |  -export([
+        |      websocket_handle/3,
+        |      websocket_info/3
+        |  ]).
+        |  
+        |  init(Req, _Opts) -&gt;
+    11..|    gen_server:call(test_forwarder, {register, self()}),
+    11..|    {cowboy_websocket, Req, #{}}.
+        |  
+        |  websocket_handle({text, Msg}, Req, State) -&gt;
+<font color=red>     0..|      lager:info("Got Data: ~p", [Msg]),</font>
+<font color=red>     0..|      {reply, {text, &lt;&lt; "responding to ", Msg/binary &gt;&gt;}, Req, State, hibernate };</font>
+        |  websocket_handle({binary, Msg}, Req, State) -&gt;
+   177..|      lager:info("Got Data: ~p", [Msg]),
+   177..|      [ S ! Msg || {S} &lt;- all_other_sockets(self()) ],
+   177..|      {reply, {text, &lt;&lt; "whut?"&gt;&gt;}, Req, State, hibernate }.
+        |  
+        |  all_other_sockets(Pid) -&gt;
+   177..|    Sockets = gen_server:call(test_forwarder, list),
+   177..|    WithoutMe = lists:filter(fun ({Socket}) -&gt;
+   177..|                                 Socket =/= Pid
+        |                             end, Sockets),
+   177..|    WithoutMe.
+        |  
+        |  websocket_info({timeout, _Ref, Msg}, Req, State) -&gt;
+<font color=red>     0..|      {reply, {text, Msg}, Req, State};</font>
+        |  websocket_info(Info, Req, State) -&gt;
+<font color=red>     0..|      lager:info("info is ~p", [Info]),</font>
+<font color=red>     0..|      {reply, {text, Info}, Req, State}.</font>
+</pre>
+</body>
+</html>

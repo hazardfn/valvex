@@ -1,0 +1,46 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<title>/home/travis/build/hazardfn/valvex/_build/test/cover/eunit/test_forwarder.html</title>
+</head><body style='background-color: white; color: black'>
+<pre>
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/test_forwarder.erl by COVER 2016-06-26 at 15:53:12
+
+****************************************************************************
+
+        |  -module(test_forwarder).
+        |  
+        |  -behavior(gen_server).
+        |  
+        |  -compile([export_all]).
+        |  
+        |  -spec start_link() -&gt; 'ignore' | {'error',_} | {'ok',pid()}.
+        |  start_link() -&gt;
+    22..|    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+        |  
+        |  -spec init(list()) -&gt; {'ok',atom() | ets:tid()}.
+        |  init(_Options) -&gt;
+    22..|    State = ets:new(sockets, [ named_table ]),
+    22..|    {ok, State}.
+        |  
+        |  handle_info(_Info, State) -&gt;
+<font color=red>     0..|    {noreply, State}.</font>
+        |  
+        |  terminate(_Reason, _State) -&gt;
+    22..|    ok.
+        |  
+        |  code_change(_OldVsn, State, _Extra) -&gt;
+<font color=red>     0..|    {ok, State}.</font>
+        |  
+        |  handle_call({register, Pid}, _From, Table) -&gt;
+    22..|    {reply, ets:insert(Table, {Pid}), Table};
+        |  
+        |  handle_call(list, _From, Table) -&gt;
+   354..|    {reply, ets:tab2list(Table), Table }.
+        |  
+        |  handle_cast(_Msg, S) -&gt;
+<font color=red>     0..|    {noreply, S}.</font>
+</pre>
+</body>
+</html>

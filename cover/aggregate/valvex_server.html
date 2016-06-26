@@ -1,0 +1,448 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<title>/home/travis/build/hazardfn/valvex/_build/test/cover/aggregate/valvex_server.html</title>
+</head><body style='background-color: white; color: black'>
+<pre>
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_server.erl by COVER 2016-06-26 at 15:53:12
+
+****************************************************************************
+
+        |  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        |  %%% @author Howard Beard-Marlowe &lt;howardbm@live.se&gt;
+        |  %%% @copyright 2016 Howard Beard-Marlowe
+        |  %%% @version 0.1.0
+        |  %%% @end
+        |  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        |  
+        |  %% @doc Valvex Server
+        |  %%
+        |  %% The server is responsible for queue management as well
+        |  %% as sending events and pushback.
+        |  
+        |  -module(valvex_server).
+        |  
+        |  -behaviour(gen_server).
+        |  
+        |  %% API exports
+        |  -export([ add/3
+        |          , add_handler/3
+        |          , remove/3
+        |          , remove_handler/3
+        |          , push/3
+        |          , get_available_workers/1
+        |          , get_queue_size/2
+        |          , start_link/1
+        |          , notify/2
+        |          , pushback/2
+        |          , update/3
+        |          ]).
+        |  
+        |  -export([ code_change/3
+        |          , handle_call/3
+        |          , handle_cast/2
+        |          , handle_info/2
+        |          , init/1
+        |          , terminate/2
+        |          ]).
+        |  
+        |  -type valvex_state() :: #{ queues            =&gt; [valvex:valvex_queue()]
+        |                           , queue_pids        =&gt; [tuple()]
+        |                           , pushback          =&gt; true | false
+        |                           , workers           =&gt; [pid()]
+        |                           , event_server      =&gt; valvex:valvex_ref()
+        |                           , available_workers =&gt; [pid()]
+        |                           }.
+        |  
+        |  %%======================================================================================================================
+        |  %% API functions
+        |  %%======================================================================================================================
+        |  %% @doc Starts a link to the valvex server
+        |  -spec start_link(valvex:valvex_options()) -&gt; valvex:valvex_ref().
+        |  start_link(Options) -&gt;
+    11..|    {ok, Pid} = gen_server:start_link({local, valvex}, ?MODULE, Options, []),
+    11..|    Pid.
+        |  
+        |  %% @doc Adds a queue to valvex, there are some alternative options
+        |  %% that can be used to alter the behaviour of add.
+        |  %% @see valvex:add_option()
+        |  -spec add(valvex:valvex_ref(), valvex:valvex_queue(), valvex:add_option()) -&gt; ok | valvex:unique_key_error().
+        |  add(Valvex, { _Key
+        |              , {threshold, _Threshold}
+        |              , {timeout, _Timeout, seconds}
+        |              , {pushback, _Pushback, seconds}
+        |              , {poll_rate, _Poll, ms}
+        |              , _Backend
+        |              } = Q, Option) -&gt;
+    11..|    do_add(Valvex, Q, Option).
+        |  
+        |  %% @doc Removes a queue from valvex, there are some alternative options
+        |  %% that can be used to alter the behaviour of remove.
+        |  %% @see valvex:remove_option()
+        |  -spec remove(valvex:valvex_ref(), valvex:queue_key(), valvex:remove_option()) -&gt; ok | valvex:key_find_error().
+        |  remove(Valvex, Key, Option) -&gt;
+     6..|    do_remove(Valvex, Key, Option).
+        |  
+        |  %% @doc Pushes an item to a queue with a specific key.
+        |  -spec push( valvex:valvex_ref(), valvex:queue_key(), valvex:valvex_q_item()) -&gt; ok.
+        |  push(Valvex, Key, Value) -&gt;
+    37..|    do_push(Valvex, Key, Value).
+        |  
+        |  %% @doc Gets available workers, as in those that aren't currently
+        |  %% undertaking work.
+        |  -spec get_available_workers(valvex:valvex_ref()) -&gt; valvex:valvex_workers().
+        |  get_available_workers(Valvex) -&gt;
+     2..|    do_get_workers(Valvex).
+        |  
+        |  %% @doc Gets the current size of the queue with the given key.
+        |  -spec get_queue_size( valvex:valvex_ref(), valvex:queue_key()) -&gt; non_neg_integer() | valvex:key_find_error().
+        |  get_queue_size(Valvex, Key) -&gt;
+ 14610..|    do_get_queue_size(Valvex, Key).
+        |  
+        |  %% @doc Pushes back on the client forcing them to wait
+        |  %% this prevents spamming if enabled.
+        |  -spec pushback(valvex:valvex_ref(), valvex:queue_key()) -&gt; ok.
+        |  pushback(Valvex, Key) -&gt;
+     4..|    do_pushback(Valvex, Key).
+        |  
+        |  %% @doc Notifies all registered event handlers of an event
+        |  %% within valvex, read the readme for more info.
+        |  -spec notify( valvex:valvex_ref(), any()) -&gt; ok.
+        |  notify(Valvex, Event) -&gt;
+   343..|    do_notify(Valvex, Event).
+        |  
+        |  %% @doc Adds a handler which will receive events from valvex, view
+        |  %% the readme for more info on events.
+        |  -spec add_handler(valvex:valvex_ref(), module(), list()) -&gt; ok.
+        |  add_handler(Valvex, Module, Args) -&gt;
+    12..|    do_add_handler(Valvex, Module, Args).
+        |  
+        |  %% @doc Removes a handler so it will no longer receive events.
+        |  -spec remove_handler(valvex:valvex_ref(), module(), list()) -&gt; ok.
+        |  remove_handler(Valvex, Module, Args) -&gt;
+     1..|    do_remove_handler(Valvex, Module, Args).
+        |  
+        |  %% @doc Updates a queue after a crossover
+        |  %% @private
+        |  -spec update(valvex:valvex_ref(), valvex:queue_key(), valvex:valvex_queue()) -&gt; ok.
+        |  update(Valvex, Key, Q) -&gt;
+     2..|    do_update(Valvex, Key, Q).
+        |  
+        |  %%======================================================================================================================
+        |  %% Gen Server Callbacks
+        |  %%======================================================================================================================
+        |  %% @doc Inititalizes valvex with predefined queues, settings and
+        |  %% event handlers
+        |  -spec init([tuple()]) -&gt; {ok, valvex_state()}.
+        |  init([ {queues, Queues}
+        |       , {pushback_enabled, Pushback}
+        |       , {workers, WorkerCount}
+        |       , {event_handlers, EventHandlers}
+        |       ]) -&gt;
+    11..|    process_flag(trap_exit, true),
+    11..|    {ok, EventServer} = gen_event:start_link(),
+    11..|    HandlerFun = fun({EventModule, Args}) -&gt;
+    11..|                     gen_event:add_handler(EventServer, EventModule, Args)
+        |                 end,
+    11..|    lists:foreach(HandlerFun, EventHandlers),
+    11..|    QueueFun = fun({ Key
+        |                   , _Threshold
+        |                   , _Timeout
+        |                   , _Pushback
+        |                   , _Poll
+        |                   , Backend
+        |                   } = Q) -&gt;
+    33..|                   valvex_queue_sup:start_child([Backend, Key, Q]),
+    33..|                   valvex_queue:start_consumer(Backend, Key),
+    33..|                   [{Key, Backend}]
+        |               end,
+    11..|    Workers = start_workers(WorkerCount),
+    11..|    {ok, #{ queues            =&gt; Queues
+        |          , queue_pids        =&gt; lists:flatmap(QueueFun, Queues)
+        |          , pushback          =&gt; Pushback
+        |          , workers           =&gt; Workers
+        |          , event_server      =&gt; EventServer
+        |          , available_workers =&gt; Workers
+        |          }};
+        |  %% @doc starts the server with default settings.
+        |  init([]) -&gt;
+<font color=red>     0..|    process_flag(trap_exit, true),</font>
+<font color=red>     0..|    Workers = start_workers(10),</font>
+<font color=red>     0..|    {ok, EventServer} = gen_event:start_link(),</font>
+<font color=red>     0..|    {ok, #{ queues            =&gt; []</font>
+        |          , queue_pids        =&gt; []
+        |          , pushback          =&gt; false
+        |          , workers           =&gt; Workers
+        |          , event_server      =&gt; EventServer
+        |          , available_workers =&gt; Workers
+        |          }}.
+        |  
+        |  %% @doc see the "see also" section for a list of synchronous operations
+        |  %% @see add()
+        |  %% @see get_available_workers()
+        |  %% @see remove()
+        |  %% @see add_handler()
+        |  %% @see remove_handler()
+        |  %% @see update()
+        |  handle_call({get_queue, Key}, _From, #{ queue_pids := Queues } = S) -&gt;
+ 14631..|    case lists:keyfind(Key, 1, Queues) of
+        |      false -&gt;
+    10..|        {reply, {error, key_not_found}, S};
+        |      {Key, _Backend} = Queue -&gt;
+ 14621..|        lager:info("get_queue found: ~p", [Queue]),
+ 14621..|        {reply, Queue, S}
+        |    end;
+        |  handle_call({get_raw_queue, Key}, _From, #{ queue_pids := Queues
+        |                                            , queues     := RawQueues
+        |                                            } = S) -&gt;
+    52..|    case lists:keyfind(Key, 1, Queues) of
+        |      false -&gt;
+     4..|        {reply, {error, key_not_found}, S};
+        |      {Key, _Backend} -&gt;
+    48..|        RawQ = lists:keyfind(Key, 1, RawQueues),
+    48..|        lager:info("get_raw_queue found: ~p", [RawQ]),
+    48..|        {reply, RawQ, S}
+        |    end;
+        |  handle_call({add, { Key
+        |                    , _Threshold
+        |                    , _Timeout
+        |                    , _Pushback
+        |                    , _Poll
+        |                    , Backend
+        |                    } = Q, Option}, _From, #{ queues       := Queues
+        |                                            , queue_pids   := QPids
+        |                                            } = S) -&gt;
+     6..|    NewQueues = lists:append(Queues, [Q]),
+     6..|    valvex_queue_sup:start_child([Backend, Key, Q]),
+     6..|    if
+        |      Option /= manual_start -&gt;
+     5..|        valvex_queue:start_consumer(Backend, Key);
+     1..|      true -&gt; ok
+        |    end,
+     6..|    NewQPids  = lists:append(QPids, [{Key, Backend}]),
+     6..|    lager:info("queue added: ~p", [Q]),
+     6..|    {reply, ok, S#{ queues     := NewQueues
+        |                  , queue_pids := NewQPids
+        |                  }};
+        |  handle_call(get_workers, _From, #{ available_workers := Workers } = S) -&gt;
+     2..|    lager:info("List of workers requested: ~p", [Workers]),
+     2..|    {reply, Workers, S};
+        |  handle_call( {assign_work, {Work, Timestamp}, {Key, QPid, Backend}}
+        |             , _From, #{ available_workers := Workers } = S) -&gt;
+    19..|    case Workers == [] of
+        |      false -&gt;
+     2..|        [Worker | T] = Workers,
+     2..|        Valvex = self(),
+     2..|        WorkFun = fun() -&gt;
+     2..|                      valvex:notify(Valvex, {result, Work(), Key})
+        |                  end,
+     2..|        valvex:notify(Valvex, {worker_assigned, Worker, T}),
+     2..|        valvex_worker:work(Worker, {work, WorkFun}),
+     2..|        {noreply, S#{ available_workers := T }};
+        |      true -&gt;
+    17..|        valvex:notify(self(), {work_requeued, Key, []}),
+    17..|        valvex_queue:push_r(Backend, QPid, {Work, Timestamp}),
+    17..|        {noreply, S}
+        |    end;
+        |  handle_call({remove, Key}, _From, #{ queues     := Queues
+        |                                     , queue_pids := QPids
+        |                                     } = S) -&gt;
+     4..|    supervisor:terminate_child(valvex_queue_sup, Key),
+     4..|    {reply, ok, S#{ queues     := lists:keydelete(Key, 1, Queues)
+        |                  , queue_pids := lists:keydelete(Key, 1, QPids)
+        |                  }};
+        |  handle_call( {add_handler, Module, Args}
+        |             , _From
+        |             , #{ event_server := EventServer} = S
+        |             ) -&gt;
+    12..|    lager:info("Handler added Module:~p, Args:~p", [Module, Args]),
+    12..|    ok = gen_event:add_handler(EventServer, Module, Args),
+    12..|    {reply, ok, S};
+        |  handle_call( {remove_handler, Module, Args}
+        |             , _From
+        |             , #{ event_server := EventServer} = S
+        |             ) -&gt;
+     1..|    lager:info("Handler removed Module:~p, Args:~p", [Module, Args]),
+     1..|    ok = gen_event:delete_handler(EventServer, Module, Args),
+     1..|    {reply, ok, S};
+        |  handle_call({update, Key, { Key
+        |                            , _
+        |                            , _
+        |                            , _
+        |                            , _
+        |                            , Backend} = Q}, _From, #{ queues     := Queues
+        |                                                    , queue_pids := QPids
+        |                                                    } = S) -&gt;
+     2..|    lager:info("Queue options updated Key:~p, Update:~p", [Key, Q]),
+     2..|    NewQueues = lists:append(lists:keydelete(Key, 1, Queues), [Q]),
+     2..|    NewQPids  = lists:append(lists:keydelete(Key, 1, QPids), [{Key, Backend}]),
+     2..|    {reply, ok, S#{ queues     := NewQueues
+        |                  , queue_pids := NewQPids }}.
+        |  
+        |  
+        |  handle_cast({pushback, Key}, #{ queues := Queues } = S) -&gt;
+     4..|    case lists:keyfind(Key, 1, Queues) of
+        |      {Key, _, _, {pushback, Pushback, seconds}, _, _} = Q -&gt;
+     4..|        Valvex = self(),
+     4..|        spawn(fun() -&gt;
+     4..|                  TimeoutMS = timer:seconds(Pushback),
+     4..|                  timer:sleep(TimeoutMS),
+     4..|                  notify(Valvex, {threshold_hit, Q})
+        |              end),
+     4..|        {noreply, S};
+        |      false -&gt;
+<font color=red>     0..|        {noreply, S}</font>
+        |    end;
+        |  handle_cast({push, Key, Value}, #{queue_pids := Queues} = S) -&gt;
+    37..|    case lists:keyfind(Key, 1, Queues) of
+        |      false -&gt;
+<font color=red>     0..|        {noreply, S};</font>
+        |      {Key, Backend} -&gt;
+    37..|        case maybe_locked(Key, Backend) of
+        |          false -&gt;
+    35..|            lager:info("Work pushed - Key:~p, Value:~p", [Key, Value]),
+    35..|            valvex_queue:push(Backend, Key, Value),
+    35..|            {noreply, S};
+        |          true -&gt;
+     2..|            lager:warning("Pushed to a locked queue: ~p", [Key]),
+     2..|            valvex:notify(self(), {push_to_locked_queue, Key}),
+     2..|            {noreply, S}
+        |        end
+        |    end;
+        |  handle_cast( {work_finished, WorkerPid}
+        |             , #{ available_workers := Workers } = S) -&gt;
+     1..|    lager:info("Work has finished and a worker has been free'd: ~p", [WorkerPid]),
+     1..|    {noreply, S#{ available_workers := lists:append(Workers, [WorkerPid]) }};
+        |  handle_cast({notify, Event}
+        |             , #{ event_server := EventServer } = S
+        |             ) -&gt;
+   302..|    lager:info("Event sent to subscribers: ~p", [Event]),
+   302..|    gen_event:notify(EventServer, Event),
+   302..|    {noreply, S}.
+        |  
+        |  handle_info(_Info, S) -&gt;
+<font color=red>     0..|    {noreply, S}.</font>
+        |  
+        |  code_change(_Vsn, S, _Extra) -&gt;
+<font color=red>     0..|    {ok, S}.</font>
+        |  
+        |  terminate(_Reason, #{ workers := Workers, queue_pids := QPids} = _S) -&gt;
+    11..|    StopWorkerFun = fun(Worker) -&gt;
+    11..|                        valvex_worker:stop(Worker)
+        |                    end,
+    11..|    StopQueueFun = fun({Key, _Backend}) -&gt;
+    33..|                       gen_server:stop(Key)
+        |                   end,
+    11..|    lists:foreach(StopWorkerFun, Workers),
+    11..|    lists:foreach(StopQueueFun, QPids),
+     9..|    ok.
+        |  
+        |  %%==============================================================================
+        |  %% Internal functions
+        |  %%==============================================================================
+        |  
+        |  get_queue(Valvex, Key) -&gt;
+ 14631..|    gen_server:call(Valvex, {get_queue, Key}).
+        |  
+        |  do_add(Valvex, {Key, _, _, _, _, _} = Q, undefined) -&gt;
+     6..|    case get_queue(Valvex, Key) of
+        |      {error, key_not_found} -&gt;
+     5..|        gen_server:call(Valvex, {add, Q, undefined});
+        |      _ -&gt;
+     1..|        lager:error("Attempted to add a non-unique key: ~p", [Key]),
+     1..|        {error, key_not_unique}
+        |    end;
+        |  do_add(Valvex, {Key, _, _, _, _, Backend} = Q, crossover_on_existing) -&gt;
+     8..|    case get_queue(Valvex, Key) of
+        |      {error, key_not_found} -&gt;
+     4..|        do_add(Valvex, Q, undefined);
+        |      {Key, Backend} -&gt;
+     2..|        valvex_queue:crossover(Backend, Key, Q);
+        |      _ -&gt;
+     2..|        lager:error("Attempted to switch backend/key - operation not supported"),
+     2..|        {error, backend_key_crossover_not_supported}
+        |    end;
+        |  do_add(Valvex, {Key, _, _, _, _, Backend} = Q, manual_start) -&gt;
+     1..|    case get_queue(Valvex, Key) of
+        |      {error, key_not_found} -&gt;
+     1..|        gen_server:call(Valvex, {add, Q, manual_start});
+        |      {Key, Backend} -&gt;
+<font color=red>     0..|        lager:error("Attempted to add a non-unique key: ~p", [Key]),</font>
+<font color=red>     0..|        {error, key_not_unique}</font>
+        |    end.
+        |  
+        |  do_remove(Valvex, Key, undefined) -&gt;
+     1..|    case get_queue(Valvex, Key) of
+        |      {Key, Backend} -&gt;
+     1..|        valvex_queue:tombstone(Backend, Key);
+        |      {error, key_not_found} = Error -&gt;
+<font color=red>     0..|        lager:error("Attempted to remove a non-existing key: ~p", [Key]),</font>
+<font color=red>     0..|        Error</font>
+        |    end;
+        |  do_remove(Valvex, Key, lock_queue) -&gt;
+     1..|    case get_queue(Valvex, Key) of
+        |      {Key, Backend} -&gt;
+     1..|        valvex_queue:lock(Backend, Key),
+     1..|        valvex_queue:tombstone(Backend, Key);
+        |      {error, key_not_found} = Error -&gt;
+<font color=red>     0..|        lager:error("Attempted to remove a non-existing key: ~p", [Key]),</font>
+<font color=red>     0..|        Error</font>
+        |    end;
+        |  do_remove(Valvex, Key, force_remove) -&gt;
+     4..|    case get_queue(Valvex, Key) of
+        |      {Key, _Backend}          -&gt;
+     4..|        gen_server:call(Valvex, {remove, Key});
+        |      {error, key_not_found} = Error -&gt;
+<font color=red>     0..|        lager:error("Attempted to remove a non-existing key: ~p", [Key]),</font>
+<font color=red>     0..|        Error</font>
+        |    end.
+        |  
+        |  do_push(Valvex, Key, Value) -&gt;
+    37..|    gen_server:cast(Valvex, {push, Key, Value}).
+        |  
+        |  do_get_workers(Valvex) -&gt;
+     2..|    gen_server:call(Valvex, get_workers).
+        |  
+        |  do_get_queue_size(Valvex, Key) -&gt;
+ 14610..|    case get_queue(Valvex, Key) of
+        |      {Key, Backend} -&gt;
+ 14610..|        valvex_queue:size(Backend, Key);
+        |      Error -&gt;
+<font color=red>     0..|        Error</font>
+        |    end.
+        |  
+        |  do_pushback(Valvex, Key) -&gt;
+     4..|    gen_server:cast(Valvex, {pushback, Key}).
+        |  
+        |  do_notify(Valvex, Event) -&gt;
+   343..|    gen_server:cast(Valvex, {notify, Event}).
+        |  
+        |  do_add_handler(Valvex, Module, Args) -&gt;
+    12..|    gen_server:call(Valvex, {add_handler, Module, Args}).
+        |  
+        |  do_remove_handler(Valvex, Module, Args) -&gt;
+     1..|    gen_server:call(Valvex, {remove_handler, Module, Args}).
+        |  
+        |  do_update(Valvex, Key, Q) -&gt;
+     2..|    gen_server:call(Valvex, {update, Key, Q}).
+        |  
+        |  start_workers(WorkerCount) -&gt;
+    11..|    lists:flatmap(fun(_) -&gt;
+    11..|                      [valvex_worker:start_link(self())]
+        |                  end, lists:seq(1, WorkerCount)).
+        |  
+        |  maybe_locked(Key, Backend) -&gt;
+    37..|    case whereis(Key) of
+<font color=red>     0..|      undefined -&gt; false;</font>
+    37..|      Pid -&gt; valvex_queue:is_locked(Backend, Pid)
+        |    end.
+        |  
+        |  %%%_* Emacs ====================================================================
+        |  %%% Local Variables:
+        |  %%% allout-layout: t
+        |  %%% erlang-indent-level: 2
+        |  %%% End:
+</pre>
+</body>
+</html>

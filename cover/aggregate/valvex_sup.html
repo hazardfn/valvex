@@ -1,0 +1,82 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<title>/home/travis/build/hazardfn/valvex/_build/test/cover/aggregate/valvex_sup.html</title>
+</head><body style='background-color: white; color: black'>
+<pre>
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_sup.erl by COVER 2016-06-26 at 15:53:12
+
+****************************************************************************
+
+        |  -module(valvex_sup).
+        |  -behaviour(supervisor).
+        |  
+        |  -export([ start_link/0
+        |          , start_link/1
+        |          ]).
+        |  -export([ init/1 ]).
+        |  
+        |  start_link() -&gt;
+<font color=red>     0..|    supervisor:start_link({local, ?MODULE}, ?MODULE, []).</font>
+        |  
+        |  start_link(Options) -&gt;
+    11..|    supervisor:start_link({local, ?MODULE}, ?MODULE, Options).
+        |  
+        |  init([]) -&gt;
+<font color=red>     0..|    {ok</font>
+        |    , { #{ strategy  =&gt; one_for_one
+        |         , intensity =&gt; 3
+        |         , period    =&gt; 60
+        |         }
+        |      , [ valvex_server_child_specs()
+        |        , valvex_queue_sup_child_specs()
+        |        ]
+        |      }};
+        |  init(Options) -&gt;
+    11..|    {ok
+        |    , { #{ strategy  =&gt; one_for_one
+        |         , intensity =&gt; 3
+        |         , period    =&gt; 60
+        |         }
+        |      , [ valvex_queue_sup_child_specs()
+        |        , valvex_server_child_specs_with_options(Options)
+        |        ]
+        |      }}.
+        |  
+        |  
+        |  valvex_server_child_specs() -&gt;
+<font color=red>     0..|    #{ id       =&gt; valvex</font>
+        |     , start    =&gt; {valvex, start_link, [[]]}
+        |     , restart  =&gt; permanent
+        |     , shutdown =&gt; 3600
+        |     , type     =&gt; worker
+        |     , modules  =&gt; [ valvex_server ]
+        |     }.
+        |  
+        |  valvex_server_child_specs_with_options(Options) -&gt;
+    11..|    #{ id       =&gt; valvex
+        |     , start    =&gt; {valvex, start_link, [Options]}
+        |     , restart  =&gt; permanent
+        |     , shutdown =&gt; 3600
+        |     , type     =&gt; worker
+        |     , modules  =&gt; [ valvex_server ]
+        |     }.
+        |  
+        |  valvex_queue_sup_child_specs() -&gt;
+    11..|    #{ id       =&gt; valvex_queue_sup
+        |     , start    =&gt; {valvex_queue_sup, start_link, []}
+        |     , restart  =&gt; permanent
+        |     , shutdown =&gt; 3600
+        |     , type     =&gt; supervisor
+        |     , modules  =&gt; [ valvex_queue_sup ]
+        |     }.
+        |  
+        |  %%%_* Emacs ============================================================
+        |  %%% Local Variables:
+        |  %%% allout-layout: t
+        |  %%% erlang-indent-level: 2
+        |  %%% End:
+</pre>
+</body>
+</html>

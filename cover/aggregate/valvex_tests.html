@@ -1,0 +1,598 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<title>/home/travis/build/hazardfn/valvex/_build/test/cover/aggregate/valvex_tests.html</title>
+</head><body style='background-color: white; color: black'>
+<pre>
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/test/valvex_tests.erl by COVER 2016-06-26 at 15:53:12
+
+****************************************************************************
+
+        |  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        |  %%% @doc valvex tests
+        |  %%% @copyright 2016 Howard Beard-Marlowe
+        |  %%% @end
+        |  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        |  %%%_* Module declaration =======================================================
+        |  -module(valvex_tests).
+        |  
+        |  -export([ test_add/1
+        |          , test_consumer/1
+        |          , test_crossover/1
+        |          , test_crossover_errors/1
+        |          , test_get_available_workers/1
+        |          , test_locking/1
+        |          , test_pop/1
+        |          , test_pop_r/1
+        |          , test_pushback/1
+        |          , test_remove/1
+        |          , test_tombstone/1
+        |          ]).
+        |  
+        |  -export([ all/0
+        |          , all/1
+        |          , suite/0
+        |          , init_per_suite/1
+        |          , init_per_testcase/2
+        |          , end_per_suite/1
+        |          , end_per_testcase/2
+        |          ]).
+        |  
+        |  %%%_* Includes =================================================================
+        |  -include_lib("common_eunit/include/common_eunit.hrl").
+        |  %%%_* Suite Callbacks ==========================================================
+        |  suite() -&gt;
+        |    [{timetrap, {seconds, 60}}].
+        |  
+        |  init_per_suite(Config) -&gt;
+        |    application:get_all_env(valvex) ++ Config.
+        |  
+        |  end_per_suite(Config) -&gt;
+        |    Config.
+        |  
+        |  init_per_testcase(TestCase, Config) -&gt;
+        |    test_forwarder:start_link(),
+        |    Pid = erlang:spawn(test_message_handler, loop, []),
+        |    application:ensure_all_started(valvex),
+        |    valvex:add_handler(valvex, valvex_message_event_handler, [Pid]),
+        |    ?MODULE:TestCase({init, Config}).
+        |  
+        |  end_per_testcase(TestCase, Config)  -&gt;
+        |    application:stop(valvex),
+        |    application:stop(cowboy),
+        |    application:stop(lager),
+        |    application:unload(lager),
+        |    application:unload(cowboy),
+        |    application:unload(valvex),
+        |    gen_server:stop(test_forwarder),
+        |    ?MODULE:TestCase({'end', Config}).
+        |  
+        |  all() -&gt;
+        |    all(suite).
+        |  all(suite) -&gt;
+        |    [ test_add
+        |    , test_consumer
+        |    , test_crossover
+        |    , test_crossover_errors
+        |    , test_get_available_workers
+        |    , test_locking
+        |    , test_pop
+        |    , test_pop_r
+        |    , test_pushback
+        |    , test_remove
+        |    , test_tombstone
+        |    ].
+        |  
+        |  %%%_ * Tests ===================================================================
+        |  test_add(suite)                         -&gt; [];
+        |  test_add({init, Config})                -&gt; Config;
+        |  test_add({'end', _Config})              -&gt; ok;
+        |  test_add(doc)                           -&gt;
+        |    ["Test we can add queues using the various options"];
+        |  test_add(Config) when is_list(Config)   -&gt;
+        |    Valvex = valvex,
+        |    KeyLifo      = test_lifo,
+        |    KeyFifo      = test_fifo,
+        |    KeyNew       = test_new,
+        |    KeyManual    = test_manual,
+        |    NewConFun    = fun() -&gt;
+        |                       valvex_queue:is_consuming(valvex_queue_fifo_backend, KeyNew)
+        |                   end,
+        |    ManualConFun = fun() -&gt;
+        |                       valvex_queue:is_consuming(valvex_queue_fifo_backend, KeyManual)
+        |                   end,
+        |    %% Make sure the queues are started as expected
+        |    ?assert(is_pid(whereis(KeyLifo))),
+        |    ?assert(is_pid(whereis(KeyFifo))),
+        |    %% Add a new queue
+        |    ?assertEqual(ok, valvex:add(Valvex, { KeyNew
+        |                                        , {threshold, 3000}
+        |                                        , {timeout, 20, seconds}
+        |                                        , {pushback, 20, seconds}
+        |                                        , {poll_rate, 3000, ms}
+        |                                        , valvex_queue_fifo_backend
+        |                                        })),
+        |    ?assert(is_pid(whereis(KeyNew))),
+        |    ?assert(NewConFun()),
+        |    %% Try adding it again and verify we get an error
+        |    ?assertEqual({error, key_not_unique}, valvex:add(Valvex, { KeyNew
+        |                                                             , {threshold, 3000}
+        |                                                             , {timeout, 20, seconds}
+        |                                                             , {pushback, 20, seconds}
+        |                                                             , {poll_rate, 3000, ms}
+        |                                                             , valvex_queue_fifo_backend
+        |                                                             })),
+        |    %% Add a manual_start queue and verify the consumer is dead
+        |    ?assertEqual(ok, valvex:add(Valvex, { KeyManual
+        |                                        , {threshold, 3000}
+        |                                        , {timeout, 20, seconds}
+        |                                        , {pushback, 20, seconds}
+        |                                        , {poll_rate, 3000, ms}
+        |                                        , valvex_queue_fifo_backend
+        |                                        }, manual_start)),
+        |    ?assertEqual(false, ManualConFun()).
+        |  
+        |  test_consumer(suite)                         -&gt; [];
+        |  test_consumer({init, Config})                -&gt; Config;
+        |  test_consumer({'end', _Config})              -&gt; ok;
+        |  test_consumer(doc)                           -&gt;
+        |    ["Test we can add queues using the various options"];
+        |  test_consumer(Config) when is_list(Config)   -&gt;
+        |    Valvex  = valvex,
+        |    KeyLifo = test_lifo,
+        |    KeyFifo = test_fifo,
+        |    WorkFun = fun() -&gt; timer:sleep(3000) end,
+        |    LifoSizeFun = fun() -&gt; valvex:get_queue_size(Valvex, KeyLifo) end,
+        |    FifoSizeFun = fun() -&gt; valvex:get_queue_size(Valvex, KeyFifo) end,
+        |    LifoPushFun = fun(_N) -&gt; valvex:push(Valvex, KeyLifo, WorkFun) end,
+        |    FifoPushFun = fun(_N) -&gt; valvex:push(Valvex, KeyFifo, WorkFun) end,
+        |    %% Make sure the queues are started as expected
+        |    ?assert(is_pid(whereis(KeyLifo))),
+        |    ?assert(is_pid(whereis(KeyFifo))),
+        |    %% Ensure the consumer is started
+        |    ?assert(valvex_queue:is_consuming(valvex_queue_lifo_backend, KeyLifo)),
+        |    ?assert(valvex_queue:is_consuming(valvex_queue_fifo_backend, KeyFifo)),
+        |    %% Push some work and monitor to ensure the queue returns to 0
+        |    Seq = lists:seq(0, 10),
+        |    lists:foreach(LifoPushFun, Seq),
+        |    lists:foreach(FifoPushFun, Seq),
+        |    ?assertEqual(ok, do_until(LifoSizeFun, 0, 999999)),
+        |    ?assertEqual(ok, do_until(FifoSizeFun, 0, 999999)),
+        |    %% Ensure stopping the consumer twice doesn't cause errors
+        |    ?assertEqual(ok, valvex_queue:stop_consumer(valvex_queue_lifo_backend, KeyLifo)),
+        |    ?assertEqual(ok, valvex_queue:stop_consumer(valvex_queue_fifo_backend, KeyFifo)),
+        |    ?assertEqual(ok, valvex_queue:stop_consumer(valvex_queue_lifo_backend, KeyLifo)),
+        |    ?assertEqual(ok, valvex_queue:stop_consumer(valvex_queue_fifo_backend, KeyFifo)),
+        |    ?assertEqual(false, valvex_queue:is_consuming(valvex_queue_lifo_backend, KeyLifo)),
+        |    ?assertEqual(false, valvex_queue:is_consuming(valvex_queue_fifo_backend, KeyFifo)),
+        |    %% Ensure starting the consumer twice doesn't cause errors
+        |    ?assertEqual(ok, valvex_queue:start_consumer(valvex_queue_lifo_backend, KeyLifo)),
+        |    ?assertEqual(ok, valvex_queue:start_consumer(valvex_queue_fifo_backend, KeyFifo)),
+        |    ?assertEqual(ok, valvex_queue:start_consumer(valvex_queue_lifo_backend, KeyLifo)),
+        |    ?assertEqual(ok, valvex_queue:start_consumer(valvex_queue_fifo_backend, KeyFifo)),
+        |    ?assertEqual(true, valvex_queue:is_consuming(valvex_queue_lifo_backend, KeyLifo)),
+        |    ?assertEqual(true, valvex_queue:is_consuming(valvex_queue_fifo_backend, KeyFifo)).
+        |  
+        |  test_crossover(suite)                         -&gt; [];
+        |  test_crossover({init, Config})                -&gt; Config;
+        |  test_crossover({'end', _Config})              -&gt; ok;
+        |  test_crossover(doc)                           -&gt;
+        |    ["Test we can change queue settings"];
+        |  test_crossover(Config) when is_list(Config)   -&gt;
+        |    Valvex = valvex,
+        |    KeyLifo = test_lifo,
+        |    KeyFifo = test_fifo,
+        |    RawLifoFun = fun() -&gt;
+        |                     gen_server:call(Valvex, {get_raw_queue, KeyLifo})
+        |                 end,
+        |    RawFifoFun = fun() -&gt;
+        |                     gen_server:call(Valvex, {get_raw_queue, KeyFifo})
+        |                 end,
+        |    %% Make sure the queues are started as expected
+        |    ?assert(is_pid(whereis(KeyLifo))),
+        |    ?assert(is_pid(whereis(KeyFifo))),
+        |    %% Get the raw queues for comparison
+        |    RawQLifo = RawLifoFun(),
+        |    RawQFifo = RawFifoFun(),
+        |    %% Set new parameters and initiate a crossover
+        |    UpdatedQLifo = { KeyLifo
+        |                   , {threshold, 3000}
+        |                   , {timeout, 20, seconds}
+        |                   , {pushback, 20, seconds}
+        |                   , {poll_rate, 3000, ms}
+        |                   , valvex_queue_lifo_backend
+        |                   },
+        |    ?assertNotEqual(RawQLifo, UpdatedQLifo),
+        |    UpdatedQFifo = { KeyFifo
+        |                   , {threshold, 3000}
+        |                   , {timeout, 20, seconds}
+        |                   , {pushback, 20, seconds}
+        |                   , {poll_rate, 3000, ms}
+        |                   , valvex_queue_fifo_backend
+        |                   },
+        |    ?assertNotEqual(RawQFifo, UpdatedQFifo),
+        |    valvex:add(Valvex, UpdatedQLifo, crossover_on_existing),
+        |    valvex:add(Valvex, UpdatedQFifo, crossover_on_existing),
+        |    %% Verify the queues are updated
+        |    ?assertEqual(ok, do_until(RawLifoFun, UpdatedQLifo, 999999)),
+        |    ?assertEqual(ok, do_until(RawFifoFun, UpdatedQFifo, 999999)).
+        |  
+        |  test_crossover_errors(suite)                         -&gt; [];
+        |  test_crossover_errors({init, Config})                -&gt; Config;
+        |  test_crossover_errors({'end', _Config})              -&gt; ok;
+        |  test_crossover_errors(doc)                           -&gt;
+        |    ["Check that certain types of crossovers are not allowed"];
+        |  test_crossover_errors(Config) when is_list(Config)   -&gt;
+        |    Valvex = valvex,
+        |    KeyLifo = test_lifo,
+        |    KeyFifo = test_fifo,
+        |    RawLifoFun = fun() -&gt;
+        |                     gen_server:call(Valvex, {get_raw_queue, KeyLifo})
+        |                 end,
+        |    RawFifoFun = fun() -&gt;
+        |                     gen_server:call(Valvex, {get_raw_queue, KeyFifo})
+        |                 end,
+        |    %% Make sure the queues are started as expected
+        |    ?assert(is_pid(whereis(KeyLifo))),
+        |    ?assert(is_pid(whereis(KeyFifo))),
+        |    %% Get the raw queues for comparison
+        |    RawQLifo = RawLifoFun(),
+        |    RawQFifo = RawFifoFun(),
+        |    %% Set new illegal parameters and initiate a crossover
+        |    UpdatedKeyQLifo = { test_lifo_new
+        |                      , {threshold, 3000}
+        |                      , {timeout, 20, seconds}
+        |                      , {pushback, 20, seconds}
+        |                      , {poll_rate, 3000, ms}
+        |                      , valvex_queue_lifo_backend
+        |                      },
+        |    UpdatedBackendQLifo = { test_lifo
+        |                          , {threshold, 3000}
+        |                          , {timeout, 20, seconds}
+        |                          , {pushback, 20, seconds}
+        |                          , {poll_rate, 3000, ms}
+        |                          , valvex_queue_fifo_backend
+        |                          },
+        |    UpdatedBothQLifo = { test_lifo_other
+        |                       , {threshold, 3000}
+        |                       , {timeout, 20, seconds}
+        |                       , {pushback, 20, seconds}
+        |                       , {poll_rate, 3000, ms}
+        |                       , valvex_queue_fifo_backend
+        |                       },
+        |    ?assertNotEqual(RawQLifo, UpdatedKeyQLifo),
+        |    ?assertNotEqual(RawQLifo, UpdatedBackendQLifo),
+        |    ?assertNotEqual(RawQLifo, UpdatedBothQLifo),
+        |    UpdatedKeyQFifo = { test_fifo_new
+        |                      , {threshold, 3000}
+        |                      , {timeout, 20, seconds}
+        |                      , {pushback, 20, seconds}
+        |                      , {poll_rate, 3000, ms}
+        |                      , valvex_queue_fifo_backend
+        |                      },
+        |    UpdatedBackendQFifo = { test_fifo
+        |                          , {threshold, 3000}
+        |                          , {timeout, 20, seconds}
+        |                          , {pushback, 20, seconds}
+        |                          , {poll_rate, 3000, ms}
+        |                          , valvex_queue_lifo_backend
+        |                          },
+        |    UpdatedBothQFifo = { test_fifo_other
+        |                       , {threshold, 3000}
+        |                       , {timeout, 20, seconds}
+        |                       , {pushback, 20, seconds}
+        |                       , {poll_rate, 3000, ms}
+        |                       , valvex_queue_lifo_backend
+        |                       },
+        |    ?assertNotEqual(RawQFifo, UpdatedKeyQFifo),
+        |    ?assertNotEqual(RawQFifo, UpdatedBackendQFifo),
+        |    ?assertNotEqual(RawQFifo, UpdatedBothQFifo),
+        |    %% Trigger the update and hope for errors in some of the cases
+        |    %% A new key is basically a request for a new queue, it will be handled
+        |    %% as such
+        |    ?assertEqual( ok
+        |                , valvex:add(Valvex, UpdatedKeyQLifo, crossover_on_existing)),
+        |    %% A new backend is tricky to crossover without losing data so this is
+        |    %% not supported
+        |    ?assertEqual( {error, backend_key_crossover_not_supported}
+        |                , valvex:add(Valvex, UpdatedBackendQLifo, crossover_on_existing)),
+        |    %% Updating both is basically a request for a new queue.
+        |    ?assertEqual( ok
+        |                , valvex:add(Valvex, UpdatedBothQLifo, crossover_on_existing)),
+        |  
+        |    %% A new key is basically a request for a new queue, it will be handled
+        |    %% as such
+        |    ?assertEqual( ok
+        |                , valvex:add(Valvex, UpdatedKeyQFifo, crossover_on_existing)),
+        |    %% A new backend is tricky to crossover without losing data so this is
+        |    %% not supported
+        |    ?assertEqual( {error, backend_key_crossover_not_supported}
+        |                , valvex:add(Valvex, UpdatedBackendQFifo, crossover_on_existing)),
+        |    %% Updating both is basically a request for a new queue.
+        |    ?assertEqual( ok
+        |                , valvex:add(Valvex, UpdatedBothQFifo, crossover_on_existing)),
+        |  
+        |    %% Verify the queues are the same as when we started
+        |    ?assertEqual(ok, do_until(RawLifoFun, RawQLifo, 999999)),
+        |    ?assertEqual(ok, do_until(RawFifoFun, RawQFifo, 999999)).
+        |  
+        |  test_get_available_workers(suite)                         -&gt; [];
+        |  test_get_available_workers({init, Config})                -&gt; Config;
+        |  test_get_available_workers({'end', _Config})              -&gt; ok;
+        |  test_get_available_workers(doc)                           -&gt;
+        |    ["Test get available workers api call"];
+        |  test_get_available_workers(Config) when is_list(Config)   -&gt;
+        |    Valvex   = valvex,
+        |    [Worker] = valvex:get_available_workers(Valvex),
+        |    ?assert(is_pid(Worker)),
+        |    ?assert(erlang:is_process_alive(Worker)),
+        |    ?assertEqual(1, valvex:get_available_workers_count(Valvex)).
+        |  
+        |  test_locking(suite)                         -&gt; [];
+        |  test_locking({init, Config})                -&gt; Config;
+        |  test_locking({'end', _Config})              -&gt; ok;
+        |  test_locking(doc)                           -&gt;
+        |    ["Test locking mechanisms"];
+        |  test_locking(Config) when is_list(Config)   -&gt;
+        |    Valvex      = valvex,
+        |    KeyLifo     = test_lifo,
+        |    KeyFifo     = test_fifo,
+        |    WorkFun     = fun() -&gt;
+        |                      timer:sleep(1000)
+        |                  end,
+        |    LifoConFun  = fun() -&gt;
+        |                      valvex_queue:is_consuming(valvex_queue_lifo_backend, KeyLifo)
+        |                  end,
+        |    LifoSizeFun = fun() -&gt;
+        |                      valvex:get_queue_size(Valvex, KeyLifo)
+        |                  end,
+        |    FifoConFun  = fun() -&gt;
+        |                      valvex_queue:is_consuming(valvex_queue_fifo_backend, KeyFifo)
+        |                  end,
+        |    FifoSizeFun = fun() -&gt;
+        |                      valvex:get_queue_size(Valvex, KeyFifo)
+        |                  end,
+        |    %% Make sure the queues are started as expected
+        |    ?assert(is_pid(whereis(KeyLifo))),
+        |    ?assert(is_pid(whereis(KeyFifo))),
+        |    %% Lock both the queues
+        |    ?assertEqual(ok, valvex_queue:lock(valvex_queue_lifo_backend, KeyLifo)),
+        |    ?assertEqual(ok, valvex_queue:lock(valvex_queue_fifo_backend, KeyFifo)),
+        |    ?assert(valvex_queue:is_locked(valvex_queue_lifo_backend, KeyLifo)),
+        |    ?assert(valvex_queue:is_locked(valvex_queue_fifo_backend, KeyFifo)),
+        |    %% Check pushing to a locked queue leaves it empty
+        |    ?assertEqual(ok, valvex:push(Valvex, KeyLifo, WorkFun)),
+        |    ?assertEqual(ok, valvex:push(Valvex, KeyFifo, WorkFun)),
+        |    ?assertEqual(0, valvex:get_queue_size(Valvex, KeyLifo)),
+        |    ?assertEqual(0, valvex:get_queue_size(Valvex, KeyFifo)),
+        |    %% Test we can unlock the queues
+        |    ?assertEqual(ok, valvex_queue:unlock(valvex_queue_lifo_backend, KeyLifo)),
+        |    ?assertEqual(ok, valvex_queue:unlock(valvex_queue_fifo_backend, KeyFifo)),
+        |    ?assertEqual(false, valvex_queue:is_locked(valvex_queue_lifo_backend, KeyLifo)),
+        |    ?assertEqual(false, valvex_queue:is_locked(valvex_queue_fifo_backend, KeyFifo)),
+        |    %% Test once they are unlocked they can be pushed to
+        |    ?assertEqual(ok, valvex_queue:stop_consumer(valvex_queue_lifo_backend, KeyLifo)),
+        |    ?assertEqual(ok, valvex_queue:stop_consumer(valvex_queue_fifo_backend, KeyFifo)),
+        |    ?assertEqual(ok, do_until(LifoConFun, false, 999999)),
+        |    ?assertEqual(ok, do_until(FifoConFun, false, 999999)),
+        |    ?assertEqual(ok, valvex:push(Valvex, KeyLifo, WorkFun)),
+        |    ?assertEqual(ok, valvex:push(Valvex, KeyFifo, WorkFun)),
+        |    ?assertEqual(ok, do_until(LifoSizeFun, 1, 999999)),
+        |    ?assertEqual(ok, do_until(FifoSizeFun, 1, 999999)).
+        |  
+        |  test_pop(suite)                         -&gt; [];
+        |  test_pop({init, Config})                -&gt; Config;
+        |  test_pop({'end', _Config})              -&gt; ok;
+        |  test_pop(doc)                           -&gt;
+        |    ["Test pop works and pops in the expected order"];
+        |  test_pop(Config) when is_list(Config)   -&gt;
+        |    Valvex       = valvex,
+        |    KeyLifo       = test_lifo,
+        |    KeyFifo       = test_fifo,
+        |    LifoSizeFun = fun() -&gt;
+        |                      valvex:get_queue_size(Valvex, KeyLifo)
+        |                  end,
+        |    FifoSizeFun = fun() -&gt;
+        |                      valvex:get_queue_size(Valvex, KeyFifo)
+        |                  end,
+        |    FirstWorkFun  = fun() -&gt; 1 end,
+        |    SecondWorkFun = fun() -&gt; 2 end,
+        |    %% Make sure the queues are started as expected
+        |    ?assert(is_pid(whereis(KeyLifo))),
+        |    ?assert(is_pid(whereis(KeyFifo))),
+        |    %% Stop the consumer so we can pop manually
+        |      ?assertEqual(ok, valvex_queue:stop_consumer(valvex_queue_lifo_backend, KeyLifo)),
+        |    ?assertEqual(ok, valvex_queue:stop_consumer(valvex_queue_fifo_backend, KeyFifo)),
+        |    ?assertEqual(false, valvex_queue:is_consuming(valvex_queue_lifo_backend, KeyLifo)),
+        |    ?assertEqual(false, valvex_queue:is_consuming(valvex_queue_fifo_backend, KeyFifo)),
+        |    %% Push work to the queues
+        |    ?assertEqual(ok, valvex:push(Valvex, KeyLifo, FirstWorkFun)),
+        |    ?assertEqual(ok, valvex:push(Valvex, KeyLifo, SecondWorkFun)),
+        |    ?assertEqual(ok, valvex:push(Valvex, KeyFifo, FirstWorkFun)),
+        |    ?assertEqual(ok, valvex:push(Valvex, KeyFifo, SecondWorkFun)),
+        |    ?assertEqual(ok, do_until(LifoSizeFun, 2, 999999)),
+        |    ?assertEqual(ok, do_until(FifoSizeFun, 2, 999999)),
+        |    %% Pop queues and check correct order
+        |    ?assertMatch({{value, {SecondWorkFun, _}}, _}, valvex_queue:pop(valvex_queue_lifo_backend, KeyLifo)),
+        |    ?assertMatch({{value, {FirstWorkFun, _}}, _}, valvex_queue:pop(valvex_queue_lifo_backend, KeyLifo)),
+        |    ?assertMatch({{value, {FirstWorkFun, _}}, _}, valvex_queue:pop(valvex_queue_fifo_backend, KeyFifo)),
+        |    ?assertMatch({{value, {SecondWorkFun, _}}, _}, valvex_queue:pop(valvex_queue_fifo_backend, KeyFifo)).
+        |  
+        |  test_pop_r(suite)                         -&gt; [];
+        |  test_pop_r({init, Config})                -&gt; Config;
+        |  test_pop_r({'end', _Config})              -&gt; ok;
+        |  test_pop_r(doc)                           -&gt;
+        |    ["Test pop_r is the reverse of pop"];
+        |  test_pop_r(Config) when is_list(Config)   -&gt;
+        |    Valvex       = valvex,
+        |    KeyLifo       = test_lifo,
+        |    KeyFifo       = test_fifo,
+        |    LifoSizeFun = fun() -&gt;
+        |                      valvex:get_queue_size(Valvex, KeyLifo)
+        |                  end,
+        |    FifoSizeFun = fun() -&gt;
+        |                      valvex:get_queue_size(Valvex, KeyFifo)
+        |                  end,
+        |    FirstWorkFun  = fun() -&gt; 1 end,
+        |    SecondWorkFun = fun() -&gt; 2 end,
+        |    %% Make sure the queues are started as expected
+        |    ?assert(is_pid(whereis(KeyLifo))),
+        |    ?assert(is_pid(whereis(KeyFifo))),
+        |    %% Stop the consumer so we can pop manually
+        |      ?assertEqual(ok, valvex_queue:stop_consumer(valvex_queue_lifo_backend, KeyLifo)),
+        |    ?assertEqual(ok, valvex_queue:stop_consumer(valvex_queue_fifo_backend, KeyFifo)),
+        |    ?assertEqual(false, valvex_queue:is_consuming(valvex_queue_lifo_backend, KeyLifo)),
+        |    ?assertEqual(false, valvex_queue:is_consuming(valvex_queue_fifo_backend, KeyFifo)),
+        |    %% Push work to the queues
+        |    ?assertEqual(ok, valvex:push(Valvex, KeyLifo, FirstWorkFun)),
+        |    ?assertEqual(ok, valvex:push(Valvex, KeyLifo, SecondWorkFun)),
+        |    ?assertEqual(ok, valvex:push(Valvex, KeyFifo, FirstWorkFun)),
+        |    ?assertEqual(ok, valvex:push(Valvex, KeyFifo, SecondWorkFun)),
+        |    ?assertEqual(ok, do_until(LifoSizeFun, 2, 999999)),
+        |    ?assertEqual(ok, do_until(FifoSizeFun, 2, 999999)),
+        |    %% Pop queues and check correct order
+        |    ?assertMatch({{value, {FirstWorkFun, _}}, _}, valvex_queue:pop_r(valvex_queue_lifo_backend, KeyLifo)),
+        |    ?assertMatch({{value, {SecondWorkFun, _}}, _}, valvex_queue:pop_r(valvex_queue_lifo_backend, KeyLifo)),
+        |    ?assertMatch({{value, {SecondWorkFun, _}}, _}, valvex_queue:pop_r(valvex_queue_fifo_backend, KeyFifo)),
+        |    ?assertMatch({{value, {FirstWorkFun, _}}, _}, valvex_queue:pop_r(valvex_queue_fifo_backend, KeyFifo)).
+        |  
+        |  test_pushback(suite)                         -&gt; [];
+        |  test_pushback({init, Config})                -&gt; Config;
+        |  test_pushback({'end', _Config})              -&gt; ok;
+        |  test_pushback(doc)                           -&gt;
+        |    ["Test pushback works"];
+        |  test_pushback(Config) when is_list(Config)   -&gt;
+        |    Valvex  = valvex,
+        |    KeyLifo = test_lifo,
+        |    KeyFifo = test_fifo,
+        |    {_, BeforeSeconds, _} = os:timestamp(),
+        |    %% Begin pushback
+        |    valvex:add_handler(Valvex, valvex_message_event_handler, [self()]),
+        |    valvex:pushback(Valvex, KeyLifo),
+        |    receive
+        |      {threshold_hit, _} -&gt;
+        |        ok
+        |    end,
+        |    valvex:pushback(Valvex, KeyFifo),
+        |    receive
+        |      {threshold_hit, _} -&gt;
+        |        ok
+        |    end,
+        |    valvex:remove_handler(Valvex, valvex_message_event_handler, []),
+        |    %% Compare time
+        |    {_, CurrentSeconds, _} = os:timestamp(),
+        |    Diff = CurrentSeconds - BeforeSeconds,
+        |    ?assert(Diff &gt;= 2).
+        |  
+        |  test_remove(suite)                         -&gt; [];
+        |  test_remove({init, Config})                -&gt; Config;
+        |  test_remove({'end', _Config})              -&gt; ok;
+        |  test_remove(doc)                           -&gt;
+        |    ["Test we can remove queues and all the possible scenarios"];
+        |  test_remove(Config) when is_list(Config)   -&gt;
+        |    Valvex      = valvex,
+        |    KeyLifo     = test_lifo,
+        |    KeyFifo     = test_fifo,
+        |    KeyPBTest   = test_threshold_pushback,
+        |    RawLifoFun  = fun() -&gt;
+        |                      gen_server:call(Valvex, {get_raw_queue, KeyLifo})
+        |                  end,
+        |    LifoSizeFun = fun() -&gt;
+        |                      valvex:get_queue_size(Valvex, KeyLifo)
+        |                  end,
+        |    LifoConFun  = fun() -&gt;
+        |                      valvex_queue:is_consuming(valvex_queue_lifo_backend, KeyLifo)
+        |                  end,
+        |    RawFifoFun  = fun() -&gt;
+        |                      gen_server:call(Valvex, {get_raw_queue, KeyFifo})
+        |                  end,
+        |    FifoSizeFun = fun() -&gt;
+        |                      valvex:get_queue_size(Valvex, KeyFifo)
+        |                  end,
+        |    FifoConFun  = fun() -&gt;
+        |                      valvex_queue:is_consuming(valvex_queue_fifo_backend, KeyFifo)
+        |                  end,
+        |    RawPBTestFun = fun() -&gt;
+        |                       gen_server:call(Valvex, {get_raw_queue, KeyPBTest})
+        |                   end,
+        |    PBTestConFun  = fun() -&gt;
+        |                        valvex_queue:is_consuming(valvex_queue_fifo_backend, KeyPBTest)
+        |                    end,
+        |    %% Make sure the queues are started as expected
+        |    ?assert(is_pid(whereis(KeyLifo))),
+        |    ?assert(is_pid(whereis(KeyFifo))),
+        |    ?assert(is_pid(whereis(KeyPBTest))),
+        |    %% Stop the consumer of the lifo queue so we can test it hangs around
+        |    %% when a normal remove is done
+        |    ?assertEqual(ok, valvex_queue:stop_consumer(valvex_queue_lifo_backend, KeyLifo)),
+        |    ?assertEqual(ok, do_until(LifoConFun, false, 999999)),
+        |    ?assertEqual(ok, valvex:push(Valvex, KeyLifo, RawLifoFun)),
+        |    ?assertEqual(ok, do_until(LifoSizeFun, 1, 999999)),
+        |    ?assertEqual(ok, valvex:remove(Valvex, KeyLifo)),
+        |    ?assertEqual(true, valvex_queue:is_tombstoned(valvex_queue_lifo_backend, KeyLifo)),
+        |    ?assertEqual(ok, valvex_queue:start_consumer(valvex_queue_lifo_backend, KeyLifo)),
+        |    ?assertEqual(ok, do_until(LifoConFun, true, 999999)),
+        |    ?assertEqual(ok, do_until(LifoSizeFun, 0, 999999)),
+        |    ?assertEqual(ok, do_until(RawLifoFun, {error, key_not_found}, 999999)),
+        |    %% Stop the consumer of the fifo queue so we can test locking
+        |    ?assertEqual(ok, valvex_queue:stop_consumer(valvex_queue_fifo_backend, KeyFifo)),
+        |    ?assertEqual(ok, do_until(FifoConFun, false, 9999999)),
+        |    ?assertEqual(ok, valvex:push(Valvex, KeyFifo, RawFifoFun)),
+        |    ?assertEqual(ok, do_until(FifoSizeFun, 1, 9999999)),
+        |    ?assertEqual(ok, valvex:remove(Valvex, KeyFifo, lock_queue)),
+        |    ?assert(valvex_queue:is_locked(valvex_queue_fifo_backend, KeyFifo)),
+        |    %% Push work to the PBTest queue so we can be sure force remove doesn't care
+        |    ?assertEqual(ok, valvex_queue:stop_consumer(valvex_queue_fifo_backend, KeyPBTest)),
+        |    ?assertEqual(ok, do_until(PBTestConFun, false, 999999)),
+        |    ?assertEqual(ok, valvex:push(Valvex, KeyPBTest, RawPBTestFun)),
+        |    ?assertEqual(ok, do_until(FifoSizeFun, 1, 9999999)),
+        |    ?assertEqual(ok, valvex:remove(Valvex, KeyPBTest, force_remove)),
+        |    ?assertEqual(ok, do_until(RawPBTestFun, {error, key_not_found}, 999999)).
+        |  
+        |  test_tombstone(suite)                         -&gt; [];
+        |  test_tombstone({init, Config})                -&gt; Config;
+        |  test_tombstone({'end', _Config})              -&gt; ok;
+        |  test_tombstone(doc)                           -&gt;
+        |    ["Test tombstone mechanisms"];
+        |  test_tombstone(Config) when is_list(Config)   -&gt;
+        |    Valvex     = valvex,
+        |    KeyLifo    = test_lifo,
+        |    KeyFifo    = test_fifo,
+        |    RawLifoFun = fun() -&gt;
+        |                     gen_server:call(Valvex, {get_raw_queue, KeyLifo})
+        |                 end,
+        |    RawFifoFun = fun() -&gt;
+        |                     gen_server:call(Valvex, {get_raw_queue, KeyFifo})
+        |                 end,
+        |    %% Make sure the queues are started as expected
+        |    ?assert(is_pid(whereis(KeyLifo))),
+        |    ?assert(is_pid(whereis(KeyFifo))),
+        |    %% Tombstone both queues
+        |    ?assertEqual(ok, valvex_queue:tombstone(valvex_queue_lifo_backend, KeyLifo)),
+        |    ?assertEqual(ok, valvex_queue:tombstone(valvex_queue_fifo_backend, KeyFifo)),
+        |    ?assert(valvex_queue:is_tombstoned(valvex_queue_lifo_backend, KeyLifo)),
+        |    ?assert(valvex_queue:is_tombstoned(valvex_queue_fifo_backend, KeyFifo)),
+        |    ?assertEqual(ok, do_until(RawLifoFun, {error, key_not_found}, 999999)),
+        |    ?assertEqual(ok, do_until(RawFifoFun, {error, key_not_found}, 999999)).
+        |  
+        |  do_until(Fun, ExpectedResult, 0) -&gt;
+        |    throw({unexpected_result, Fun(), ExpectedResult});
+        |  do_until(Fun, ExpectedResult, N) -&gt;
+        |    case Fun() of
+        |      ExpectedResult -&gt;
+        |        lager:info("Expected Result was given: ~p", [ExpectedResult]),
+        |        ok;
+        |      Other              -&gt;
+        |        lager:info("Unxpected Result was given attempting again: ~p", [Other]),
+        |        do_until(Fun, ExpectedResult, N-1)
+        |    end.
+        |  
+        |  %%%_* Emacs ============================================================
+        |  %%% Local Variables:
+        |  %%% allout-layout: t
+        |  %%% erlang-indent-level: 2
+        |  %%% End:
+</pre>
+</body>
+</html>

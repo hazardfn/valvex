@@ -1,0 +1,74 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<title>/home/travis/build/hazardfn/valvex/_build/test/cover/eunit/valvex_worker.html</title>
+</head><body style='background-color: white; color: black'>
+<pre>
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_worker.erl by COVER 2016-06-26 at 15:53:12
+
+****************************************************************************
+
+        |  -module(valvex_worker).
+        |  
+        |  -behaviour(gen_server).
+        |  
+        |  -export([ start_link/1
+        |          , stop/1
+        |          , work/2
+        |          ]).
+        |  
+        |  -export([ code_change/3
+        |          , handle_call/3
+        |          , handle_cast/2
+        |          , handle_info/2
+        |          , init/1
+        |          , terminate/2
+        |          ]).
+        |  
+        |  %%%=============================================================================
+        |  %%% API
+        |  %%%=============================================================================
+        |  -spec start_link(valvex:valvex_ref()) -&gt; valvex:valvex_ref().
+        |  start_link(Valvex) -&gt;
+    22..|    {ok, Pid} = gen_server:start_link(?MODULE, Valvex, []),
+    22..|    Pid.
+        |  
+        |  work(Worker, Work) -&gt;
+     4..|    gen_server:cast(Worker, Work).
+        |  
+        |  -spec stop(valvex:valvex_ref()) -&gt; ok.
+        |  stop(Worker) -&gt;
+    22..|    gen_server:call(Worker, stop).
+        |  
+        |  %%%=============================================================================
+        |  %%% Gen Server Callbacks
+        |  %%%=============================================================================
+        |  init(Valvex) -&gt;
+    22..|    {ok, #{ valvex =&gt; Valvex }}.
+        |  
+        |  handle_cast({work, Work}, #{ valvex := Valvex } = S) -&gt;
+     4..|    Work(),
+     4..|    gen_server:cast(Valvex, {work_finished, self()}),
+     4..|    {noreply, S}.
+        |  
+        |  handle_call(stop, _From, #{ valvex := Valvex } = S) -&gt;
+    22..|    valvex:notify(Valvex, {worker_stopped, self()}),
+    22..|    {stop, normal, ok, S}.
+        |  
+        |  handle_info(_Msg, S) -&gt;
+<font color=red>     0..|    {noreply, S}.</font>
+        |  
+        |  code_change(_OldVsn, S, _Extra) -&gt;
+<font color=red>     0..|    {ok, S}.</font>
+        |  
+        |  terminate(_Reason, _S) -&gt;
+    22..|    ok.
+        |  %%%_* Emacs ============================================================
+        |  %%% Local Variables:
+        |  %%% allout-layout: t
+        |  %%% erlang-indent-level: 2
+        |  %%% End:
+</pre>
+</body>
+</html>

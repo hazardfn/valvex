@@ -1,0 +1,114 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<title>/home/travis/build/hazardfn/valvex/_build/test/cover/eunit/valvex_message_event_handler.html</title>
+</head><body style='background-color: white; color: black'>
+<pre>
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_message_event_handler.erl by COVER 2016-06-26 at 15:53:12
+
+****************************************************************************
+
+        |  -module(valvex_message_event_handler).
+        |  -behaviour(gen_event).
+        |  
+        |  %% gen_event exports
+        |  -export([ init/1
+        |          , handle_event/2
+        |          , handle_call/2
+        |          , handle_info/2
+        |          , code_change/3
+        |          , terminate/2
+        |          ]).
+        |  
+        |  %% API exports
+        |  -export([]).
+        |  
+        |  %%==============================================================================
+        |  %% Gen Event API
+        |  %%==============================================================================
+        |  init([Pid]) -&gt;
+    24..|    {ok, #{ receiver =&gt; Pid }}.
+        |  
+        |  handle_event({queue_started, _Q} = Event, #{ receiver := Pid } = S) -&gt;
+    12..|    Pid ! Event,
+    12..|    {ok, S};
+        |  handle_event({queue_popped, _Q} = Event, #{ receiver := Pid } = S) -&gt;
+    84..|    Pid ! Event,
+    84..|    {ok, S};
+        |  handle_event({queue_popped_r, _Q} = Event, #{ receiver := Pid } = S) -&gt;
+     8..|    Pid ! Event,
+     8..|    {ok, S};
+        |  handle_event({queue_push, _Q} = Event, #{ receiver := Pid } = S) -&gt;
+    70..|    Pid ! Event,
+    70..|    {ok, S};
+        |  handle_event({queue_push_r, _Q} = Event, #{ receiver := Pid } = S) -&gt;
+    34..|    Pid ! Event,
+    34..|    {ok, S};
+        |  handle_event({push_complete, _Q} = Event, #{ receiver := Pid} = S) -&gt;
+   100..|    Pid ! Event,
+   100..|    {ok, S};
+        |  handle_event({push_to_locked_queue, _Q} = Event, #{ receiver := Pid} = S) -&gt;
+     4..|    Pid ! Event,
+     4..|    {ok, S};
+        |  handle_event({queue_tombstoned, _Q} = Event, #{ receiver := Pid } = S) -&gt;
+     8..|    Pid ! Event,
+     8..|    {ok, S};
+        |  handle_event({queue_locked, _Q} = Event, #{ receiver := Pid } = S) -&gt;
+     6..|    Pid ! Event,
+     6..|    {ok, S};
+        |  handle_event({queue_unlocked, _Q} = Event, #{ receiver := Pid } = S) -&gt;
+     4..|    Pid ! Event,
+     4..|    {ok, S};
+        |  handle_event({queue_consumer_started, _Q} = Event, #{ receiver := Pid } = S) -&gt;
+    22..|    Pid ! Event,
+    22..|    {ok, S};
+        |  handle_event({queue_consumer_stopped, _Q} = Event, #{ receiver := Pid } = S) -&gt;
+    26..|    Pid ! Event,
+    26..|    {ok, S};
+        |  handle_event({timeout, _Key} = Event, #{ receiver := Pid } = S) -&gt;
+    38..|    Pid ! Event,
+    38..|    {ok, S};
+        |  handle_event({result, _Result, _Key} = Event, #{ receiver := Pid } = S) -&gt;
+     2..|    Pid ! Event,
+     2..|    {ok, S};
+        |  handle_event({threshold_hit, _Q} = Event, #{ receiver := Pid } = S) -&gt;
+    12..|    Pid ! Event,
+    12..|    {ok, S};
+        |  handle_event({work_requeued, _Key, _AvailableWorkers} = Event, #{ receiver := Pid } = S) -&gt;
+    34..|    Pid ! Event,
+    34..|    {ok, S};
+        |  handle_event({worker_assigned, _Key, _AvailableWorkers} = Event, #{ receiver := Pid } = S) -&gt;
+     4..|    Pid ! Event,
+     4..|    {ok, S};
+        |  handle_event({queue_crossover, _Q, _NuQ} = Event, #{ receiver := Pid } = S) -&gt;
+     4..|    Pid ! Event,
+     4..|    {ok, S};
+        |  handle_event({queue_removed, _Key} = Event, #{ receiver := Pid } = S) -&gt;
+     6..|    Pid ! Event,
+     6..|    {ok, S};
+        |  handle_event({worker_stopped, _Worker} = Event, #{receiver := Pid } = S) -&gt;
+<font color=red>     0..|    Pid ! Event,</font>
+<font color=red>     0..|    {ok, S}.</font>
+        |  
+        |  
+        |  handle_info(_, State) -&gt;
+   338..|    {ok, State}.
+        |  
+        |  handle_call(_, S) -&gt;
+<font color=red>     0..|    {ok, ok, S}.</font>
+        |  
+        |  code_change(_OldVsn, State, _Extra) -&gt;
+<font color=red>     0..|    {ok, State}.</font>
+        |  
+        |  terminate(_Reason, _State) -&gt;
+    24..|    ok.
+        |  
+        |  %%%_* Emacs ====================================================================
+        |  %%% Local Variables:
+        |  %%% allout-layout: t
+        |  %%% erlang-indent-level: 2
+        |  %%% End:
+</pre>
+</body>
+</html>

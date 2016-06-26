@@ -1,0 +1,62 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<title>/home/travis/build/hazardfn/valvex/_build/test/cover/eunit/valvex_app.html</title>
+</head><body style='background-color: white; color: black'>
+<pre>
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_app.erl by COVER 2016-06-26 at 15:53:12
+
+****************************************************************************
+
+        |  %%%---------------------------------------------------------------------------------------------------------------------
+        |  %% @doc Valvex rebar3 app
+        |  %% @end
+        |  %%%---------------------------------------------------------------------------------------------------------------------
+        |  
+        |  -module(valvex_app).
+        |  
+        |  -behaviour(application).
+        |  
+        |  %% Application callbacks
+        |  -export([start/0, start/2, stop/1]).
+        |  
+        |  %%======================================================================================================================
+        |  %% API
+        |  %%======================================================================================================================
+        |  
+        |  start() -&gt;
+<font color=red>     0..|    application:start(valvex).</font>
+        |  start(_StartType, _StartArgs) -&gt;
+    22..|    case application:get_all_env(valvex) of
+<font color=red>     0..|       []      -&gt; valvex_sup:start_link();</font>
+        |      _Options -&gt;
+    22..|       {ok, Queues}          = get_setting(valvex, queues),
+    22..|       {ok, EventHandlers}   = get_setting(valvex, event_handlers),
+    22..|       {ok, Workers}         = get_setting(valvex, workers),
+    22..|       {ok, PushbackEnabled} = get_setting(valvex, pushback_enabled),
+    22..|       valvex_sup:start_link([ {queues, Queues}
+        |                             , {pushback_enabled, PushbackEnabled}
+        |                             , {workers, Workers}
+        |                             , {event_handlers, EventHandlers}
+        |                             ])
+        |    end.
+        |  %%----------------------------------------------------------------------------------------------------------------------
+        |  stop(_State) -&gt;
+    22..|      ok.
+        |  
+        |  %%======================================================================================================================
+        |  %% Internal functions
+        |  %%======================================================================================================================
+        |  
+        |  get_setting(App, Par) -&gt;
+    88..|    application:get_env(App, Par).
+        |  
+        |  %%%_* Emacs ============================================================================================================
+        |  %%% Local Variables:
+        |  %%% allout-layout: t
+        |  %%% erlang-indent-level: 2
+        |  %%% End:
+</pre>
+</body>
+</html>

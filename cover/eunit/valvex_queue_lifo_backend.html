@@ -1,0 +1,431 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<title>/home/travis/build/hazardfn/valvex/_build/test/cover/eunit/valvex_queue_lifo_backend.html</title>
+</head><body style='background-color: white; color: black'>
+<pre>
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_queue_lifo_backend.erl by COVER 2016-06-26 at 15:53:12
+
+****************************************************************************
+
+        |  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        |  %%% @author Howard Beard-Marlowe &lt;howardbm@live.se&gt;
+        |  %%% @copyright 2016 Howard Beard-Marlowe
+        |  %%% @version 0.1.0
+        |  %%% @end
+        |  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        |  
+        |  %% @doc Valvex LIFO backend
+        |  %%
+        |  %% The fifo backend provides a last in first out behaviour for valvex
+        |  %% it uses a standard erlang queue - if this behaviour does not suit
+        |  %% your application or you wish to use a custom queue feel free
+        |  %% to create your own backend, be careful to ensure you adhere to
+        |  %% to the behaviour of a valvex queue and to include knowledge
+        |  %% of locking and tombstoning to your backend.
+        |  
+        |  -module(valvex_queue_lifo_backend).
+        |  
+        |  -behaviour(valvex_queue).
+        |  -behaviour(gen_server).
+        |  
+        |  -export([ consume/5
+        |          , crossover/2
+        |          , is_consuming/1
+        |          , is_locked/1
+        |          , is_tombstoned/1
+        |          , lock/1
+        |          , pop/1
+        |          , pop_r/1
+        |          , push/2
+        |          , push_r/2
+        |          , size/1
+        |          , start_consumer/1
+        |          , start_link/2
+        |          , stop_consumer/1
+        |          , tombstone/1
+        |          , unlock/1
+        |          ]).
+        |  
+        |  -export([ init/1
+        |          , code_change/3
+        |          , handle_call/3
+        |          , handle_cast/2
+        |          , handle_info/2
+        |          , terminate/2
+        |          ]).
+        |  
+        |  %%======================================================================================================================
+        |  %% Queue Callbacks
+        |  %%======================================================================================================================
+        |  
+        |  
+        |  %% @doc consumes once from the queue, usually used via start_consumer which
+        |  %% slurps from the queue per milliseconds as set in the poll_rate setting.
+        |  %% @see start_consumer
+        |  %% @see valvex:queue_poll_rate()
+        |  -spec consume( valvex:valvex_ref()
+        |               , valvex:valvex_ref()
+        |               , valvex:queue_backend()
+        |               , valvex:queue_key()
+        |               , non_neg_integer()) -&gt; ok.
+        |  consume(Valvex, QPid, Backend, Key, Timeout) -&gt;
+   112..|    do_consume(Valvex, QPid, Backend, Key, Timeout).
+        |  
+        |  %% @doc initiates a crossover, the replacement of the current queue settings
+        |  %% with a different arrangement.
+        |  -spec crossover( valvex:valvex_ref(), valvex:valvex_queue()) -&gt; ok.
+        |  crossover(Q, NuQ) -&gt;
+     2..|    gen_server:cast(Q, {crossover, NuQ}),
+     2..|    gen_server:cast(Q, restart_consumer).
+        |  
+        |  %% @doc returns true if the consumer is active.
+        |  -spec is_consuming(valvex:valvex_ref()) -&gt; true | false.
+        |  is_consuming(Q) -&gt;
+    16..|    gen_server:call(Q, is_consuming).
+        |  
+        |  %% @doc returns true if the queue is locked, more details about what that means
+        |  %% exist in the readme.
+        |  -spec is_locked(valvex:valvex_ref()) -&gt; true | false.
+        |  is_locked(Q) -&gt;
+    40..|    gen_server:call(Q, is_locked).
+        |  
+        |  %% @doc returns true if the queue is queued for deletion, it will only be deleted
+        |  %% once empty and can only be guaranteed to be eventually empty when locked.
+        |  -spec is_tombstoned(valvex:valvex_ref()) -&gt; true | false.
+        |  is_tombstoned(Q) -&gt;
+     4..|    gen_server:call(Q, is_tombstoned).
+        |  
+        |  %% @doc lock the queue, refer to the readme for specifics as to what this means.
+        |  -spec lock(valvex:valvex_ref()) -&gt; ok.
+        |  lock(Q) -&gt;
+     2..|    gen_server:cast(Q, lock).
+        |  
+        |  %% @doc pop the queue, in the case of this backend it's last in first out.
+        |  -spec pop(valvex:valvex_ref()) -&gt; valvex:valvex_q_item().
+        |  pop(Q) -&gt;
+     4..|    gen_server:call(Q, pop).
+        |  
+        |  %% @doc pop_r is the reverse operation of whatever pop is, in this case it's
+        |  %% first in first out.
+        |  -spec pop_r(valvex:valvex_ref()) -&gt; valvex:valvex_q_item().
+        |  pop_r(Q) -&gt;
+     4..|    gen_server:call(Q, pop_r).
+        |  
+        |  %% @doc pushes a queue item to the queue. The item is placed at the end.
+        |  %% @see valvex:valvex_q_item()
+        |  -spec push(valvex:valvex_ref(), valvex:valvex_q_item()) -&gt; ok.
+        |  push(Q, Value) -&gt;
+    34..|    gen_server:cast(Q, {push, Value}).
+        |  
+        |  %% @doc pushes a queue item to the queue. The item is placed at the front.
+        |  %% @see valvex:valvex_q_item()
+        |  -spec push_r(valvex:valvex_ref(), valvex:valvex_q_item()) -&gt; ok.
+        |  push_r(Q, Value) -&gt;
+    18..|    gen_server:cast(Q, {push_r, Value}).
+        |  
+        |  %% @doc returns the current number of items in the queue.
+        |  -spec size(valvex:valvex_ref()) -&gt; non_neg_integer().
+        |  size(Q) -&gt;
+ 29206..|    gen_server:call(Q, size).
+        |  
+        |  %% @doc starts a timer that regularly calls the consume function
+        |  %% to facilitate constant slurping of the queue, how regularly
+        |  %% is determined by the poll_rate.
+        |  %% @see valvex:queue_poll_rate()
+        |  %% @see consume()
+        |  -spec start_consumer(valvex:valvex_ref()) -&gt; ok.
+        |  start_consumer(Q) -&gt;
+    32..|    gen_server:cast(Q, start_consumer).
+        |  
+        |  %% @doc starts a link with the queue gen_server.
+        |  -spec start_link(valvex:valvex_ref(), valvex:valvex_queue()) -&gt; valvex:valvex_ref().
+        |  start_link(Valvex, { Key, _, _, _, _, _ } = Q) -&gt;
+    44..|    gen_server:start_link({local, Key}, ?MODULE, [Valvex, Q], []).
+        |  
+        |  %% @doc stops the regular consumption of the queue.
+        |  -spec stop_consumer(valvex:valvex_ref()) -&gt; ok.
+        |  stop_consumer(Q) -&gt;
+    12..|    gen_server:cast(Q, stop_consumer).
+        |  
+        |  %% @doc marks the queue for deletion.
+        |  -spec tombstone(valvex:valvex_ref()) -&gt; ok.
+        |  tombstone(Q) -&gt;
+     4..|    gen_server:cast(Q, tombstone).
+        |  
+        |  %% @doc unlocks the queue, for more information about what this means
+        |  %% consult the readme.
+        |  -spec unlock(valvex:valvex_ref()) -&gt; ok.
+        |  unlock(Q) -&gt;
+     2..|    gen_server:cast(Q, unlock).
+        |  
+        |  %%======================================================================================================================
+        |  %% Gen Server Callbacks
+        |  %%======================================================================================================================
+        |  
+        |  %% @doc to initialize a queue the valvex reference to valvex_server
+        |  %% is required and a queue.
+        |  %% @see valvex:valvex_queue()
+        |  %% @see valvex:valvex_ref()
+        |  -spec init(list()) -&gt; {ok, valvex_queue:queue_state()}.
+        |  init([ Valvex, { Key
+        |                 , {threshold, Threshold}
+        |                 , {timeout, Timeout, seconds}
+        |                 , {pushback, Pushback, seconds}
+        |                 , {poll_rate, Poll, ms}
+        |                 , _Backend
+        |                 } = Q
+        |       ]) -&gt;
+    44..|    valvex:notify(Valvex, {queue_started, Q}),
+    44..|    {ok, #{ key        =&gt; Key
+        |          , threshold  =&gt; Threshold
+        |          , timeout    =&gt; Timeout
+        |          , pushback   =&gt; Pushback
+        |          , backend    =&gt; ?MODULE
+        |          , size       =&gt; 0
+        |          , poll_rate  =&gt; Poll
+        |          , queue      =&gt; queue:new()
+        |          , q          =&gt; Q
+        |          , locked     =&gt; false
+        |          , tombstoned =&gt; false
+        |          , valvex     =&gt; Valvex
+        |          , queue_pid  =&gt; self()
+        |          , consumer   =&gt; undefined
+        |          }}.
+        |  
+        |  %% @doc see the "see also" list for a list of synchronous operations
+        |  %% @see pop()
+        |  %% @see pop_r()
+        |  %% @see is_locked()
+        |  %% @see is_tombstoned()
+        |  %% @see size()
+        |  handle_call(pop, _From, #{ queue      := Q0
+        |                           , q          := RawQ
+        |                           , size       := Size
+        |                           , tombstoned := Tombstone
+        |                           , valvex     := Valvex
+        |                           } = S) -&gt;
+   134..|    Value = queue:out_r(Q0),
+   134..|    evaluate_value(Valvex, Tombstone, Size, RawQ, Value, queue_popped, S);
+        |  handle_call(pop_r, _From, #{ queue      := Q0
+        |                             , q          := RawQ
+        |                             , size       := Size
+        |                             , tombstoned := Tombstone
+        |                             , valvex     := Valvex
+        |                             } = S) -&gt;
+     4..|    Value = queue:out(Q0),
+     4..|    evaluate_value(Valvex, Tombstone, Size, RawQ, Value, queue_popped_r, S);
+        |  handle_call(is_consuming, _From, #{ consumer := Consumer} = S) -&gt;
+    16..|    case Consumer of
+    10..|      undefined -&gt; {reply, false, S};
+     6..|      _         -&gt; {reply, true, S}
+        |      end;
+        |  handle_call(is_locked, _From, #{ locked := Locked } = S) -&gt;
+    40..|    {reply, Locked, S};
+        |  handle_call(is_tombstoned, _From, #{ tombstoned := Tombstoned } = S) -&gt;
+     4..|    {reply, Tombstoned, S};
+        |  handle_call(size, _From, #{ size := Size } = S) -&gt;
+ 29206..|    {reply, Size, S}.
+        |  
+        |  %% @doc See the "see also" list for a list of asynchronous operations.
+        |  %% @see push()
+        |  %% @see push_r()
+        |  %% @see lock()
+        |  %% @see unlock()
+        |  %% @see tombstone()
+        |  %% @see crossover()
+        |  %% @see start_consumer()
+        |  %% @see stop_consumer()
+        |  handle_cast({push, {Work, _Timestamp} = Value}, #{ valvex    := Valvex
+        |                                                   , q         := RawQ
+        |                                                   , queue     := Q
+        |                                                   } = S) -&gt;
+    34..|    valvex:notify(Valvex, {queue_push, RawQ}),
+    34..|    evaluate_push(S, queue:in(Value, Q), Work);
+        |  handle_cast( {push_r, {Work, _Timestamp} = Value}, #{ valvex    := Valvex
+        |                                                      , q         := RawQ
+        |                                                      , queue     := Q
+        |                                                      } = S) -&gt;
+    18..|    valvex:notify(Valvex, {queue_push_r, RawQ}),
+    18..|    evaluate_push(S, queue:in_r(Value, Q), Work);
+        |  handle_cast(lock, #{ valvex := Valvex, q := RawQ } = S) -&gt;
+     2..|    valvex:notify(Valvex, {queue_locked, RawQ}),
+     2..|    {noreply, S#{ locked := true }};
+        |  handle_cast(unlock, #{ valvex := Valvex, q := RawQ } = S) -&gt;
+     2..|    valvex:notify(Valvex, {queue_unlocked, RawQ}),
+     2..|    {noreply, S#{ locked := false }};
+        |  handle_cast(tombstone, #{ valvex := Valvex, q := RawQ } = S) -&gt;
+     4..|    valvex:notify(Valvex, {queue_tombstoned, RawQ}),
+     4..|    {noreply, S#{ tombstoned := true}};
+        |  handle_cast({crossover, NuQ}, #{ key      := Key
+        |                                 , valvex   := Valvex
+        |                                 , q        := RawQ
+        |                                 } = S) -&gt;
+     2..|    valvex:notify(Valvex, {queue_crossover, RawQ, NuQ}),
+     2..|    valvex:update(Valvex, Key, NuQ),
+     2..|    do_crossover(NuQ, S);
+        |  handle_cast(start_consumer, #{ valvex     := Valvex
+        |                               , queue_pid  := QPid
+        |                               , backend    := Backend
+        |                               , key        := Key
+        |                               , timeout    := Timeout
+        |                               , poll_rate  := Poll
+        |                               , q          := RawQ
+        |                               , consumer   := TRef0
+        |                               } = S) -&gt;
+    32..|    case TRef0 of
+        |      undefined -&gt;
+    30..|        start_timer(Valvex, QPid, Backend, Key, Timeout, Poll, RawQ, S);
+        |      _ -&gt;
+     2..|        {noreply, S}
+        |    end;
+        |  handle_cast(restart_consumer, #{ valvex    := Valvex
+        |                                 , queue_pid := QPid
+        |                                 , backend   := Backend
+        |                                 , key       := Key
+        |                                 , timeout   := Timeout
+        |                                 , poll_rate := Poll
+        |                                 , q         := RawQ
+        |                                 , consumer  := TRef
+        |                                 } = S) -&gt;
+     2..|    case TRef of
+<font color=red>     0..|      undefined -&gt; {noreply, S};</font>
+        |      _         -&gt;
+     2..|        timer:cancel(TRef),
+     2..|        start_timer(Valvex, QPid, Backend, Key, Timeout, Poll, RawQ, S)
+        |    end;
+        |  handle_cast(stop_consumer, #{ consumer := TRef
+        |                              , q        := RawQ
+        |                              , valvex   := Valvex
+        |                              } = S) -&gt;
+    12..|    timer:cancel(TRef),
+    12..|    valvex:notify(Valvex, {queue_consumer_stopped, RawQ}),
+    12..|    {noreply, S#{ consumer := undefined }}.
+        |  
+        |  %% @doc Info messages are discarded.
+        |  handle_info(_Info, S) -&gt;
+<font color=red>     0..|    {noreply, S}.</font>
+        |  
+        |  %% @doc Restarts the consumer only during a code change as this may be
+        |  %% required if code within the consumer function has changed, it will
+        |  %% only be restarted if it was running at the point of change.
+        |  code_change(_Vsn, S, _Extra) -&gt;
+<font color=red>     0..|    gen_server:cast(self(), restart_consumer),</font>
+<font color=red>     0..|    {ok, S}.</font>
+        |  
+        |  %% @doc Performs cleanup by stopping the consumer and unregistering
+        |  %% the queues key if it remains registered for whatever reason.
+        |  terminate(_Reason, #{ consumer := Consumer
+        |                      , key      := Key
+        |                      }) -&gt;
+    20..|    cleanup(Consumer, Key).
+        |  
+        |  
+        |  %%%=====================================================================================================================
+        |  %%% Helpers
+        |  %%%=====================================================================================================================
+        |  cleanup(Consumer, Key) -&gt;
+    20..|    maybe_stop_consumer(Consumer),
+    20..|    maybe_unregister_queue(whereis(Key), Key).
+        |  
+        |  maybe_stop_consumer(undefined) -&gt;
+     6..|    ok;
+        |  maybe_stop_consumer(Consumer) -&gt;
+    14..|    timer:cancel(Consumer).
+        |  
+        |  maybe_unregister_queue(undefined, _Key) -&gt;
+<font color=red>     0..|    ok;</font>
+        |  maybe_unregister_queue(_Pid, Key) -&gt;
+    20..|    erlang:unregister(Key).
+        |  
+        |  do_consume(Valvex, QPid, Backend, Key, Timeout) -&gt;
+22305044|    try
+22308716|      QueueValue = gen_server:call(QPid, pop),
+   130..|      case QueueValue of
+        |        {{value, {Work, Timestamp}}, _Q} -&gt;
+    40..|          case is_stale(Timeout, Timestamp) of
+        |            false -&gt;
+    20..|              gen_server:call(Valvex, { assign_work
+        |                                      , {Work, Timestamp}
+        |                                      , {Key, QPid, Backend}
+        |                                      }
+        |                             );
+        |            true  -&gt;
+    20..|              valvex:notify(Valvex, {timeout, Key})
+        |          end,
+    20..|          do_consume(Valvex, QPid, Backend, Key, Timeout);
+        |        {empty, tombstoned} -&gt;
+     4..|          valvex:notify(Valvex, {queue_removed, Key}),
+     4..|          valvex:remove(Valvex, Key, force_remove);
+        |        {empty, _} -&gt;
+    86..|          ok
+        |      end
+        |    catch _Error:_Reason -&gt;
+22312084|        do_consume(Valvex, QPid, Backend, Key, Timeout)
+        |    end.
+        |  
+        |  update_state(Q, Size, S) -&gt;
+    98..|    S#{ size := Size, queue := Q }.
+        |  
+        |  evaluate_value(Valvex, Tombstone, Size, RawQ, Value, Event, S) -&gt;
+   138..|    case Value of
+        |      {{value, {_Work, _Timestamp}}, Q} -&gt;
+    48..|        valvex:notify(Valvex, {Event, RawQ}),
+    48..|        {reply, Value, update_state(Q, Size-1, S)};
+        |      {empty, _}                                -&gt;
+    90..|        case Tombstone of
+    86..|          false -&gt; {reply, Value, S};
+     4..|          true  -&gt; {reply, {empty, tombstoned}, S}
+        |        end
+        |    end.
+        |  
+        |  evaluate_push(#{ key       := Key
+        |                 , valvex    := Valvex
+        |                 , q         := RawQ
+        |                 , threshold := Threshold
+        |                 , size      := Size
+        |                 } = S, Q, _Work) -&gt;
+    52..|    case Size &gt;= Threshold of
+        |      true -&gt;
+     2..|        valvex:pushback(Valvex, Key),
+     2..|        {noreply, S};
+        |      false -&gt;
+    50..|        valvex:notify(Valvex, {push_complete, RawQ}),
+    50..|        {noreply, update_state(Q, Size+1, S)}
+        |    end.
+        |  
+        |  do_crossover({ _Key
+        |               , {threshold, Threshold}
+        |               , {timeout, Timeout, seconds}
+        |               , {pushback, Pushback, seconds}
+        |               , {poll_rate, Poll, ms}
+        |               , _Backend
+        |               } = Q, S) -&gt;
+     2..|  {noreply, S#{ threshold := Threshold
+        |              , timeout   := Timeout
+        |              , pushback  := Pushback
+        |              , poll_rate := Poll
+        |              , q         := Q}}.
+        |  
+        |  start_timer(Valvex, QPid, Backend, Key, Timeout, Poll, RawQ, S) -&gt;
+    32..|    {ok, TRef} = timer:apply_interval( Poll
+        |                                     , ?MODULE
+        |                                     , consume
+        |                                     , [Valvex, QPid, Backend, Key, Timeout]
+        |                                     ),
+    32..|    valvex:notify(Valvex, {queue_consumer_started, RawQ}),
+    32..|    {noreply, S#{ consumer =&gt; TRef }}.
+        |  
+        |  is_stale(Timeout, Timestamp) -&gt;
+    40..|    TimeoutMS = timer:seconds(Timeout),
+    40..|    Diff      = timer:now_diff(erlang:timestamp(), Timestamp),
+    40..|    Diff      &gt; (TimeoutMS * 1000).
+        |  %%%_* Emacs ====================================================================
+        |  %%% Local Variables:
+        |  %%% allout-layout: t
+        |  %%% erlang-indent-level: 2
+        |  %%% End:
+</pre>
+</body>
+</html>
