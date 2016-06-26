@@ -6,6 +6,7 @@ TARGET_BRANCH="gh-pages"
 
 function doCompile {
   ./rebar3 edoc
+  ./rebar3 cover
 }
 
 # Pull requests and commits to other branches shouldn't try to deploy, just build to verify
@@ -32,6 +33,9 @@ doCompile
 
 # Copy over doc
 yes | cp -rf doc/* out/doc/
+
+# Add cover
+yes | cp -rf _build/test/cover out/
 
 # Now let's go have some fun with the cloned repo
 cd out
