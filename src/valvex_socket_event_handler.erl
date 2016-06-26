@@ -18,20 +18,26 @@
 %%==============================================================================
 init([ {host, Host}
      , {port, Port}
+     , {handler, Handler}
+     , {use_local, Local}
      ]) ->
+  case Local of
+    true -> start_cowboy(Port, Handler);
+    false -> ok
+  end,
   {ok, Gun}      = gun:open(Host, Port),
   {ok, Protocol} = gun:await_up(Gun),
   gun:ws_upgrade(Gun, "/websocket"),
   receive
-        {gun_ws_upgrade, Gun, ok, _Headers} ->
-          ok;
-        {gun_response, Gun, _, _, Status, Headers} ->
-                exit({ws_upgrade_failed, Status, Headers});
-        {gun_error, Gun, _StreamRef, Reason} ->
-                exit({ws_upgrade_failed, Reason})
-        %% More clauses here as needed.
-  after 5000 ->
-        exit(timeout)
+    {gun_ws_upgrade, Gun, ok, _Headers} ->
+      ok;
+    {gun_response, Gun, _, _, Status, Headers} ->
+      exit({ws_upgrade_failed, Status, Headers});
+    {gun_error, Gun, _StreamRef, Reason} ->
+      exit({ws_upgrade_failed, Reason})
+      %% More clauses here as needed.
+  after 15000 ->
+      exit(timeout)
   end,
   {ok, #{ gun      => Gun
         , host     => Host
@@ -247,7 +253,7 @@ handle_event({worker_assigned, Key, AvailableWorkers}, #{ gun := Gun } = S) ->
   gun:ws_send(Gun, jsonify(Event)),
   {ok, S};
 handle_event({worker_stopped, Worker}, #{ gun := Gun } = S) ->
-  Event = #{ worker => Worker
+  Event = #{ worker => erlang:pid_to_list(Worker)
            , event => worker_stopped
            , timestamp => format_utc_timestamp()
            },
@@ -270,6 +276,13 @@ terminate(_Reason, #{ gun := Gun }) ->
 jsonify(Event) ->
   {binary, jsx:encode(Event)}.
 
+start_cowboy(Port, Handler) ->
+  Dispatch = cowboy_router:compile([
+                                    {'_', [
+                                           {"/websocket", Handler, []}
+                                          ]}
+                                   ]),
+  cowboy:start_clear(http, 100, [{port, Port}], #{ env => #{dispatch => Dispatch} }).
 format_utc_timestamp() ->
     TS = {_,_,Micro} = os:timestamp(),
     {{Year,Month,Day},{Hour,Minute,Second}} = calendar:now_to_universal_time(TS),

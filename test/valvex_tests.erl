@@ -41,12 +41,20 @@ end_per_suite(Config) ->
   Config.
 
 init_per_testcase(TestCase, Config) ->
+  test_forwarder:start_link(),
+  Pid = erlang:spawn(test_message_handler, loop, []),
   application:ensure_all_started(valvex),
+  valvex:add_handler(valvex, valvex_message_event_handler, [Pid]),
   ?MODULE:TestCase({init, Config}).
 
 end_per_testcase(TestCase, Config)  ->
   application:stop(valvex),
+  application:stop(cowboy),
+  application:stop(lager),
+  application:unload(lager),
+  application:unload(cowboy),
   application:unload(valvex),
+  gen_server:stop(test_forwarder),
   ?MODULE:TestCase({'end', Config}).
 
 all() ->
