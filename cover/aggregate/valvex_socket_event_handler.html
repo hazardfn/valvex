@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/aggregate/valvex_socket_event_handler.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_socket_event_handler.erl by COVER 2016-06-26 at 23:19:23
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_socket_event_handler.erl by COVER 2016-06-26 at 23:55:19
 
 ****************************************************************************
 
@@ -76,28 +76,61 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |          , protocol =&gt; Protocol
         |          }}.
         |  
-        |  handle_event({_, {Key, _, _, _, _, _}}, #{ gun := Gun } = S) -&gt;
-   256..|    do_fudge(sys:get_state(Key), Gun),
-   256..|    {ok, S};
-        |  handle_event({_, {Key, _, _, _, _, _}, _}, #{ gun := Gun } = S) -&gt;
-     3..|    do_fudge(sys:get_state(Key), Gun),
-     3..|    {ok, S};
-        |  handle_event({_, Key}, #{ gun := Gun } = S) -&gt;
-    24..|    do_fudge(sys:get_state(Key), Gun),
-    24..|    {ok, S};
-        |  handle_event({_, Key, _, _}, #{ gun := Gun } = S) -&gt;
-     2..|    do_fudge(sys:get_state(Key), Gun),
-     2..|    {ok, S};
-        |  handle_event({_, Key, _}, #{ gun := Gun } = S) -&gt;
-    17..|    do_fudge(sys:get_state(Key), Gun),
-    17..|    {ok, S}.
+        |  handle_event( {queue_started, {Key, {threshold, Threshold}, {timeout, Timeout, seconds}, {pushback, Pushback, seconds}, {poll_rate, Poll, ms}, Backend}}
+        |              , #{ gun := Gun } = S) -&gt;
+    39..|    Map = #{ key        =&gt; Key
+        |           , threshold  =&gt; Threshold
+        |           , timeout    =&gt; Timeout
+        |           , pushback   =&gt; Pushback
+        |           , poll_rate  =&gt; Poll
+        |           , backend    =&gt; Backend
+        |           , name       =&gt; queue_started
+        |           , created_at =&gt; format_utc_timestamp()
+        |           },
+    39..|    gun:ws_send(Gun, jsonify(Map)),
+    39..|    {ok, S};
+        |  handle_event( {queue_consumer_started, {Key, {threshold, Threshold}, {timeout, Timeout, seconds}, {pushback, Pushback, seconds}, {poll_rate, Poll, ms}, Backend}}
+        |              , #{ gun := Gun } = S) -&gt;
+    41..|    Map = #{ key        =&gt; Key
+        |           , threshold  =&gt; Threshold
+        |           , timeout    =&gt; Timeout
+        |           , pushback   =&gt; Pushback
+        |           , poll_rate  =&gt; Poll
+        |           , backend    =&gt; Backend
+        |           , name       =&gt; queue_started
+        |           , created_at =&gt; format_utc_timestamp()
+        |           },
+    41..|    gun:ws_send(Gun, jsonify(Map)),
+    41..|    {ok, S};
+        |  handle_event( {queue_consumer_stopped, {Key, {threshold, Threshold}, {timeout, Timeout, seconds}, {pushback, Pushback, seconds}, {poll_rate, Poll, ms}, Backend}}
+        |              , #{ gun := Gun } = S) -&gt;
+     5..|    Map = #{ key        =&gt; Key
+        |           , threshold  =&gt; Threshold
+        |           , timeout    =&gt; Timeout
+        |           , pushback   =&gt; Pushback
+        |           , poll_rate  =&gt; Poll
+        |           , backend    =&gt; Backend
+        |           , name       =&gt; queue_started
+        |           , created_at =&gt; format_utc_timestamp()
+        |           },
+     5..|    gun:ws_send(Gun, jsonify(Map)),
+     5..|    {ok, S};
+        |  handle_event(Event, #{ gun := Gun } = S) -&gt;
+   164..|    do_fudge(Gun, Event),
+   159..|    {ok, S}.
         |  
-        |  do_fudge(QS, Gun) -&gt;
-   302..|    QueueState = maps:put(created_at, format_utc_timestamp(), maps:put(name, dump, maps:remove(queue, maps:remove(q, maps:remove(consumer, maps:remove(queue_pid, QS)))))),
-   302..|    gun:ws_send(Gun, jsonify(QueueState)).
+        |  do_fudge(Gun, _Event) -&gt;
+   164..|    ValvexState = sys:get_state(valvex),
+   160..|    Queues      = maps:get(queues, ValvexState),
+   160..|    QueueFun    = fun({Key, _, _, _, _, _}) -&gt;
+   476..|                    [maps:remove(queue, maps:remove(q, maps:remove(consumer, maps:remove(queue_pid, sys:get_state(Key)))))]
+        |                  end,
+   160..|    QueueMapped = #{ mapped_queues =&gt; lists:flatmap(QueueFun, Queues) },
+   159..|    QueueState  = maps:put(created_at, format_utc_timestamp(), maps:put(name, dump, QueueMapped)),
+   159..|    gun:ws_send(Gun, jsonify(QueueState)).
         |  
         |  handle_info(_, State) -&gt;
-   302..|    {ok, State}.
+   210..|    {ok, State}.
         |  
         |  handle_call(_, S) -&gt;
 <font color=red>     0..|    {ok, ok, S}.</font>
@@ -109,7 +142,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
     11..|    gun:shutdown(Gun).
         |  
         |  jsonify(Event) -&gt;
-   302..|    {binary, jsx:encode(Event)}.
+   244..|    {binary, jsx:encode(Event)}.
         |  
         |  start_cowboy(Port, Handler) -&gt;
     11..|    Dispatch = cowboy_router:compile([
@@ -120,13 +153,8 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
     11..|    cowboy:start_clear(http, 100, [{port, Port}], #{ env =&gt; #{dispatch =&gt; Dispatch} }).
         |  
         |  format_utc_timestamp() -&gt;
-   302..|    TS = {_,_,Micro} = os:timestamp(),
-   302..|    {{Year,Month,Day},{Hour,Minute,Second}} = calendar:now_to_universal_time(TS),
-   302..|    Mstr = element(Month,{"Jan","Feb","Mar","Apr","May","Jun","Jul",
-        |                          "Aug","Sep","Oct","Nov","Dec"}),
-   302..|    R = io_lib:format("~2w ~s ~4w ~2w:~2..0w:~2..0w.~6..~w", [Day,Mstr,Year,Hour,Minute,Second, Micro]),
-   302..|    lists:flatten(R).
-        |  
+   244..|    TS =  os:timestamp(),
+   244..|    calendar:now_to_universal_time(TS).
         |  %%%_* Emacs ====================================================================
         |  %%% Local Variables:
         |  %%% allout-layout: t

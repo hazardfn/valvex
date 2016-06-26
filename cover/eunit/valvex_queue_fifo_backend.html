@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/eunit/valvex_queue_fifo_backend.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_queue_fifo_backend.erl by COVER 2016-06-26 at 23:19:24
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_queue_fifo_backend.erl by COVER 2016-06-26 at 23:55:19
 
 ****************************************************************************
 
@@ -71,7 +71,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |               , valvex:queue_key()
         |               , non_neg_integer()) -&gt; ok.
         |  consume(Valvex, QPid, Backend, Key, Timeout) -&gt;
-   232..|    do_consume(Valvex, QPid, Backend, Key, Timeout).
+   230..|    do_consume(Valvex, QPid, Backend, Key, Timeout).
         |  
         |  %% @doc initiates a crossover, the replacement of the current queue settings
         |  %% with a different arrangement.
@@ -341,8 +341,8 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
 <font color=red>     0..|    erlang:unregister(Key).</font>
         |  
         |  do_consume(Valvex, QPid, Backend, Key, Timeout) -&gt;
-22802852|    try
-22805942|      QueueValue = gen_server:call(QPid, pop),
+20555478|    try
+20555486|      QueueValue = gen_server:call(QPid, pop),
    248..|      case QueueValue of
         |        {{value, {Work, Timestamp}}, _Q} -&gt;
     36..|          case is_stale(Timeout, Timestamp) of
@@ -363,7 +363,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
    210..|          ok
         |      end
         |    catch _Error:_Reason -&gt;
-22802608|        do_consume(Valvex, QPid, Backend, Key, Timeout)
+20555230|        do_consume(Valvex, QPid, Backend, Key, Timeout)
         |    end.
         |  
         |  update_state(Q, Size, S) -&gt;
