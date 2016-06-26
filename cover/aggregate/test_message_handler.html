@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/aggregate/test_message_handler.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/test_message_handler.erl by COVER 2016-06-26 at 16:04:08
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/test_message_handler.erl by COVER 2016-06-26 at 16:07:45
 
 ****************************************************************************
 
@@ -13,13 +13,13 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  -export([loop/0]).
         |  
         |  loop() -&gt;
-   255..|      receive
+   247..|      receive
         |          {queue_started, _Q} -&gt;
      6..|              ok,
      6..|              loop();
         |          {queue_popped, _Q} -&gt;
-    44..|              ok,
-    44..|              loop();
+    42..|              ok,
+    42..|              loop();
         |          {queue_popped_r, _Q} -&gt;
      4..|              ok,
      4..|              loop();
@@ -27,11 +27,11 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
     35..|              ok,
     35..|              loop();
         |          {queue_push_r, _Q} -&gt;
-    19..|              ok,
-    19..|              loop();
+    17..|              ok,
+    17..|              loop();
         |          {push_complete, _Q} -&gt;
-    52..|              ok,
-    52..|              loop();
+    50..|              ok,
+    50..|              loop();
         |          {push_to_locked_queue, _Q} -&gt;
      2..|              ok,
      2..|              loop();
@@ -60,8 +60,8 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
      4..|              ok,
      4..|              loop();
         |          {work_requeued, _Key, _AvailableWorkers} -&gt;
-    19..|              ok,
-    19..|              loop();
+    17..|              ok,
+    17..|              loop();
         |          {worker_assigned, _Key, _AvailableWorkers} -&gt;
      2..|              ok,
      2..|              loop();

@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/eunit/valvex_queue.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_queue.erl by COVER 2016-06-26 at 16:04:08
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_queue.erl by COVER 2016-06-26 at 16:07:45
 
 ****************************************************************************
 
@@ -159,14 +159,14 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  %% depending on your backend view its documentation for more information.
         |  -spec push_r( valvex:queue_backend(), valvex:valvex_ref(), valvex:valvex_q_item()) -&gt; ok.
         |  push_r(Backend, Q, Value) -&gt;
-    38..|    Backend:push_r(Q, Value).
+    34..|    Backend:push_r(Q, Value).
         |  
         |  %% @doc This function should retrieve the current size of the queue, if for some reason
         |  %% this is costly with your implementation make sure the user is notified this doesnt
         |  %% work.
         |  -spec size(valvex:queue_backend(), valvex:valvex_ref()) -&gt; non_neg_integer().
         |  size(Backend, Q) -&gt;
- 35104..|    Backend:size(Q).
+ 29052..|    Backend:size(Q).
         |  
         |  %% @doc This function should start your consumer, this will be a regularly run
         |  %% function that slurps the queue.
