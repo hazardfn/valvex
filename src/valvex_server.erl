@@ -226,7 +226,7 @@ handle_call( {assign_work, {Work, Timestamp}, {Key, QPid, Backend}}
       WorkFun = fun() ->
                     valvex:notify(Valvex, {result, Work(), Key})
                 end,
-      valvex:notify(Valvex, {worker_assigned, Worker, T}),
+      valvex:notify(Valvex, {worker_assigned, Key, Worker, T}),
       valvex_worker:work(Worker, {work, WorkFun}),
       {noreply, S#{ available_workers := T }};
     true ->
@@ -321,7 +321,7 @@ terminate(_Reason, #{ workers := Workers, queue_pids := QPids} = _S) ->
                       valvex_worker:stop(Worker)
                   end,
   StopQueueFun = fun({Key, _Backend}) ->
-                     gen_server:stop(Key)
+                     supervisor:terminate_child(valvex_queue_sup, Key)
                  end,
   lists:foreach(StopWorkerFun, Workers),
   lists:foreach(StopQueueFun, QPids),

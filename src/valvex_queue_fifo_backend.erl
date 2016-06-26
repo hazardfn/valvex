@@ -181,6 +181,7 @@ init([ Valvex, { Key
         , valvex     => Valvex
         , queue_pid  => self()
         , consumer   => undefined
+        , consuming  => false
         }}.
 
 %% @doc see the "see also" list for a list of synchronous operations
@@ -290,7 +291,7 @@ handle_cast(stop_consumer, #{ consumer := TRef
                             } = S) ->
   timer:cancel(TRef),
   valvex:notify(Valvex, {queue_consumer_stopped, RawQ}),
-  {noreply, S#{ consumer := undefined }}.
+  {noreply, S#{ consumer := undefined, consuming := false }}.
 
 %% @doc Info messages are discarded.
 handle_info(_Info, S) ->
@@ -404,7 +405,7 @@ start_timer(Valvex, QPid, Backend, Key, Timeout, Poll, RawQ, S) ->
                                    , [Valvex, QPid, Backend, Key, Timeout]
                                    ),
   valvex:notify(Valvex, {queue_consumer_started, RawQ}),
-  {noreply, S#{ consumer => TRef }}.
+  {noreply, S#{ consumer => TRef, consuming => true }}.
 
 is_stale(Timeout, Timestamp) ->
   TimeoutMS = timer:seconds(Timeout),

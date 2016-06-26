@@ -51,7 +51,7 @@ loop() ->
         {work_requeued, _Key, _AvailableWorkers} ->
             ok,
             loop();
-        {worker_assigned, _Key, _AvailableWorkers} ->
+        {worker_assigned, _Key, _Worker, _AvailableWorkers} ->
             ok,
             loop();
         {queue_crossover, _Q, _NuQ} ->

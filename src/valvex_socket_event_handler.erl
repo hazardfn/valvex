@@ -65,222 +65,25 @@ init([ {host, Host}
         , protocol => Protocol
         }}.
 
-
-handle_event({queue_started, {Key, {threshold, Threshold}, {timeout, Timeout, seconds}, {pushback, Pushback, seconds}, {poll_rate, Poll, ms}, Backend}}, #{ gun := Gun } = S) ->
-  Event  = #{ key => Key
-            , threshold => Threshold
-            , timeout   => Timeout
-            , pushback  => Pushback
-            , poll_rate => Poll
-            , backend   => Backend
-            , event     => queue_started
-            , timestamp => format_utc_timestamp()
-            },
-  gun:ws_send(Gun, jsonify(Event)),
+handle_event({_, {Key, _, _, _, _, _}}, #{ gun := Gun } = S) ->
+  do_fudge(sys:get_state(Key), Gun),
   {ok, S};
-handle_event({queue_popped, {Key, {threshold, Threshold}, {timeout, Timeout, seconds}, {pushback, Pushback, seconds}, {poll_rate, Poll, ms}, Backend}}, #{ gun := Gun } = S) ->
-  Event  = #{ key => Key
-            , threshold => Threshold
-            , timeout   => Timeout
-            , pushback  => Pushback
-            , poll_rate => Poll
-            , backend   => Backend
-            , event     => queue_popped
-            , timestamp => format_utc_timestamp()
-            },
-  gun:ws_send(Gun, jsonify(Event)),
+handle_event({_, {Key, _, _, _, _, _}, _}, #{ gun := Gun } = S) ->
+  do_fudge(sys:get_state(Key), Gun),
   {ok, S};
-handle_event({queue_popped_r, {Key, {threshold, Threshold}, {timeout, Timeout, seconds}, {pushback, Pushback, seconds}, {poll_rate, Poll, ms}, Backend}}, #{ gun := Gun } = S) ->
-    Event = #{ key => Key
-             , threshold => Threshold
-             , timeout   => Timeout
-             , pushback  => Pushback
-             , poll_rate => Poll
-             , backend   => Backend
-             , event     => queue_popped_r
-             , timestamp => format_utc_timestamp()
-             },
-  gun:ws_send(Gun, jsonify(Event)),
+handle_event({_, Key}, #{ gun := Gun } = S) ->
+  do_fudge(sys:get_state(Key), Gun),
   {ok, S};
-handle_event({queue_push, {Key, {threshold, Threshold}, {timeout, Timeout, seconds}, {pushback, Pushback, seconds}, {poll_rate, Poll, ms}, Backend}}, #{ gun := Gun } = S) ->
-  Event  = #{ key => Key
-            , threshold => Threshold
-            , timeout   => Timeout
-            , pushback  => Pushback
-            , poll_rate => Poll
-            , backend   => Backend
-            , event     => queue_push
-            , timestamp => format_utc_timestamp()
-            },
-  gun:ws_send(Gun, jsonify(Event)),
+handle_event({_, Key, _, _}, #{ gun := Gun } = S) ->
+  do_fudge(sys:get_state(Key), Gun),
   {ok, S};
-handle_event({queue_push_r, {Key, {threshold, Threshold}, {timeout, Timeout, seconds}, {pushback, Pushback, seconds}, {poll_rate, Poll, ms}, Backend}}, #{ gun := Gun } = S) ->
-  Event  = #{ key => Key
-            , threshold => Threshold
-            , timeout   => Timeout
-            , pushback  => Pushback
-            , poll_rate => Poll
-            , backend   => Backend
-            , event     => queue_push_r
-            , timestamp => format_utc_timestamp()
-            },
-  gun:ws_send(Gun, jsonify(Event)),
-  {ok, S};
-handle_event({push_complete, {Key, {threshold, Threshold}, {timeout, Timeout, seconds}, {pushback, Pushback, seconds}, {poll_rate, Poll, ms}, Backend}}, #{ gun := Gun} = S) ->
-  Event  = #{ key => Key
-            , threshold => Threshold
-            , timeout   => Timeout
-            , pushback  => Pushback
-            , poll_rate => Poll
-            , backend   => Backend
-            , event     => push_complete
-            , timestamp => format_utc_timestamp()
-            },
-  gun:ws_send(Gun, jsonify(Event)),
-  {ok, S};
-handle_event({push_to_locked_queue, Key}, #{ gun := Gun} = S) ->
-  Event  = #{ key => Key
-            , event     => push_to_locked_queue
-            , timestamp => format_utc_timestamp()
-            },
-  gun:ws_send(Gun, jsonify(Event)),
-  {ok, S};
-handle_event({queue_tombstoned, {Key, {threshold, Threshold}, {timeout, Timeout, seconds}, {pushback, Pushback, seconds}, {poll_rate, Poll, ms}, Backend}}, #{ gun := Gun } = S) ->
-  Event  = #{ key => Key
-            , threshold => Threshold
-            , timeout   => Timeout
-            , pushback  => Pushback
-            , poll_rate => Poll
-            , backend   => Backend
-            , event     => queue_tombstoned
-            , timestamp => format_utc_timestamp()
-            },
-  gun:ws_send(Gun, jsonify(Event)),
-  {ok, S};
-handle_event({queue_locked, {Key, {threshold, Threshold}, {timeout, Timeout, seconds}, {pushback, Pushback, seconds}, {poll_rate, Poll, ms}, Backend}}, #{ gun := Gun } = S) ->
-  Event  = #{ key => Key
-            , threshold => Threshold
-            , timeout   => Timeout
-            , pushback  => Pushback
-            , poll_rate => Poll
-            , backend   => Backend
-            , event     => queue_locked
-            , timestamp => format_utc_timestamp()
-            },
-  gun:ws_send(Gun, jsonify(Event)),
-  {ok, S};
-handle_event({queue_unlocked, {Key, {threshold, Threshold}, {timeout, Timeout, seconds}, {pushback, Pushback, seconds}, {poll_rate, Poll, ms}, Backend}}, #{ gun := Gun } = S) ->
-  Event  = #{ key => Key
-            , threshold => Threshold
-            , timeout   => Timeout
-            , pushback  => Pushback
-            , poll_rate => Poll
-            , backend   => Backend
-            , event     => queue_unlocked
-            , timestamp => format_utc_timestamp()
-            },
-  gun:ws_send(Gun, jsonify(Event)),
-  {ok, S};
-handle_event({queue_consumer_started, {Key, {threshold, Threshold}, {timeout, Timeout, seconds}, {pushback, Pushback, seconds}, {poll_rate, Poll, ms}, Backend}}, #{ gun := Gun } = S) ->
-  Event  = #{ key => Key
-            , threshold => Threshold
-            , timeout   => Timeout
-            , pushback  => Pushback
-            , poll_rate => Poll
-            , backend   => Backend
-            , event     => queue_consumer_started
-            , timestamp => format_utc_timestamp()
-            },
-  gun:ws_send(Gun, jsonify(Event)),
-  {ok, S};
-handle_event({queue_consumer_stopped, {Key, {threshold, Threshold}, {timeout, Timeout, seconds}, {pushback, Pushback, seconds}, {poll_rate, Poll, ms}, Backend}}, #{ gun := Gun } = S) ->
-  Event  = #{ key => Key
-            , threshold => Threshold
-            , timeout   => Timeout
-            , pushback  => Pushback
-            , poll_rate => Poll
-            , backend   => Backend
-            , event     => queue_consumer_stopped
-            , timestamp => format_utc_timestamp()
-            },
-  gun:ws_send(Gun, jsonify(Event)),
-  {ok, S};
-handle_event({timeout, Key}, #{ gun := Gun } = S) ->
-  Event  = #{ key       => Key
-            , event     => timeout
-            , timestamp => format_utc_timestamp()
-            },
-  gun:ws_send(Gun, jsonify(Event)),
-  {ok, S};
-handle_event({result, Result, Key}, #{ gun := Gun } = S) ->
-  Event  = #{ key    => Key
-            , result    => lists:flatten(io_lib:format("~s", [Result]))
-            , event     => result
-            , timestamp => format_utc_timestamp()
-            },
-  gun:ws_send(Gun, jsonify(Event)),
-  {ok, S};
-handle_event({threshold_hit, {Key, {threshold, Threshold}, {timeout, Timeout, seconds}, {pushback, Pushback, seconds}, {poll_rate, Poll, ms}, Backend}}, #{ gun := Gun } = S) ->
-  Event  = #{ key => Key
-            , threshold => Threshold
-            , timeout   => Timeout
-            , pushback  => Pushback
-            , poll_rate => Poll
-            , backend   => Backend
-            , event     => threshold_hit
-            , timestamp => format_utc_timestamp()
-            },
-  gun:ws_send(Gun, jsonify(Event)),
-  {ok, S};
-handle_event({queue_crossover, {Key, {threshold, Threshold}, {timeout, Timeout, seconds}, {pushback, Pushback, seconds}, {poll_rate, Poll, ms}, Backend}, {NuKey, {threshold, NuThreshold}, {timeout, NuTimeout, seconds}, {pushback, NuPushback, seconds}, {poll_rate, NuPoll, ms}, NuBackend}}, #{ gun := Gun } = S) ->
-  Event  = #{ key => Key
-            , threshold   => Threshold
-            , timeout     => Timeout
-            , pushback    => Pushback
-            , poll_rate   => Poll
-            , backend     => Backend
-            , nukey       => NuKey
-            , nuthreshold => NuThreshold
-            , nutimeout   => NuTimeout
-            , nupushback  => NuPushback
-            , nupoll_rate => NuPoll
-            , nubackend   => NuBackend
-            , event       => queue_crossover
-            , timestamp   => format_utc_timestamp()
-            },
-  gun:ws_send(Gun, jsonify(Event)),
-  {ok, S};
-handle_event({queue_removed, Key}, #{ gun := Gun } = S) ->
-  Event  = #{ key   => Key
-            , event => queue_removed
-            , timestamp => format_utc_timestamp()
-            },
-  gun:ws_send(Gun, jsonify(Event)),
-  {ok, S};
-handle_event({work_requeued, Key, AvailableWorkers}, #{ gun := Gun } = S) ->
-  Event = #{ key => Key
-           , available_workers => AvailableWorkers
-           , event => work_requeued
-           , timestamp => format_utc_timestamp()
-           },
-  gun:ws_send(Gun, jsonify(Event)),
-  {ok, S};
-handle_event({worker_assigned, Key, AvailableWorkers}, #{ gun := Gun } = S) ->
-  Event = #{ key => Key
-           , available_workers => AvailableWorkers
-           , event => work_assigned
-           , timestamp => format_utc_timestamp()
-           },
-  gun:ws_send(Gun, jsonify(Event)),
-  {ok, S};
-handle_event({worker_stopped, Worker}, #{ gun := Gun } = S) ->
-  Event = #{ worker => erlang:pid_to_list(Worker)
-           , event => worker_stopped
-           , timestamp => format_utc_timestamp()
-           },
-  gun:ws_send(Gun, jsonify(Event)),
+handle_event({_, Key, _}, #{ gun := Gun } = S) ->
+  do_fudge(sys:get_state(Key), Gun),
   {ok, S}.
 
+do_fudge(QS, Gun) ->
+  QueueState = maps:put(created_at, format_utc_timestamp(), maps:put(name, dump, maps:remove(queue, maps:remove(q, maps:remove(consumer, maps:remove(queue_pid, QS)))))),
+  gun:ws_send(Gun, jsonify(QueueState)).
 
 handle_info(_, State) ->
   {ok, State}.
@@ -304,9 +107,15 @@ start_cowboy(Port, Handler) ->
                                           ]}
                                    ]),
   cowboy:start_clear(http, 100, [{port, Port}], #{ env => #{dispatch => Dispatch} }).
+
 format_utc_timestamp() ->
-    TS  = os:timestamp(),
-    calendar:now_to_universal_time(TS).
+  TS = {_,_,Micro} = os:timestamp(),
+  {{Year,Month,Day},{Hour,Minute,Second}} = calendar:now_to_universal_time(TS),
+  Mstr = element(Month,{"Jan","Feb","Mar","Apr","May","Jun","Jul",
+                        "Aug","Sep","Oct","Nov","Dec"}),
+  R = io_lib:format("~2w ~s ~4w ~2w:~2..0w:~2..0w.~6..~w", [Day,Mstr,Year,Hour,Minute,Second, Micro]),
+  lists:flatten(R).
+
 %%%_* Emacs ====================================================================
 %%% Local Variables:
 %%% allout-layout: t
