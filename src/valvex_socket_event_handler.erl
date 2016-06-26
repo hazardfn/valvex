@@ -214,7 +214,7 @@ handle_event({timeout, Key}, #{ gun := Gun } = S) ->
   {ok, S};
 handle_event({result, Result, Key}, #{ gun := Gun } = S) ->
   Event  = #{ key    => Key
-            , result    => lists:flatten(io_lib:format("~p", [Result]))
+            , result    => lists:flatten(io_lib:format("~s", [Result]))
             , event     => result
             , timestamp => format_utc_timestamp()
             },
@@ -305,13 +305,8 @@ start_cowboy(Port, Handler) ->
                                    ]),
   cowboy:start_clear(http, 100, [{port, Port}], #{ env => #{dispatch => Dispatch} }).
 format_utc_timestamp() ->
-    TS = {_,_,Micro} = os:timestamp(),
-    {{Year,Month,Day},{Hour,Minute,Second}} = calendar:now_to_universal_time(TS),
-    Mstr = element(Month,{"Jan","Feb","Mar","Apr","May","Jun","Jul",
-    "Aug","Sep","Oct","Nov","Dec"}),
-    R = io_lib:format("~2w ~s ~4w ~2w:~2..0w:~2..0w.~6..~w", [Day,Mstr,Year,Hour,Minute,Second, Micro]),
-    lists:flatten(R).
-
+    TS  = os:timestamp(),
+    calendar:now_to_universal_time(TS).
 %%%_* Emacs ====================================================================
 %%% Local Variables:
 %%% allout-layout: t
