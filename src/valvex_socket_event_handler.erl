@@ -65,24 +65,57 @@ init([ {host, Host}
         , protocol => Protocol
         }}.
 
-handle_event({_, {Key, _, _, _, _, _}}, #{ gun := Gun } = S) ->
-  do_fudge(sys:get_state(Key), Gun),
+handle_event( {queue_started, {Key, {threshold, Threshold}, {timeout, Timeout, seconds}, {pushback, Pushback, seconds}, {poll_rate, Poll, ms}, Backend}}
+            , #{ gun := Gun } = S) ->
+  Map = #{ key        => Key
+         , threshold  => Threshold
+         , timeout    => Timeout
+         , pushback   => Pushback
+         , poll_rate  => Poll
+         , backend    => Backend
+         , name       => queue_started
+         , created_at => format_utc_timestamp()
+         },
+  gun:ws_send(Gun, jsonify(Map)),
   {ok, S};
-handle_event({_, {Key, _, _, _, _, _}, _}, #{ gun := Gun } = S) ->
-  do_fudge(sys:get_state(Key), Gun),
+handle_event( {queue_consumer_started, {Key, {threshold, Threshold}, {timeout, Timeout, seconds}, {pushback, Pushback, seconds}, {poll_rate, Poll, ms}, Backend}}
+            , #{ gun := Gun } = S) ->
+  Map = #{ key        => Key
+         , threshold  => Threshold
+         , timeout    => Timeout
+         , pushback   => Pushback
+         , poll_rate  => Poll
+         , backend    => Backend
+         , name       => queue_started
+         , created_at => format_utc_timestamp()
+         },
+  gun:ws_send(Gun, jsonify(Map)),
   {ok, S};
-handle_event({_, Key}, #{ gun := Gun } = S) ->
-  do_fudge(sys:get_state(Key), Gun),
+handle_event( {queue_consumer_stopped, {Key, {threshold, Threshold}, {timeout, Timeout, seconds}, {pushback, Pushback, seconds}, {poll_rate, Poll, ms}, Backend}}
+            , #{ gun := Gun } = S) ->
+  Map = #{ key        => Key
+         , threshold  => Threshold
+         , timeout    => Timeout
+         , pushback   => Pushback
+         , poll_rate  => Poll
+         , backend    => Backend
+         , name       => queue_started
+         , created_at => format_utc_timestamp()
+         },
+  gun:ws_send(Gun, jsonify(Map)),
   {ok, S};
-handle_event({_, Key, _, _}, #{ gun := Gun } = S) ->
-  do_fudge(sys:get_state(Key), Gun),
-  {ok, S};
-handle_event({_, Key, _}, #{ gun := Gun } = S) ->
-  do_fudge(sys:get_state(Key), Gun),
+handle_event(Event, #{ gun := Gun } = S) ->
+  do_fudge(Gun, Event),
   {ok, S}.
 
-do_fudge(QS, Gun) ->
-  QueueState = maps:put(created_at, format_utc_timestamp(), maps:put(name, dump, maps:remove(queue, maps:remove(q, maps:remove(consumer, maps:remove(queue_pid, QS)))))),
+do_fudge(Gun, _Event) ->
+  ValvexState = sys:get_state(valvex),
+  Queues      = maps:get(queues, ValvexState),
+  QueueFun    = fun({Key, _, _, _, _, _}) ->
+                  [maps:remove(queue, maps:remove(q, maps:remove(consumer, maps:remove(queue_pid, sys:get_state(Key)))))]
+                end,
+  QueueMapped = #{ mapped_queues => lists:flatmap(QueueFun, Queues) },
+  QueueState  = maps:put(created_at, format_utc_timestamp(), maps:put(name, dump, QueueMapped)),
   gun:ws_send(Gun, jsonify(QueueState)).
 
 handle_info(_, State) ->
@@ -109,13 +142,8 @@ start_cowboy(Port, Handler) ->
   cowboy:start_clear(http, 100, [{port, Port}], #{ env => #{dispatch => Dispatch} }).
 
 format_utc_timestamp() ->
-  TS = {_,_,Micro} = os:timestamp(),
-  {{Year,Month,Day},{Hour,Minute,Second}} = calendar:now_to_universal_time(TS),
-  Mstr = element(Month,{"Jan","Feb","Mar","Apr","May","Jun","Jul",
-                        "Aug","Sep","Oct","Nov","Dec"}),
-  R = io_lib:format("~2w ~s ~4w ~2w:~2..0w:~2..0w.~6..~w", [Day,Mstr,Year,Hour,Minute,Second, Micro]),
-  lists:flatten(R).
-
+  TS =  os:timestamp(),
+  calendar:now_to_universal_time(TS).
 %%%_* Emacs ====================================================================
 %%% Local Variables:
 %%% allout-layout: t
