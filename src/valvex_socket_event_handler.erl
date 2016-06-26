@@ -16,15 +16,35 @@
 %%==============================================================================
 %% Gen Event API
 %%==============================================================================
+init([ {port, Port}
+     , {handler, Handler}
+     , {use_local, true}
+     ]) ->
+  start_cowboy(Port, Handler),
+  {ok, [{IP, _, _}, _]} = inet:getif(),
+  Host = inet_parse:ntoa(IP),
+  {ok, Gun}      = gun:open(Host, Port),
+  {ok, Protocol} = gun:await_up(Gun),
+  gun:ws_upgrade(Gun, "/websocket"),
+  receive
+    {gun_ws_upgrade, Gun, ok, _Headers} ->
+      ok;
+    {gun_response, Gun, _, _, Status, Headers} ->
+      exit({ws_upgrade_failed, Status, Headers});
+    {gun_error, Gun, _StreamRef, Reason} ->
+      exit({ws_upgrade_failed, Reason})
+      %% More clauses here as needed.
+  after 15000 ->
+      exit(timeout)
+  end,
+  {ok, #{ gun      => Gun
+        , host     => Host
+        , port     => Port
+        , protocol => Protocol
+        }};
 init([ {host, Host}
      , {port, Port}
-     , {handler, Handler}
-     , {use_local, Local}
      ]) ->
-  case Local of
-    true -> start_cowboy(Port, Handler);
-    false -> ok
-  end,
   {ok, Gun}      = gun:open(Host, Port),
   {ok, Protocol} = gun:await_up(Gun),
   gun:ws_upgrade(Gun, "/websocket"),
@@ -44,6 +64,7 @@ init([ {host, Host}
         , port     => Port
         , protocol => Protocol
         }}.
+
 
 handle_event({queue_started, {Key, {threshold, Threshold}, {timeout, Timeout, seconds}, {pushback, Pushback, seconds}, {poll_rate, Poll, ms}, Backend}}, #{ gun := Gun } = S) ->
   Event  = #{ key => Key
