@@ -1,11 +1,3 @@
-language: generic # don't install any environment
-script:
-  - make docs
-env:
-  global:
-  - ENCRYPTION_LABEL: "a083722bc806"
-  - COMMIT_AUTHOR_EMAIL: "travis@valvex.io"
-
 language: erlang
 otp_release:
   - 18.0
@@ -15,3 +7,8 @@ otp_release:
 script:
   - make check
   - make test
+  - make docs
+env:
+  global:
+  - ENCRYPTION_LABEL: "a083722bc806"
+  - COMMIT_AUTHOR_EMAIL: "travis@valvex.io"
