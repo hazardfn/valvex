@@ -214,7 +214,7 @@ handle_event({timeout, Key}, #{ gun := Gun } = S) ->
   {ok, S};
 handle_event({result, Result, Key}, #{ gun := Gun } = S) ->
   Event  = #{ key    => Key
-            , result    => lists:flatten(io_lib:format("~s", [Result]))
+            , result    => lists:flatten(io_lib:format("~p", [Result]))
             , event     => result
             , timestamp => format_utc_timestamp()
             },
@@ -309,7 +309,8 @@ format_utc_timestamp() ->
     {{Year,Month,Day},{Hour,Minute,Second}} = calendar:now_to_universal_time(TS),
     Mstr = element(Month,{"Jan","Feb","Mar","Apr","May","Jun","Jul",
     "Aug","Sep","Oct","Nov","Dec"}),
-    io_lib:format("~2w ~s ~4w ~2w:~2..0w:~2..0w.~6..~w", [Day,Mstr,Year,Hour,Minute,Second, Micro]).
+    R = io_lib:format("~2w ~s ~4w ~2w:~2..0w:~2..0w.~6..~w", [Day,Mstr,Year,Hour,Minute,Second, Micro]),
+    lists:flatten(R).
 
 %%%_* Emacs ====================================================================
 %%% Local Variables:

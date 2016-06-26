@@ -4,11 +4,11 @@
 
 -compile([export_all]).
 
--spec start_link() -> {'ok', pid()}.
+-spec start_link() -> 'ignore' | {'error',_} | {'ok',pid()}.
 start_link() ->
   gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
--spec init(list()) -> {ok, #{}}.
+-spec init(list()) -> {'ok',atom() | ets:tid()}.
 init(_Options) ->
   State = ets:new(sockets, [ named_table ]),
   {ok, State}.
