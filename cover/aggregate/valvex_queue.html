@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/aggregate/valvex_queue.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_queue.erl by COVER 2016-06-26 at 16:07:45
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_queue.erl by COVER 2016-06-26 at 23:19:23
 
 ****************************************************************************
 
@@ -166,7 +166,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  %% work.
         |  -spec size(valvex:queue_backend(), valvex:valvex_ref()) -&gt; non_neg_integer().
         |  size(Backend, Q) -&gt;
- 14526..|    Backend:size(Q).
+ 14450..|    Backend:size(Q).
         |  
         |  %% @doc This function should start your consumer, this will be a regularly run
         |  %% function that slurps the queue.
@@ -176,7 +176,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  
         |  -spec start_link(valvex:queue_backend(), valvex:valvex_ref(), valvex:valvex_queue()) -&gt; {ok, valvex:valvex_ref()}.
         |  start_link(Backend, Valvex, Q) -&gt;
-    68..|    Backend:start_link(Valvex, Q).
+    39..|    Backend:start_link(Valvex, Q).
         |  
         |  %% @doc This function should stop the consumer, note that it should not remove the queue
         |  %% entirely.

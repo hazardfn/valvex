@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/eunit/valvex_message_event_handler.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_message_event_handler.erl by COVER 2016-06-26 at 16:07:45
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_message_event_handler.erl by COVER 2016-06-26 at 23:19:24
 
 ****************************************************************************
 
@@ -61,8 +61,8 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
      4..|    Pid ! Event,
      4..|    {ok, S};
         |  handle_event({queue_consumer_started, _Q} = Event, #{ receiver := Pid } = S) -&gt;
-    20..|    Pid ! Event,
-    20..|    {ok, S};
+    22..|    Pid ! Event,
+    22..|    {ok, S};
         |  handle_event({queue_consumer_stopped, _Q} = Event, #{ receiver := Pid } = S) -&gt;
     26..|    Pid ! Event,
     26..|    {ok, S};
@@ -78,7 +78,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  handle_event({work_requeued, _Key, _AvailableWorkers} = Event, #{ receiver := Pid } = S) -&gt;
     34..|    Pid ! Event,
     34..|    {ok, S};
-        |  handle_event({worker_assigned, _Key, _AvailableWorkers} = Event, #{ receiver := Pid } = S) -&gt;
+        |  handle_event({worker_assigned, _Key, _Worker,  _AvailableWorkers} = Event, #{ receiver := Pid } = S) -&gt;
      4..|    Pid ! Event,
      4..|    {ok, S};
         |  handle_event({queue_crossover, _Q, _NuQ} = Event, #{ receiver := Pid } = S) -&gt;
@@ -93,7 +93,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  
         |  
         |  handle_info(_, State) -&gt;
-   336..|    {ok, State}.
+   606..|    {ok, State}.
         |  
         |  handle_call(_, S) -&gt;
 <font color=red>     0..|    {ok, ok, S}.</font>
