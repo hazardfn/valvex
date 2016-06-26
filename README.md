@@ -15,7 +15,12 @@ Features
 Configuration
 --------
 Before you can use valvex you need to configure environment variables in your sys.config or you can use the API to change the settings/add queues at runtime.
+
+Other
+--------
 For more technical information view the technical docs [here](http://hazardfn.github.io/valvex/doc).
+
+For current test coverage see [here](http://hazardfn.github.io/valvex/cover/).
 
 Usage
 --------
@@ -305,5 +310,5 @@ Valid events:
   already too many items.
 * {work_requeued, Key, AvailableWorkers} - Triggered when work is
   requeued
-* {work_assigned, Key, AvailableWorkers} - Triggered when a worker is
+* {work_assigned, Key, Worker, AvailableWorkers} - Triggered when a worker is
   assigned work
