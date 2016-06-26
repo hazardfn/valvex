@@ -75,6 +75,9 @@ handle_event({queue_crossover, _Q, _NuQ} = Event, #{ receiver := Pid } = S) ->
   {ok, S};
 handle_event({queue_removed, _Key} = Event, #{ receiver := Pid } = S) ->
   Pid ! Event,
+  {ok, S};
+handle_event({worker_stopped, _Worker} = Event, #{receiver := Pid } = S) ->
+  Pid ! Event,
   {ok, S}.
 
 
