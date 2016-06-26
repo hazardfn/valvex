@@ -1,6 +1,6 @@
 %% encoding: UTF-8
 {application,valvex}.
-{modules,[valvex,valvex_app,valvex_message_event_handler,valvex_queue,
-          valvex_queue_fifo_backend,valvex_queue_lifo_backend,
-          valvex_queue_sup,valvex_server,valvex_socket_event_handler,
-          valvex_sup,valvex_worker]}.
+{modules,[test_forwarder,test_handler,test_message_handler,valvex,valvex_app,
+          valvex_message_event_handler,valvex_queue,valvex_queue_fifo_backend,
+          valvex_queue_lifo_backend,valvex_queue_sup,valvex_server,
+          valvex_socket_event_handler,valvex_sup,valvex_worker]}.
