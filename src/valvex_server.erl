@@ -316,7 +316,15 @@ handle_info(_Info, S) ->
 code_change(_Vsn, S, _Extra) ->
   {ok, S}.
 
-terminate(_Reason, _S) ->
+terminate(_Reason, #{ workers := Workers, queue_pids := QPids} = _S) ->
+  StopWorkerFun = fun(Worker) ->
+                      valvex_worker:stop(Worker)
+                  end,
+  StopQueueFun = fun({Key, _Backend}) ->
+                     gen_server:stop(Key)
+                 end,
+  lists:foreach(StopWorkerFun, Workers),
+  lists:foreach(StopQueueFun, QPids),
   ok.
 
 %%==============================================================================

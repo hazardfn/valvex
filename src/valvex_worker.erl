@@ -27,8 +27,8 @@ work(Worker, Work) ->
   gen_server:cast(Worker, Work).
 
 -spec stop(valvex:valvex_ref()) -> ok.
-stop(Valvex) ->
-  gen_server:call(Valvex, stop).
+stop(Worker) ->
+  gen_server:call(Worker, stop).
 
 %%%=============================================================================
 %%% Gen Server Callbacks
@@ -41,8 +41,9 @@ handle_cast({work, Work}, #{ valvex := Valvex } = S) ->
   gen_server:cast(Valvex, {work_finished, self()}),
   {noreply, S}.
 
-handle_call(stop, _From, State) ->
-  {stop, normal, ok, State}.
+handle_call(stop, _From, #{ valvex := Valvex } = S) ->
+  valvex:notify(Valvex, {worker_stopped, self()}),
+  {stop, normal, ok, S}.
 
 handle_info(_Msg, S) ->
   {noreply, S}.

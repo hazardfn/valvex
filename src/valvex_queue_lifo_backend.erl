@@ -250,20 +250,10 @@ handle_cast(tombstone, #{ valvex := Valvex, q := RawQ } = S) ->
 handle_cast({crossover, NuQ}, #{ key      := Key
                                , valvex   := Valvex
                                , q        := RawQ
-                               , consumer := TRef
                                } = S) ->
   valvex:notify(Valvex, {queue_crossover, RawQ, NuQ}),
-  case TRef of
-    undefined ->
-      valvex:update(Valvex, Key, NuQ),
-      do_crossover(NuQ, S);
-    _ ->
-      stop_consumer(Key),
-      valvex:update(Valvex, Key, NuQ),
-      Reply = do_crossover(NuQ, S),
-      start_consumer(Key),
-      Reply
-  end;
+  valvex:update(Valvex, Key, NuQ),
+  do_crossover(NuQ, S);
 handle_cast(start_consumer, #{ valvex     := Valvex
                              , queue_pid  := QPid
                              , backend    := Backend

@@ -226,6 +226,7 @@ handle_event({queue_crossover, {Key, {threshold, Threshold}, {timeout, Timeout, 
 handle_event({queue_removed, Key}, #{ gun := Gun } = S) ->
   Event  = #{ key   => Key
             , event => queue_removed
+            , timestamp => format_utc_timestamp()
             },
   gun:ws_send(Gun, jsonify(Event)),
   {ok, S};
@@ -233,6 +234,7 @@ handle_event({work_requeued, Key, AvailableWorkers}, #{ gun := Gun } = S) ->
   Event = #{ key => Key
            , available_workers => AvailableWorkers
            , event => work_requeued
+           , timestamp => format_utc_timestamp()
            },
   gun:ws_send(Gun, jsonify(Event)),
   {ok, S};
@@ -240,9 +242,18 @@ handle_event({worker_assigned, Key, AvailableWorkers}, #{ gun := Gun } = S) ->
   Event = #{ key => Key
            , available_workers => AvailableWorkers
            , event => work_assigned
+           , timestamp => format_utc_timestamp()
+           },
+  gun:ws_send(Gun, jsonify(Event)),
+  {ok, S};
+handle_event({worker_stopped, Worker}, #{ gun := Gun } = S) ->
+  Event = #{ worker => Worker
+           , event => worker_stopped
+           , timestamp => format_utc_timestamp()
            },
   gun:ws_send(Gun, jsonify(Event)),
   {ok, S}.
+
 
 handle_info(_, State) ->
   {ok, State}.

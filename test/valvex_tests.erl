@@ -32,7 +32,7 @@
 -include_lib("common_eunit/include/common_eunit.hrl").
 %%%_* Suite Callbacks ==========================================================
 suite() ->
-  [{timetrap, {seconds, 10}}].
+  [{timetrap, {seconds, 30}}].
 
 init_per_suite(Config) ->
   application:get_all_env(valvex) ++ Config.
@@ -53,6 +53,7 @@ all() ->
   all(suite).
 all(suite) ->
   [ test_add
+  , test_consumer
   , test_crossover
   , test_crossover_errors
   , test_get_available_workers
@@ -122,7 +123,7 @@ test_consumer(Config) when is_list(Config)   ->
   Valvex  = valvex,
   KeyLifo = test_lifo,
   KeyFifo = test_fifo,
-  WorkFun = fun() -> timer:sleep(1000) end,
+  WorkFun = fun() -> timer:sleep(3000) end,
   LifoSizeFun = fun() -> valvex:get_queue_size(Valvex, KeyLifo) end,
   FifoSizeFun = fun() -> valvex:get_queue_size(Valvex, KeyFifo) end,
   LifoPushFun = fun(_N) -> valvex:push(Valvex, KeyLifo, WorkFun) end,
@@ -536,8 +537,15 @@ test_tombstone({'end', _Config})              -> ok;
 test_tombstone(doc)                           ->
   ["Test tombstone mechanisms"];
 test_tombstone(Config) when is_list(Config)   ->
-  KeyLifo     = test_lifo,
-  KeyFifo     = test_fifo,
+  Valvex     = valvex,
+  KeyLifo    = test_lifo,
+  KeyFifo    = test_fifo,
+  RawLifoFun = fun() ->
+                   gen_server:call(Valvex, {get_raw_queue, KeyLifo})
+               end,
+  RawFifoFun = fun() ->
+                   gen_server:call(Valvex, {get_raw_queue, KeyFifo})
+               end,
   %% Make sure the queues are started as expected
   ?assert(is_pid(whereis(KeyLifo))),
   ?assert(is_pid(whereis(KeyFifo))),
@@ -545,7 +553,10 @@ test_tombstone(Config) when is_list(Config)   ->
   ?assertEqual(ok, valvex_queue:tombstone(valvex_queue_lifo_backend, KeyLifo)),
   ?assertEqual(ok, valvex_queue:tombstone(valvex_queue_fifo_backend, KeyFifo)),
   ?assert(valvex_queue:is_tombstoned(valvex_queue_lifo_backend, KeyLifo)),
-  ?assert(valvex_queue:is_tombstoned(valvex_queue_fifo_backend, KeyFifo)).
+  ?assert(valvex_queue:is_tombstoned(valvex_queue_fifo_backend, KeyFifo)),
+  ?assertEqual(ok, do_until(RawLifoFun, {error, key_not_found}, 999999)),
+  ?assertEqual(ok, do_until(RawFifoFun, {error, key_not_found}, 999999)).
+
 do_until(Fun, ExpectedResult, 0) ->
   throw({unexpected_result, Fun(), ExpectedResult});
 do_until(Fun, ExpectedResult, N) ->
