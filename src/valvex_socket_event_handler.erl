@@ -105,18 +105,27 @@ handle_event( {queue_consumer_stopped, {Key, {threshold, Threshold}, {timeout, T
   gun:ws_send(Gun, jsonify(Map)),
   {ok, S};
 handle_event(Event, #{ gun := Gun } = S) ->
-  do_fudge(Gun, Event),
+  do_dump(Gun, Event),
   {ok, S}.
 
-do_fudge(Gun, _Event) ->
+do_dump(Gun, _Event) ->
   ValvexState = sys:get_state(valvex),
   Queues      = maps:get(queues, ValvexState),
   QueueFun    = fun({Key, _, _, _, _, _}) ->
-                  [maps:remove(queue, maps:remove(q, maps:remove(consumer, maps:remove(queue_pid, sys:get_state(Key)))))]
+                    Pred = fun(K, _V) ->
+                               lists:member(K, map_blacklist()) == false
+                           end,
+                    [maps:filter(Pred, sys:get_state(Key))]
                 end,
   QueueMapped = #{ mapped_queues => lists:flatmap(QueueFun, Queues) },
-  QueueState  = maps:put(created_at, format_utc_timestamp(), maps:put(name, dump, QueueMapped)),
+  BaseMap     = #{ created_at    => format_utc_timestamp()
+                 , name          => dump
+                 },
+  QueueState = maps:merge(BaseMap, QueueMapped),
   gun:ws_send(Gun, jsonify(QueueState)).
+
+map_blacklist() ->
+  [ queue, q, consumer, queue_pid ].
 
 handle_info(_, State) ->
   {ok, State}.
