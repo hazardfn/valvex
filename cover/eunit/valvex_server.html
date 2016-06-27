@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/eunit/valvex_server.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_server.erl by COVER 2016-06-26 at 23:55:19
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_server.erl by COVER 2016-06-27 at 00:05:19
 
 ****************************************************************************
 
@@ -98,7 +98,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  %% @doc Gets the current size of the queue with the given key.
         |  -spec get_queue_size( valvex:valvex_ref(), valvex:queue_key()) -&gt; non_neg_integer() | valvex:key_find_error().
         |  get_queue_size(Valvex, Key) -&gt;
- 28974..|    do_get_queue_size(Valvex, Key).
+ 30440..|    do_get_queue_size(Valvex, Key).
         |  
         |  %% @doc Pushes back on the client forcing them to wait
         |  %% this prevents spamming if enabled.
@@ -186,23 +186,23 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  %% @see remove_handler()
         |  %% @see update()
         |  handle_call({get_queue, Key}, _From, #{ queue_pids := Queues } = S) -&gt;
- 29016..|    case lists:keyfind(Key, 1, Queues) of
+ 30482..|    case lists:keyfind(Key, 1, Queues) of
         |      false -&gt;
     20..|        {reply, {error, key_not_found}, S};
         |      {Key, _Backend} = Queue -&gt;
- 28996..|        lager:info("get_queue found: ~p", [Queue]),
- 28996..|        {reply, Queue, S}
+ 30462..|        lager:info("get_queue found: ~p", [Queue]),
+ 30462..|        {reply, Queue, S}
         |    end;
         |  handle_call({get_raw_queue, Key}, _From, #{ queue_pids := Queues
         |                                            , queues     := RawQueues
         |                                            } = S) -&gt;
-   110..|    case lists:keyfind(Key, 1, Queues) of
+   128..|    case lists:keyfind(Key, 1, Queues) of
         |      false -&gt;
      8..|        {reply, {error, key_not_found}, S};
         |      {Key, _Backend} -&gt;
-   102..|        RawQ = lists:keyfind(Key, 1, RawQueues),
-   102..|        lager:info("get_raw_queue found: ~p", [RawQ]),
-   102..|        {reply, RawQ, S}
+   120..|        RawQ = lists:keyfind(Key, 1, RawQueues),
+   120..|        lager:info("get_raw_queue found: ~p", [RawQ]),
+   120..|        {reply, RawQ, S}
         |    end;
         |  handle_call({add, { Key
         |                    , _Threshold
@@ -343,7 +343,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  %%==============================================================================
         |  
         |  get_queue(Valvex, Key) -&gt;
- 29016..|    gen_server:call(Valvex, {get_queue, Key}).
+ 30482..|    gen_server:call(Valvex, {get_queue, Key}).
         |  
         |  do_add(Valvex, {Key, _, _, _, _, _} = Q, undefined) -&gt;
     12..|    case get_queue(Valvex, Key) of
@@ -405,9 +405,9 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
      4..|    gen_server:call(Valvex, get_workers).
         |  
         |  do_get_queue_size(Valvex, Key) -&gt;
- 28974..|    case get_queue(Valvex, Key) of
+ 30440..|    case get_queue(Valvex, Key) of
         |      {Key, Backend} -&gt;
- 28974..|        valvex_queue:size(Backend, Key);
+ 30440..|        valvex_queue:size(Backend, Key);
         |      Error -&gt;
 <font color=red>     0..|        Error</font>
         |    end.

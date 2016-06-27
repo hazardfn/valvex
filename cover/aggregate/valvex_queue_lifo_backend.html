@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/aggregate/valvex_queue_lifo_backend.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_queue_lifo_backend.erl by COVER 2016-06-26 at 23:55:19
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_queue_lifo_backend.erl by COVER 2016-06-27 at 00:05:19
 
 ****************************************************************************
 
@@ -128,7 +128,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  %% @doc returns the current number of items in the queue.
         |  -spec size(valvex:valvex_ref()) -&gt; non_neg_integer().
         |  size(Q) -&gt;
- 14480..|    gen_server:call(Q, size).
+ 15213..|    gen_server:call(Q, size).
         |  
         |  %% @doc starts a timer that regularly calls the consume function
         |  %% to facilitate constant slurping of the queue, how regularly
@@ -227,7 +227,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  handle_call(is_tombstoned, _From, #{ tombstoned := Tombstoned } = S) -&gt;
      2..|    {reply, Tombstoned, S};
         |  handle_call(size, _From, #{ size := Size } = S) -&gt;
- 14480..|    {reply, Size, S}.
+ 15213..|    {reply, Size, S}.
         |  
         |  %% @doc See the "see also" list for a list of asynchronous operations.
         |  %% @see push()
@@ -341,8 +341,8 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
 <font color=red>     0..|    erlang:unregister(Key).</font>
         |  
         |  do_consume(Valvex, QPid, Backend, Key, Timeout) -&gt;
-10932071|    try
-10930233|      QueueValue = gen_server:call(QPid, pop),
+9930807.|    try
+9929275.|      QueueValue = gen_server:call(QPid, pop),
     65..|      case QueueValue of
         |        {{value, {Work, Timestamp}}, _Q} -&gt;
     20..|          case is_stale(Timeout, Timestamp) of
@@ -363,7 +363,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
     43..|          ok
         |      end
         |    catch _Error:_Reason -&gt;
-10932013|        do_consume(Valvex, QPid, Backend, Key, Timeout)
+9930756.|        do_consume(Valvex, QPid, Backend, Key, Timeout)
         |    end.
         |  
         |  update_state(Q, Size, S) -&gt;
