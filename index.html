@@ -43,8 +43,14 @@ options to ensure you get the best solution.</p>
 <h2>
 <a id="configuration" class="anchor" href="#configuration" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Configuration</h2>
 
-<p>Before you can use valvex you need to configure environment variables in your sys.config or you can use the API to change the settings/add queues at runtime.
-For more technical information view the technical docs <a href="http://hazardfn.github.io/valvex/doc">here</a>.</p>
+<p>Before you can use valvex you need to configure environment variables in your sys.config or you can use the API to change the settings/add queues at runtime.</p>
+
+<h2>
+<a id="other" class="anchor" href="#other" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Other</h2>
+
+<p>For more technical information view the technical docs <a href="http://hazardfn.github.io/valvex/doc">here</a>.</p>
+
+<p>For current test coverage see <a href="http://hazardfn.github.io/valvex/cover/">here</a>.</p>
 
 <h2>
 <a id="usage" class="anchor" href="#usage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Usage</h2>
@@ -387,7 +393,7 @@ to push to a locked queue</li>
 already too many items.</li>
 <li>{work_requeued, Key, AvailableWorkers} - Triggered when work is
 requeued</li>
-<li>{work_assigned, Key, AvailableWorkers} - Triggered when a worker is
+<li>{work_assigned, Key, Worker, AvailableWorkers} - Triggered when a worker is
 assigned work</li>
 </ul>
 
