@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/eunit/valvex_socket_event_handler.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_socket_event_handler.erl by COVER 2016-06-27 at 00:05:19
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_socket_event_handler.erl by COVER 2016-06-27 at 08:23:56
 
 ****************************************************************************
 
@@ -116,21 +116,30 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
     14..|    gun:ws_send(Gun, jsonify(Map)),
     14..|    {ok, S};
         |  handle_event(Event, #{ gun := Gun } = S) -&gt;
-   322..|    do_fudge(Gun, Event),
-   310..|    {ok, S}.
+   318..|    do_dump(Gun, Event),
+   306..|    {ok, S}.
         |  
-        |  do_fudge(Gun, _Event) -&gt;
-   322..|    ValvexState = sys:get_state(valvex),
-   314..|    Queues      = maps:get(queues, ValvexState),
-   314..|    QueueFun    = fun({Key, _, _, _, _, _}) -&gt;
-   936..|                    [maps:remove(queue, maps:remove(q, maps:remove(consumer, maps:remove(queue_pid, sys:get_state(Key)))))]
+        |  do_dump(Gun, _Event) -&gt;
+   318..|    ValvexState = sys:get_state(valvex),
+   310..|    Queues      = maps:get(queues, ValvexState),
+   310..|    QueueFun    = fun({Key, _, _, _, _, _}) -&gt;
+   924..|                      Pred = fun(K, _V) -&gt;
+ 13800..|                                 lists:member(K, map_blacklist()) == false
+        |                             end,
+   924..|                      [maps:filter(Pred, sys:get_state(Key))]
         |                  end,
-   314..|    QueueMapped = #{ mapped_queues =&gt; lists:flatmap(QueueFun, Queues) },
-   310..|    QueueState  = maps:put(created_at, format_utc_timestamp(), maps:put(name, dump, QueueMapped)),
-   310..|    gun:ws_send(Gun, jsonify(QueueState)).
+   310..|    QueueMapped = #{ mapped_queues =&gt; lists:flatmap(QueueFun, Queues) },
+   306..|    BaseMap     = #{ created_at    =&gt; format_utc_timestamp()
+        |                   , name          =&gt; dump
+        |                   },
+   306..|    QueueState = maps:merge(BaseMap, QueueMapped),
+   306..|    gun:ws_send(Gun, jsonify(QueueState)).
+        |  
+        |  map_blacklist() -&gt;
+ 13800..|    [ queue, q, consumer, queue_pid ].
         |  
         |  handle_info(_, State) -&gt;
-   422..|    {ok, State}.
+   420..|    {ok, State}.
         |  
         |  handle_call(_, S) -&gt;
 <font color=red>     0..|    {ok, ok, S}.</font>
@@ -142,7 +151,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
     22..|    gun:shutdown(Gun).
         |  
         |  jsonify(Event) -&gt;
-   484..|    {binary, jsx:encode(Event)}.
+   480..|    {binary, jsx:encode(Event)}.
         |  
         |  start_cowboy(Port, Handler) -&gt;
     22..|    Dispatch = cowboy_router:compile([
@@ -153,8 +162,8 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
     22..|    cowboy:start_clear(http, 100, [{port, Port}], #{ env =&gt; #{dispatch =&gt; Dispatch} }).
         |  
         |  format_utc_timestamp() -&gt;
-   484..|    TS =  os:timestamp(),
-   484..|    calendar:now_to_universal_time(TS).
+   480..|    TS =  os:timestamp(),
+   480..|    calendar:now_to_universal_time(TS).
         |  %%%_* Emacs ====================================================================
         |  %%% Local Variables:
         |  %%% allout-layout: t

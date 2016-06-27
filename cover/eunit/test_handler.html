@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/eunit/test_handler.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/test_handler.erl by COVER 2016-06-27 at 00:05:19
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/test_handler.erl by COVER 2016-06-27 at 08:23:56
 
 ****************************************************************************
 
@@ -24,16 +24,16 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
 <font color=red>     0..|      lager:info("Got Data: ~p", [Msg]),</font>
 <font color=red>     0..|      {reply, {text, &lt;&lt; "responding to ", Msg/binary &gt;&gt;}, Req, State, hibernate };</font>
         |  websocket_handle({binary, Msg}, Req, State) -&gt;
-   484..|      lager:info("Got Data: ~p", [Msg]),
-   484..|      [ S ! Msg || {S} &lt;- all_other_sockets(self()) ],
-   484..|      {reply, {text, &lt;&lt; "whut?"&gt;&gt;}, Req, State, hibernate }.
+   480..|      lager:info("Got Data: ~p", [Msg]),
+   480..|      [ S ! Msg || {S} &lt;- all_other_sockets(self()) ],
+   480..|      {reply, {text, &lt;&lt; "whut?"&gt;&gt;}, Req, State, hibernate }.
         |  
         |  all_other_sockets(Pid) -&gt;
-   484..|    Sockets = gen_server:call(test_forwarder, list),
-   484..|    WithoutMe = lists:filter(fun ({Socket}) -&gt;
-   484..|                                 Socket =/= Pid
+   480..|    Sockets = gen_server:call(test_forwarder, list),
+   480..|    WithoutMe = lists:filter(fun ({Socket}) -&gt;
+   480..|                                 Socket =/= Pid
         |                             end, Sockets),
-   484..|    WithoutMe.
+   480..|    WithoutMe.
         |  
         |  websocket_info({timeout, _Ref, Msg}, Req, State) -&gt;
 <font color=red>     0..|      {reply, {text, Msg}, Req, State};</font>
