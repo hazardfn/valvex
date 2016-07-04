@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/eunit/valvex_socket_event_handler.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_socket_event_handler.erl by COVER 2016-06-27 at 08:23:56
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_socket_event_handler.erl by COVER 2016-07-04 at 20:31:57
 
 ****************************************************************************
 
@@ -76,70 +76,33 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |          , protocol =&gt; Protocol
         |          }}.
         |  
-        |  handle_event( {queue_started, {Key, {threshold, Threshold}, {timeout, Timeout, seconds}, {pushback, Pushback, seconds}, {poll_rate, Poll, ms}, Backend}}
-        |              , #{ gun := Gun } = S) -&gt;
-    78..|    Map = #{ key        =&gt; Key
-        |           , threshold  =&gt; Threshold
-        |           , timeout    =&gt; Timeout
-        |           , pushback   =&gt; Pushback
-        |           , poll_rate  =&gt; Poll
-        |           , backend    =&gt; Backend
-        |           , name       =&gt; queue_started
-        |           , created_at =&gt; format_utc_timestamp()
-        |           },
-    78..|    gun:ws_send(Gun, jsonify(Map)),
-    78..|    {ok, S};
-        |  handle_event( {queue_consumer_started, {Key, {threshold, Threshold}, {timeout, Timeout, seconds}, {pushback, Pushback, seconds}, {poll_rate, Poll, ms}, Backend}}
-        |              , #{ gun := Gun } = S) -&gt;
-    82..|    Map = #{ key        =&gt; Key
-        |           , threshold  =&gt; Threshold
-        |           , timeout    =&gt; Timeout
-        |           , pushback   =&gt; Pushback
-        |           , poll_rate  =&gt; Poll
-        |           , backend    =&gt; Backend
-        |           , name       =&gt; queue_started
-        |           , created_at =&gt; format_utc_timestamp()
-        |           },
-    82..|    gun:ws_send(Gun, jsonify(Map)),
-    82..|    {ok, S};
-        |  handle_event( {queue_consumer_stopped, {Key, {threshold, Threshold}, {timeout, Timeout, seconds}, {pushback, Pushback, seconds}, {poll_rate, Poll, ms}, Backend}}
-        |              , #{ gun := Gun } = S) -&gt;
-    14..|    Map = #{ key        =&gt; Key
-        |           , threshold  =&gt; Threshold
-        |           , timeout    =&gt; Timeout
-        |           , pushback   =&gt; Pushback
-        |           , poll_rate  =&gt; Poll
-        |           , backend    =&gt; Backend
-        |           , name       =&gt; queue_started
-        |           , created_at =&gt; format_utc_timestamp()
-        |           },
-    14..|    gun:ws_send(Gun, jsonify(Map)),
-    14..|    {ok, S};
         |  handle_event(Event, #{ gun := Gun } = S) -&gt;
-   318..|    do_dump(Gun, Event),
-   306..|    {ok, S}.
+   462..|    do_dump(Gun, Event),
+   442..|    {ok, S}.
         |  
         |  do_dump(Gun, _Event) -&gt;
-   318..|    ValvexState = sys:get_state(valvex),
-   310..|    Queues      = maps:get(queues, ValvexState),
-   310..|    QueueFun    = fun({Key, _, _, _, _, _}) -&gt;
-   924..|                      Pred = fun(K, _V) -&gt;
- 13800..|                                 lists:member(K, map_blacklist()) == false
+   462..|    Queues      = gen_server:call(valvex, get_queues, 2000),
+   444..|    QueueFun    = fun({Key, _, _, _, _, Backend}) -&gt;
+  1314..|                      Pred = fun(K, _V) -&gt;
+ 19710..|                                 lists:member(K, map_blacklist()) == false
         |                             end,
-   924..|                      [maps:filter(Pred, sys:get_state(Key))]
+  1314..|                      [maps:filter(Pred, valvex_queue:get_state(Backend, Key))]
         |                  end,
-   310..|    QueueMapped = #{ mapped_queues =&gt; lists:flatmap(QueueFun, Queues) },
-   306..|    BaseMap     = #{ created_at    =&gt; format_utc_timestamp()
+   444..|    QueueMapped = #{ mapped_queues =&gt; lists:flatmap(QueueFun, Queues) },
+   444..|    BaseMap     = #{ created_at    =&gt; format_utc_timestamp()
         |                   , name          =&gt; dump
         |                   },
-   306..|    QueueState = maps:merge(BaseMap, QueueMapped),
-   306..|    gun:ws_send(Gun, jsonify(QueueState)).
+   444..|    QueueState = maps:merge(BaseMap, QueueMapped),
+   444..|    gun:ws_send(Gun, jsonify(QueueState)).
         |  
         |  map_blacklist() -&gt;
- 13800..|    [ queue, q, consumer, queue_pid ].
+ 19710..|    [ queue, q, consumer, queue_pid ].
         |  
-        |  handle_info(_, State) -&gt;
-   420..|    {ok, State}.
+        |  handle_info({'EXIT', _Pid, _Reason}, S) -&gt;
+<font color=red>     0..|    gen_event:stop(self()),</font>
+<font color=red>     0..|    {ok, S};</font>
+        |  handle_info(_Info, State) -&gt;
+   352..|    {ok, State}.
         |  
         |  handle_call(_, S) -&gt;
 <font color=red>     0..|    {ok, ok, S}.</font>
@@ -148,10 +111,11 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
 <font color=red>     0..|    {ok, State}.</font>
         |  
         |  terminate(_Reason, #{ gun := Gun }) -&gt;
-    22..|    gun:shutdown(Gun).
+    20..|    gun:shutdown(Gun),
+    20..|    ok.
         |  
         |  jsonify(Event) -&gt;
-   480..|    {binary, jsx:encode(Event)}.
+   444..|    {binary, jsx:encode(Event)}.
         |  
         |  start_cowboy(Port, Handler) -&gt;
     22..|    Dispatch = cowboy_router:compile([
@@ -162,8 +126,8 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
     22..|    cowboy:start_clear(http, 100, [{port, Port}], #{ env =&gt; #{dispatch =&gt; Dispatch} }).
         |  
         |  format_utc_timestamp() -&gt;
-   480..|    TS =  os:timestamp(),
-   480..|    calendar:now_to_universal_time(TS).
+   444..|    TS =  os:timestamp(),
+   444..|    calendar:now_to_universal_time(TS).
         |  %%%_* Emacs ====================================================================
         |  %%% Local Variables:
         |  %%% allout-layout: t

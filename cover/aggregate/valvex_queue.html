@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/aggregate/valvex_queue.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_queue.erl by COVER 2016-06-27 at 08:23:56
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_queue.erl by COVER 2016-07-04 at 20:31:57
 
 ****************************************************************************
 
@@ -24,6 +24,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  -module(valvex_queue).
         |  
         |  -export([ crossover/3
+        |          , get_state/2
         |          , is_consuming/2
         |          , is_locked/2
         |          , is_tombstoned/2
@@ -68,6 +69,8 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  
         |  -callback crossover(Q :: valvex:valvex_ref(), NuQ :: valvex:valvex_queue()) -&gt; ok.
         |  
+        |  -callback get_state(Q :: valvex:valvex_ref()) -&gt; queue_state().
+        |  
         |  -callback is_consuming(Q :: valvex:valvex_ref() ) -&gt; true | false.
         |  
         |  -callback is_locked(Q :: valvex:valvex_ref() ) -&gt; true | false.
@@ -106,6 +109,11 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  -spec crossover(valvex:queue_backend(), valvex:valvex_ref(), valvex:valvex_queue()) -&gt; ok.
         |  crossover(Backend, Q, NuQ) -&gt;
      2..|    Backend:crossover(Q, NuQ).
+        |  
+        |  %% @doc Used to get information on the state of the queues.
+        |  -spec get_state(valvex:queue_backend(), valvex:valvex_ref()) -&gt; queue_state().
+        |  get_state(Backend, Q) -&gt;
+   657..|    Backend:get_state(Q).
         |  
         |  %% @doc Returns true if the consumer is started, false otherwise.
         |  -spec is_consuming(valvex:queue_backend(), valvex:valvex_ref()) -&gt; true | false.
@@ -166,7 +174,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  %% work.
         |  -spec size(valvex:queue_backend(), valvex:valvex_ref()) -&gt; non_neg_integer().
         |  size(Backend, Q) -&gt;
- 14277..|    Backend:size(Q).
+  8793..|    Backend:size(Q).
         |  
         |  %% @doc This function should start your consumer, this will be a regularly run
         |  %% function that slurps the queue.

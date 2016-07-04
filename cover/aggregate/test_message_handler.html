@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/aggregate/test_message_handler.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/test_message_handler.erl by COVER 2016-06-27 at 08:23:56
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/test_message_handler.erl by COVER 2016-07-04 at 20:31:57
 
 ****************************************************************************
 
@@ -13,64 +13,64 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  -export([loop/0]).
         |  
         |  loop() -&gt;
-   247..|      receive
+    11..|      receive
         |          {queue_started, _Q} -&gt;
-     6..|              ok,
-     6..|              loop();
+<font color=red>     0..|              ok,</font>
+<font color=red>     0..|              loop();</font>
         |          {queue_popped, _Q} -&gt;
-    42..|              ok,
-    42..|              loop();
+<font color=red>     0..|              ok,</font>
+<font color=red>     0..|              loop();</font>
         |          {queue_popped_r, _Q} -&gt;
-     4..|              ok,
-     4..|              loop();
+<font color=red>     0..|              ok,</font>
+<font color=red>     0..|              loop();</font>
         |          {queue_push, _Q} -&gt;
-    35..|              ok,
-    35..|              loop();
+<font color=red>     0..|              ok,</font>
+<font color=red>     0..|              loop();</font>
         |          {queue_push_r, _Q} -&gt;
-    17..|              ok,
-    17..|              loop();
+<font color=red>     0..|              ok,</font>
+<font color=red>     0..|              loop();</font>
         |          {push_complete, _Q} -&gt;
-    50..|              ok,
-    50..|              loop();
+<font color=red>     0..|              ok,</font>
+<font color=red>     0..|              loop();</font>
         |          {push_to_locked_queue, _Q} -&gt;
-     2..|              ok,
-     2..|              loop();
+<font color=red>     0..|              ok,</font>
+<font color=red>     0..|              loop();</font>
         |          {queue_tombstoned, _Q} -&gt;
-     4..|              ok,
-     4..|              loop();
+<font color=red>     0..|              ok,</font>
+<font color=red>     0..|              loop();</font>
         |          {queue_locked, _Q} -&gt;
-     3..|              ok,
-     3..|              loop();
+<font color=red>     0..|              ok,</font>
+<font color=red>     0..|              loop();</font>
         |          {queue_unlocked, _Q} -&gt;
-     2..|              ok,
-     2..|              loop();
+<font color=red>     0..|              ok,</font>
+<font color=red>     0..|              loop();</font>
         |          {queue_consumer_started, _Q} -&gt;
-    10..|              ok,
-    10..|              loop();
+<font color=red>     0..|              ok,</font>
+<font color=red>     0..|              loop();</font>
         |          {queue_consumer_stopped, _Q} -&gt;
-    13..|              ok,
-    13..|              loop();
+<font color=red>     0..|              ok,</font>
+<font color=red>     0..|              loop();</font>
         |          {timeout, _Key} -&gt;
-    19..|              ok,
-    19..|              loop();
+<font color=red>     0..|              ok,</font>
+<font color=red>     0..|              loop();</font>
         |          {result, _Result, _Key} -&gt;
-     1..|              ok,
-     1..|              loop();
+<font color=red>     0..|              ok,</font>
+<font color=red>     0..|              loop();</font>
         |          {threshold_hit, _Q} -&gt;
-     4..|              ok,
-     4..|              loop();
+<font color=red>     0..|              ok,</font>
+<font color=red>     0..|              loop();</font>
         |          {work_requeued, _Key, _AvailableWorkers} -&gt;
-    17..|              ok,
-    17..|              loop();
+<font color=red>     0..|              ok,</font>
+<font color=red>     0..|              loop();</font>
         |          {worker_assigned, _Key, _Worker, _AvailableWorkers} -&gt;
-     2..|              ok,
-     2..|              loop();
+<font color=red>     0..|              ok,</font>
+<font color=red>     0..|              loop();</font>
         |          {queue_crossover, _Q, _NuQ} -&gt;
-     2..|              ok,
-     2..|              loop();
+<font color=red>     0..|              ok,</font>
+<font color=red>     0..|              loop();</font>
         |          {queue_removed, _Key} -&gt;
-     3..|              ok,
-     3..|              loop();
+<font color=red>     0..|              ok,</font>
+<font color=red>     0..|              loop();</font>
         |          {worker_stopped, _Worker} -&gt;
 <font color=red>     0..|              ok,</font>
 <font color=red>     0..|              loop();</font>
