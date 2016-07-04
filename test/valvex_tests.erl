@@ -42,9 +42,9 @@ end_per_suite(Config) ->
 
 init_per_testcase(TestCase, Config) ->
   test_forwarder:start_link(),
-  Pid = erlang:spawn(test_message_handler, loop, []),
+  erlang:spawn(test_message_handler, loop, []),
   application:ensure_all_started(valvex),
-  valvex:add_handler(valvex, valvex_message_event_handler, [Pid]),
+  valvex:add_handler(valvex, valvex_message_event_handler, [self()]),
   ?MODULE:TestCase({init, Config}).
 
 end_per_testcase(TestCase, Config)  ->
@@ -456,17 +456,19 @@ test_pushback(Config) when is_list(Config)   ->
   KeyLifo = test_lifo,
   KeyFifo = test_fifo,
   {_, BeforeSeconds, _} = os:timestamp(),
+  valvex:add_handler(valvex, valvex_message_event_handler, [self()]),
   %% Begin pushback
-  valvex:add_handler(Valvex, valvex_message_event_handler, [self()]),
   valvex:pushback(Valvex, KeyLifo),
   receive
     {threshold_hit, _} ->
-      ok
+      ok;
+    _ -> ok
   end,
   valvex:pushback(Valvex, KeyFifo),
   receive
     {threshold_hit, _} ->
-      ok
+      ok;
+    _ -> ok
   end,
   valvex:remove_handler(Valvex, valvex_message_event_handler, []),
   %% Compare time

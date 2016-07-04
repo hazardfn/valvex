@@ -65,57 +65,17 @@ init([ {host, Host}
         , protocol => Protocol
         }}.
 
-handle_event( {queue_started, {Key, {threshold, Threshold}, {timeout, Timeout, seconds}, {pushback, Pushback, seconds}, {poll_rate, Poll, ms}, Backend}}
-            , #{ gun := Gun } = S) ->
-  Map = #{ key        => Key
-         , threshold  => Threshold
-         , timeout    => Timeout
-         , pushback   => Pushback
-         , poll_rate  => Poll
-         , backend    => Backend
-         , name       => queue_started
-         , created_at => format_utc_timestamp()
-         },
-  gun:ws_send(Gun, jsonify(Map)),
-  {ok, S};
-handle_event( {queue_consumer_started, {Key, {threshold, Threshold}, {timeout, Timeout, seconds}, {pushback, Pushback, seconds}, {poll_rate, Poll, ms}, Backend}}
-            , #{ gun := Gun } = S) ->
-  Map = #{ key        => Key
-         , threshold  => Threshold
-         , timeout    => Timeout
-         , pushback   => Pushback
-         , poll_rate  => Poll
-         , backend    => Backend
-         , name       => queue_started
-         , created_at => format_utc_timestamp()
-         },
-  gun:ws_send(Gun, jsonify(Map)),
-  {ok, S};
-handle_event( {queue_consumer_stopped, {Key, {threshold, Threshold}, {timeout, Timeout, seconds}, {pushback, Pushback, seconds}, {poll_rate, Poll, ms}, Backend}}
-            , #{ gun := Gun } = S) ->
-  Map = #{ key        => Key
-         , threshold  => Threshold
-         , timeout    => Timeout
-         , pushback   => Pushback
-         , poll_rate  => Poll
-         , backend    => Backend
-         , name       => queue_started
-         , created_at => format_utc_timestamp()
-         },
-  gun:ws_send(Gun, jsonify(Map)),
-  {ok, S};
 handle_event(Event, #{ gun := Gun } = S) ->
   do_dump(Gun, Event),
   {ok, S}.
 
 do_dump(Gun, _Event) ->
-  ValvexState = sys:get_state(valvex),
-  Queues      = maps:get(queues, ValvexState),
-  QueueFun    = fun({Key, _, _, _, _, _}) ->
+  Queues      = gen_server:call(valvex, get_queues, 2000),
+  QueueFun    = fun({Key, _, _, _, _, Backend}) ->
                     Pred = fun(K, _V) ->
                                lists:member(K, map_blacklist()) == false
                            end,
-                    [maps:filter(Pred, sys:get_state(Key))]
+                    [maps:filter(Pred, valvex_queue:get_state(Backend, Key))]
                 end,
   QueueMapped = #{ mapped_queues => lists:flatmap(QueueFun, Queues) },
   BaseMap     = #{ created_at    => format_utc_timestamp()
@@ -127,7 +87,10 @@ do_dump(Gun, _Event) ->
 map_blacklist() ->
   [ queue, q, consumer, queue_pid ].
 
-handle_info(_, State) ->
+handle_info({'EXIT', _Pid, _Reason}, S) ->
+  gen_event:stop(self()),
+  {ok, S};
+handle_info(_Info, State) ->
   {ok, State}.
 
 handle_call(_, S) ->
@@ -137,7 +100,8 @@ code_change(_OldVsn, State, _Extra) ->
   {ok, State}.
 
 terminate(_Reason, #{ gun := Gun }) ->
-  gun:shutdown(Gun).
+  gun:shutdown(Gun),
+  ok.
 
 jsonify(Event) ->
   {binary, jsx:encode(Event)}.

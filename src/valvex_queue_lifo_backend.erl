@@ -21,6 +21,7 @@
 
 -export([ consume/5
         , crossover/2
+        , get_state/1
         , is_consuming/1
         , is_locked/1
         , is_tombstoned/1
@@ -68,6 +69,10 @@ consume(Valvex, QPid, Backend, Key, Timeout) ->
 crossover(Q, NuQ) ->
   gen_server:cast(Q, {crossover, NuQ}),
   gen_server:cast(Q, restart_consumer).
+
+-spec get_state( valvex:valvex_ref()) -> valvex_queue:queue_state().
+get_state(Q) ->
+  gen_server:call(Q, get_state).
 
 %% @doc returns true if the consumer is active.
 -spec is_consuming(valvex:valvex_ref()) -> true | false.
@@ -216,7 +221,9 @@ handle_call(is_locked, _From, #{ locked := Locked } = S) ->
 handle_call(is_tombstoned, _From, #{ tombstoned := Tombstoned } = S) ->
   {reply, Tombstoned, S};
 handle_call(size, _From, #{ size := Size } = S) ->
-  {reply, Size, S}.
+  {reply, Size, S};
+handle_call(get_state, _From, S) ->
+  {reply, S, S}.
 
 %% @doc See the "see also" list for a list of asynchronous operations.
 %% @see push()

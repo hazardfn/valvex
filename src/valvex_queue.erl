@@ -13,6 +13,7 @@
 -module(valvex_queue).
 
 -export([ crossover/3
+        , get_state/2
         , is_consuming/2
         , is_locked/2
         , is_tombstoned/2
@@ -57,6 +58,8 @@
 
 -callback crossover(Q :: valvex:valvex_ref(), NuQ :: valvex:valvex_queue()) -> ok.
 
+-callback get_state(Q :: valvex:valvex_ref()) -> queue_state().
+
 -callback is_consuming(Q :: valvex:valvex_ref() ) -> true | false.
 
 -callback is_locked(Q :: valvex:valvex_ref() ) -> true | false.
@@ -95,6 +98,11 @@
 -spec crossover(valvex:queue_backend(), valvex:valvex_ref(), valvex:valvex_queue()) -> ok.
 crossover(Backend, Q, NuQ) ->
   Backend:crossover(Q, NuQ).
+
+%% @doc Used to get information on the state of the queues.
+-spec get_state(valvex:queue_backend(), valvex:valvex_ref()) -> queue_state().
+get_state(Backend, Q) ->
+  Backend:get_state(Q).
 
 %% @doc Returns true if the consumer is started, false otherwise.
 -spec is_consuming(valvex:queue_backend(), valvex:valvex_ref()) -> true | false.

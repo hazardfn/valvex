@@ -40,7 +40,7 @@
                          , queue_pids        => [tuple()]
                          , pushback          => true | false
                          , workers           => [pid()]
-                         , event_server      => valvex:valvex_ref()
+                         , event_server      => valvex:valvex_ref() | undefined
                          , available_workers => [pid()]
                          }.
 
@@ -130,29 +130,13 @@ init([ {queues, Queues}
      , {event_handlers, EventHandlers}
      ]) ->
   process_flag(trap_exit, true),
-  {ok, EventServer} = gen_event:start_link(),
-  HandlerFun = fun({EventModule, Args}) ->
-                   gen_event:add_handler(EventServer, EventModule, Args)
-               end,
-  lists:foreach(HandlerFun, EventHandlers),
-  QueueFun = fun({ Key
-                 , _Threshold
-                 , _Timeout
-                 , _Pushback
-                 , _Poll
-                 , Backend
-                 } = Q) ->
-                 valvex_queue_sup:start_child([Backend, Key, Q]),
-                 valvex_queue:start_consumer(Backend, Key),
-                 [{Key, Backend}]
-             end,
-  Workers = start_workers(WorkerCount),
-  {ok, #{ queues            => Queues
-        , queue_pids        => lists:flatmap(QueueFun, Queues)
-        , pushback          => Pushback
-        , workers           => Workers
-        , event_server      => EventServer
-        , available_workers => Workers
+  gen_server:cast(self(), {init, Queues, Pushback, WorkerCount, EventHandlers}),
+  {ok, #{ queues            => []
+        , queue_pids        => []
+        , pushback          => false
+        , workers           => []
+        , event_server      => undefined
+        , available_workers => []
         }};
 %% @doc starts the server with default settings.
 init([]) ->
@@ -267,8 +251,9 @@ handle_call({update, Key, { Key
   NewQueues = lists:append(lists:keydelete(Key, 1, Queues), [Q]),
   NewQPids  = lists:append(lists:keydelete(Key, 1, QPids), [{Key, Backend}]),
   {reply, ok, S#{ queues     := NewQueues
-                , queue_pids := NewQPids }}.
-
+                , queue_pids := NewQPids }};
+handle_call(get_queues, _From, #{queues := Queues} = S) ->
+  {reply, Queues, S}.
 
 handle_cast({pushback, Key}, #{ queues := Queues } = S) ->
   case lists:keyfind(Key, 1, Queues) of
@@ -308,7 +293,32 @@ handle_cast({notify, Event}
            ) ->
   lager:info("Event sent to subscribers: ~p", [Event]),
   gen_event:notify(EventServer, Event),
-  {noreply, S}.
+  {noreply, S};
+handle_cast({init, Queues, Pushback, WorkerCount, EventHandlers}, _S) ->
+  {ok, EventServer} = gen_event:start_link(),
+  HandlerFun = fun({EventModule, Args}) ->
+                   gen_event:add_handler(EventServer, EventModule, Args)
+               end,
+  lists:foreach(HandlerFun, EventHandlers),
+  QueueFun = fun({ Key
+                 , _Threshold
+                 , _Timeout
+                 , _Pushback
+                 , _Poll
+                 , Backend
+                 } = Q) ->
+                 valvex_queue_sup:start_child([Backend, Key, Q]),
+                 valvex_queue:start_consumer(Backend, Key),
+                 [{Key, Backend}]
+             end,
+  Workers = start_workers(WorkerCount),
+  {noreply, #{ queues            => Queues
+             , queue_pids        => lists:flatmap(QueueFun, Queues)
+             , pushback          => Pushback
+             , workers           => Workers
+             , event_server      => EventServer
+             , available_workers => Workers
+             }}.
 
 handle_info(_Info, S) ->
   {noreply, S}.
