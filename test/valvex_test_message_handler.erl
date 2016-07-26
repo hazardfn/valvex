@@ -1,4 +1,4 @@
--module(test_message_handler).
+-module(valvex_test_message_handler).
 -export([loop/0]).
 
 loop() ->

@@ -230,7 +230,7 @@ handle_call( {add_handler, Module, Args}
            , #{ event_server := EventServer} = S
            ) ->
   lager:info("Handler added Module:~p, Args:~p", [Module, Args]),
-  ok = gen_event:add_handler(EventServer, Module, Args),
+  ok = gen_event:add_sup_handler(EventServer, Module, Args),
   {reply, ok, S};
 handle_call( {remove_handler, Module, Args}
            , _From

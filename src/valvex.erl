@@ -1,16 +1,16 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% @author Howard Beard-Marlowe <howardbm@live.se>
 %%% @copyright 2016 Howard Beard-Marlowe
 %%% @version 0.1.0
 %%% @end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% @doc Valvex - the ultimate tool for rate-limiting in erlang.
 %%
 %% This module provides the main interface to Valvex. For more information
 %% refer to the readme.
 
-%%%_* Module declaration =======================================================
+%%%_* Module declaration ===============================================================================================
 -module(valvex).
 
 %% API exports
@@ -44,7 +44,6 @@
 
 %% Option / Behavioural modifier types ---------------------------------------------------------------------------------
 -type add_option()       :: crossover_on_existing | manual_start | undefined.
-
 -type remove_option()    :: force_remove | lock_queue | undefined.
 
 %% Error types ---------------------------------------------------------------------------------------------------------
@@ -94,9 +93,7 @@ start_link(Options) ->
 
 %% @doc Adds a queue to valvex using the default option undefined.
 %% @see add/3
--spec add( valvex_ref()
-         , valvex_queue()
-         ) -> ok | unique_key_error().
+-spec add( valvex_ref(), valvex_queue()) -> ok | unique_key_error().
 add(Valvex, { _Key
             , {threshold, _Threshold}
             , {timeout, _Timeout, seconds}
@@ -117,9 +114,7 @@ add(Valvex, { _Key
 %% the key is not unique </li>
 %% </ul>.
 %% @see add_option()
--spec add( valvex_ref()
-         , valvex_queue()
-         , add_option()) -> ok.
+-spec add(valvex_ref(), valvex_queue(), add_option()) -> ok.
 add(Valvex, { _Key
             , {threshold, _Threshold}
             , {timeout, _Timeout, seconds}
@@ -131,9 +126,7 @@ add(Valvex, { _Key
 
 %% @doc removes a queue from valvex with the default setting. see remove/3 for more info.
 %% @see remove/3
--spec remove( valvex_ref()
-            , queue_key()
-            ) -> ok | key_find_error().
+-spec remove( valvex_ref(), queue_key()) -> ok | key_find_error().
 remove(Valvex, Key) ->
   valvex:remove(Valvex, Key, undefined).
 
@@ -147,19 +140,13 @@ remove(Valvex, Key) ->
 %% <li> undefined - marks the queue for deletion but new items can flow in, it won't be removed until empty </li>
 %% </ul>.
 %% @see remove_option()
--spec remove( valvex_ref()
-            , queue_key()
-            , remove_option()
-            ) -> ok | key_find_error().
+-spec remove(valvex_ref(), queue_key(), remove_option()) -> ok | key_find_error().
 remove(Valvex, Key, Option) ->
   valvex_server:remove(Valvex, Key, Option).
 
 %% @doc Pushes an item to the queue with the given key. Work can be any
 %% 0 arity function.
--spec push( valvex_ref()
-          , queue_key()
-          , function()
-          ) -> ok.
+-spec push(valvex_ref(), queue_key(), function()) -> ok.
 push(Valvex, Key, Work) ->
   valvex_server:push(Valvex, Key, {Work, erlang:timestamp()}).
 
@@ -174,41 +161,29 @@ get_available_workers_count(Valvex) ->
   length(valvex:get_available_workers(Valvex)).
 
 %% @doc Gets the size of the queue with the given key.
--spec get_queue_size( valvex_ref()
-                    , queue_key()
-                    ) -> non_neg_integer() | key_find_error().
+-spec get_queue_size(valvex_ref(), queue_key()) -> non_neg_integer() | key_find_error().
 get_queue_size(Valvex, Key) ->
   valvex_server:get_queue_size(Valvex, Key).
 
 %% @doc Pushes back a set amount of time in order to prevent spamming.
--spec pushback( valvex_ref()
-              , queue_key()
-              ) -> ok.
+-spec pushback(valvex_ref(), queue_key()) -> ok.
 pushback(Valvex, Key) ->
   valvex_server:pushback(Valvex, Key).
 
 %% @doc Notifies those listening via gen_event of various events happening
 %% inside valvex.
--spec notify( valvex_ref()
-            , any()
-            ) -> ok.
+-spec notify(valvex_ref(), any()) -> ok.
 notify(Valvex, Event) ->
   valvex_server:notify(Valvex, Event).
 
 %% @doc Adds an event handler which can intercept events from valvex
 %% and do various things.
--spec add_handler( valvex_ref()
-                 , module()
-                 , [any()]
-                 ) -> ok.
+-spec add_handler(valvex_ref(), module(), [any()]) -> ok.
 add_handler(Valvex, Module, Args) ->
   valvex_server:add_handler(Valvex, Module, Args).
 
 %% @doc Removes a previously added handler.
--spec remove_handler( valvex_ref()
-                    , module()
-                    , [any()]
-                    ) -> ok.
+-spec remove_handler(valvex_ref(), module(), [any()]) -> ok.
 remove_handler(Valvex, Module, Args) ->
   valvex_server:remove_handler(Valvex, Module, Args).
 
