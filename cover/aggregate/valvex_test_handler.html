@@ -1,0 +1,58 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<title>/home/travis/build/hazardfn/valvex/_build/test/cover/aggregate/valvex_test_handler.html</title>
+</head><body style='background-color: white; color: black'>
+<pre>
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/test/valvex_test_handler.erl by COVER 2016-07-26 at 15:34:39
+
+****************************************************************************
+
+        |  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        |  %%% Howard Beard-Marlowe &lt;howardbm@live.se&gt;
+        |  %%% @copyright 2016 Howard Beard-Marlowe
+        |  %%% @version 0.1.0
+        |  %%% @end
+        |  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        |  
+        |  %% @doc Valvex test handler
+        |  %%
+        |  %% This module is used as part of testing the socket event handler
+        |  %% It is the cowboy handler which takes data sent by the event handler
+        |  %% and forwards it on to the listening sockets.
+        |  
+        |  %%%_* Module declaration ===============================================================================================
+        |  -module(valvex_test_handler).
+        |  -export([ init/2,
+        |            websocket_handle/3,
+        |            websocket_info/3
+        |          ]).
+        |  %%%_* Cowboy callbacks =================================================================================================
+        |  init(Req, _Opts) -&gt;
+    11..|    gen_server:call(valvex_test_forwarder, {register, self()}),
+    11..|    {cowboy_websocket, Req, #{}}.
+        |  
+        |  websocket_handle({text, Msg}, Req, State) -&gt;
+<font color=red>     0..|    {reply, {text, &lt;&lt; "responding to ", Msg/binary &gt;&gt;}, Req, State, hibernate };</font>
+        |  websocket_handle({binary, Msg}, Req, State) -&gt;
+    10..|    [ S ! Msg || {S} &lt;- all_other_sockets(self()) ],
+<font color=red>     0..|    {reply, {text, &lt;&lt; "Message Forwarded!"&gt;&gt;}, Req, State, hibernate }.</font>
+        |  
+        |  websocket_info({timeout, _Ref, Msg}, Req, State) -&gt;
+<font color=red>     0..|    {reply, {text, Msg}, Req, State};</font>
+        |  websocket_info(Info, Req, State) -&gt;
+<font color=red>     0..|    {reply, {text, Info}, Req, State}.</font>
+        |  
+        |  all_other_sockets(Pid) -&gt;
+    10..|    Sockets   = gen_server:call(test_forwarder, list),
+<font color=red>     0..|    lists:filter(fun ({Socket}) -&gt; Socket =/= Pid end, Sockets).</font>
+        |  
+        |  %%%_* Emacs ====================================================================
+        |  %%% Local Variables:
+        |  %%% allout-layout: t
+        |  %%% erlang-indent-level: 2
+        |  %%% End:
+</pre>
+</body>
+</html>

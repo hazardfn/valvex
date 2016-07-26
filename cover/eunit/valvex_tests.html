@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/eunit/valvex_tests.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/test/valvex_tests.erl by COVER 2016-07-04 at 20:31:57
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/test/valvex_tests.erl by COVER 2016-07-26 at 15:34:39
 
 ****************************************************************************
 
@@ -43,7 +43,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/te
         |  -include_lib("common_eunit/include/common_eunit.hrl").
         |  %%%_* Suite Callbacks ==========================================================
         |  suite() -&gt;
-     4..|    [{timetrap, {seconds, 60}}].
+     8..|    [{timetrap, {seconds, 60}}].
         |  
         |  init_per_suite(Config) -&gt;
      2..|    application:get_all_env(valvex) ++ Config.
@@ -52,10 +52,10 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/te
      2..|    Config.
         |  
         |  init_per_testcase(TestCase, Config) -&gt;
-    22..|    test_forwarder:start_link(),
-    22..|    erlang:spawn(test_message_handler, loop, []),
+    22..|    valvex_test_forwarder:start_link(),
+    22..|    HandlerPid = erlang:spawn(valvex_test_message_handler, loop, []),
     22..|    application:ensure_all_started(valvex),
-    22..|    valvex:add_handler(valvex, valvex_message_event_handler, [self()]),
+    22..|    valvex:add_handler(valvex, valvex_message_event_handler, [HandlerPid]),
     22..|    ?MODULE:TestCase({init, Config}).
         |  
         |  end_per_testcase(TestCase, Config)  -&gt;
@@ -65,13 +65,13 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/te
     22..|    application:unload(lager),
     22..|    application:unload(cowboy),
     22..|    application:unload(valvex),
-    22..|    gen_server:stop(test_forwarder),
+    22..|    gen_server:stop(valvex_test_forwarder),
     22..|    ?MODULE:TestCase({'end', Config}).
         |  
         |  all() -&gt;
-     4..|    all(suite).
+     8..|    all(suite).
         |  all(suite) -&gt;
-     4..|    [ test_add
+     8..|    [ test_add
         |    , test_consumer
         |    , test_crossover
         |    , test_crossover_errors
@@ -498,7 +498,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/te
      2..|    KeyFifo     = test_fifo,
      2..|    KeyPBTest   = test_threshold_pushback,
      2..|    RawLifoFun  = fun() -&gt;
-    42..|                      gen_server:call(Valvex, {get_raw_queue, KeyLifo})
+    50..|                      gen_server:call(Valvex, {get_raw_queue, KeyLifo})
         |                  end,
      2..|    LifoSizeFun = fun() -&gt;
     24..|                      valvex:get_queue_size(Valvex, KeyLifo)
@@ -562,7 +562,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/te
      2..|    KeyLifo    = test_lifo,
      2..|    KeyFifo    = test_fifo,
      2..|    RawLifoFun = fun() -&gt;
-    32..|                     gen_server:call(Valvex, {get_raw_queue, KeyLifo})
+    36..|                     gen_server:call(Valvex, {get_raw_queue, KeyLifo})
         |                 end,
      2..|    RawFifoFun = fun() -&gt;
      2..|                     gen_server:call(Valvex, {get_raw_queue, KeyFifo})
@@ -581,13 +581,13 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/te
         |  do_until(Fun, ExpectedResult, 0) -&gt;
 <font color=red>     0..|    throw({unexpected_result, Fun(), ExpectedResult});</font>
         |  do_until(Fun, ExpectedResult, N) -&gt;
- 17678..|    case Fun() of
+ 25618..|    case Fun() of
         |      ExpectedResult -&gt;
     52..|        lager:info("Expected Result was given: ~p", [ExpectedResult]),
     52..|        ok;
         |      Other              -&gt;
- 17626..|        lager:info("Unxpected Result was given attempting again: ~p", [Other]),
- 17626..|        do_until(Fun, ExpectedResult, N-1)
+ 25566..|        lager:info("Unxpected Result was given attempting again: ~p", [Other]),
+ 25566..|        do_until(Fun, ExpectedResult, N-1)
         |    end.
         |  
         |  %%%_* Emacs ============================================================

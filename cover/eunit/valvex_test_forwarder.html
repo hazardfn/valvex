@@ -1,0 +1,81 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<title>/home/travis/build/hazardfn/valvex/_build/test/cover/eunit/valvex_test_forwarder.html</title>
+</head><body style='background-color: white; color: black'>
+<pre>
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/test/valvex_test_forwarder.erl by COVER 2016-07-26 at 15:34:39
+
+****************************************************************************
+
+        |  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        |  %%% Howard Beard-Marlowe &lt;howardbm@live.se&gt;
+        |  %%% @copyright 2016 Howard Beard-Marlowe
+        |  %%% @version 0.1.0
+        |  %%% @end
+        |  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        |  
+        |  %% @doc Valvex test forwarder
+        |  %%
+        |  %% This module is used as part of testing the socket event handler.
+        |  %% It collects the pids of the open sockets in an ets table so every
+        |  %% listener can receive the message.
+        |  
+        |  %%%_* Module declaration ===============================================================================================
+        |  -module(valvex_test_forwarder).
+        |  -export([ start_link/0
+        |          , register/2
+        |          , list/1
+        |          ]).
+        |  
+        |  %%%_* Behaviour declaration ============================================================================================
+        |  -behavior(gen_server).
+        |  -export([ init/1
+        |          , handle_call/3
+        |          , handle_cast/2
+        |          , handle_info/2
+        |          , terminate/2
+        |          , code_change/3
+        |          ]).
+        |  %%%_* API ==============================================================================================================
+        |  %% @doc Starts a link with the test_forwarder gen_server.
+        |  -spec start_link() -&gt; 'ignore' | {'error',_} | {'ok',pid()}.
+        |  start_link() -&gt;
+    22..|    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+        |  
+        |  %% @doc Registers a socket by placing it in the global
+        |  %% sockets ets table.
+        |  -spec register(atom() | pid(), atom() | pid()) -&gt; ok.
+        |  register(Forwarder, SocketPid) -&gt;
+<font color=red>     0..|      gen_server:call(Forwarder, {register, SocketPid}).</font>
+        |  
+        |  %% @doc Lists all the sockets currently residing in the table.
+        |  -spec list(atom() | pid()) -&gt; [pid() | atom()].
+        |  list(Forwarder) -&gt;
+<font color=red>     0..|      gen_server:call(Forwarder, list).</font>
+        |  
+        |  %%%_* Gen_Server callbacks =============================================================================================
+        |  -spec init([]) -&gt; {'ok',atom() | ets:tid()}.
+        |  init([]) -&gt;
+    22..|    {ok, ets:new(sockets, [ named_table ])}.
+        |  
+        |  handle_call({register, Pid}, _From, Table) -&gt;
+    22..|    {reply, ets:insert(Table, {Pid}), Table};
+        |  handle_call(list, _From, Table) -&gt;
+<font color=red>     0..|    {reply, ets:tab2list(Table), Table }.</font>
+        |  
+        |  handle_cast(_Msg, S) -&gt;
+<font color=red>     0..|    {noreply, S}.</font>
+        |  
+        |  handle_info(_Info, State) -&gt;
+<font color=red>     0..|    {noreply, State}.</font>
+        |  
+        |  terminate(_Reason, Table) -&gt;
+    22..|    ets:delete(Table).
+        |  
+        |  code_change(_OldVsn, State, _Extra) -&gt;
+<font color=red>     0..|    {ok, State}.</font>
+</pre>
+</body>
+</html>

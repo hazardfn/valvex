@@ -1,0 +1,82 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<title>/home/travis/build/hazardfn/valvex/_build/test/cover/aggregate/valvex_test_message_handler.html</title>
+</head><body style='background-color: white; color: black'>
+<pre>
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/test/valvex_test_message_handler.erl by COVER 2016-07-26 at 15:34:39
+
+****************************************************************************
+
+        |  -module(valvex_test_message_handler).
+        |  -export([loop/0]).
+        |  
+        |  loop() -&gt;
+   305..|      receive
+        |          {queue_started, _Q} -&gt;
+    35..|              ok,
+    35..|              loop();
+        |          {queue_popped, _Q} -&gt;
+    42..|              ok,
+    42..|              loop();
+        |          {queue_popped_r, _Q} -&gt;
+     4..|              ok,
+     4..|              loop();
+        |          {queue_push, _Q} -&gt;
+    35..|              ok,
+    35..|              loop();
+        |          {queue_push_r, _Q} -&gt;
+    17..|              ok,
+    17..|              loop();
+        |          {push_complete, _Q} -&gt;
+    50..|              ok,
+    50..|              loop();
+        |          {push_to_locked_queue, _Q} -&gt;
+     2..|              ok,
+     2..|              loop();
+        |          {queue_tombstoned, _Q} -&gt;
+     4..|              ok,
+     4..|              loop();
+        |          {queue_locked, _Q} -&gt;
+     3..|              ok,
+     3..|              loop();
+        |          {queue_unlocked, _Q} -&gt;
+     2..|              ok,
+     2..|              loop();
+        |          {queue_consumer_started, _Q} -&gt;
+    39..|              ok,
+    39..|              loop();
+        |          {queue_consumer_stopped, _Q} -&gt;
+    13..|              ok,
+    13..|              loop();
+        |          {timeout, _Key} -&gt;
+    19..|              ok,
+    19..|              loop();
+        |          {result, _Result, _Key} -&gt;
+     1..|              ok,
+     1..|              loop();
+        |          {threshold_hit, _Q} -&gt;
+     4..|              ok,
+     4..|              loop();
+        |          {work_requeued, _Key, _AvailableWorkers} -&gt;
+    17..|              ok,
+    17..|              loop();
+        |          {worker_assigned, _Key, _Worker, _AvailableWorkers} -&gt;
+     2..|              ok,
+     2..|              loop();
+        |          {queue_crossover, _Q, _NuQ} -&gt;
+     2..|              ok,
+     2..|              loop();
+        |          {queue_removed, _Key} -&gt;
+     3..|              ok,
+     3..|              loop();
+        |          {worker_stopped, _Worker} -&gt;
+<font color=red>     0..|              ok,</font>
+<font color=red>     0..|              loop();</font>
+        |          Msg -&gt;
+<font color=red>     0..|              throw({unexpected_msg, Msg})</font>
+        |      end.
+</pre>
+</body>
+</html>
