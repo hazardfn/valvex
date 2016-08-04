@@ -48,6 +48,7 @@
                         , valvex     => valvex:valvex_ref()
                         , queue_pid  => valvex:valvex_ref()
                         , consumer   => undefined | timer:tref()
+                        , consuming  => true | false
                         }.
 
 -export_type([queue_state/0]).
