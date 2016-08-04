@@ -384,14 +384,23 @@ evaluate_push(#{ key       := Key
                , q         := RawQ
                , threshold := Threshold
                , size      := Size
-               } = S, Q, _Work) ->
-  case Size >= Threshold of
-    true ->
-      valvex:pushback(Valvex, Key),
-      {noreply, S};
+               , locked    := Locked
+               } = S, Q, Work) ->
+  case Locked of
     false ->
-      valvex:notify(Valvex, {push_complete, RawQ}),
-      {noreply, update_state(Q, Size+1, S)}
+      case Size >= Threshold of
+        true ->
+          valvex:pushback(Valvex, Key),
+          {noreply, S};
+        false ->
+          lager:info("Work pushed - Key:~p, Value:~p", [Key, Work]),
+          valvex:notify(Valvex, {push_complete, RawQ}),
+          {noreply, update_state(Q, Size+1, S)}
+      end;
+    true ->
+      lager:warning("Pushed to a locked queue: ~p", [Key]),
+      valvex:notify(Valvex, {push_to_locked_queue, Key}),
+      {noreply, S}
   end.
 
 do_crossover({ _Key

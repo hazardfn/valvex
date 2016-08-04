@@ -35,26 +35,24 @@ suite() ->
   [{timetrap, {seconds, 60}}].
 
 init_per_suite(Config) ->
+  valvex_test_forwarder:start_link(),
   application:get_all_env(valvex) ++ Config.
 
 end_per_suite(Config) ->
+  gen_server:stop(valvex_test_forwarder),
+  application:stop(lager),
+  application:stop(cowboy),
   Config.
 
 init_per_testcase(TestCase, Config) ->
-  valvex_test_forwarder:start_link(),
-  HandlerPid = erlang:spawn(valvex_test_message_handler, loop, []),
   application:ensure_all_started(valvex),
+  HandlerPid = erlang:spawn(valvex_test_message_handler, loop, []),
   valvex:add_handler(valvex, valvex_message_event_handler, [HandlerPid]),
   ?MODULE:TestCase({init, Config}).
 
 end_per_testcase(TestCase, Config)  ->
   application:stop(valvex),
-  application:stop(cowboy),
-  application:stop(lager),
-  application:unload(lager),
-  application:unload(cowboy),
   application:unload(valvex),
-  gen_server:stop(valvex_test_forwarder),
   ?MODULE:TestCase({'end', Config}).
 
 all() ->

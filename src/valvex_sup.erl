@@ -3,14 +3,24 @@
 
 -export([ start_link/0
         , start_link/1
+        , stop/0
         ]).
 -export([ init/1 ]).
 
 start_link() ->
-  supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+  supervisor:start_link({local, ?MODULE}, ?MODULE, []),
+  valvex_queue_sup:start_link().
 
 start_link(Options) ->
-  supervisor:start_link({local, ?MODULE}, ?MODULE, Options).
+  supervisor:start_link({local, ?MODULE}, ?MODULE, Options),
+  valvex_queue_sup:start_link().
+
+stop() ->
+  ChildKillLoop = fun({Id, _, _, _}) ->
+                    supervisor:terminate_child(valvex_queue_sup, Id)
+                  end,
+  lists:foreach(ChildKillLoop, supervisor:which_children(valvex_queue_sup)),
+  supervisor:terminate_child(valvex_sup, valvex).
 
 init([]) ->
   {ok
@@ -18,9 +28,7 @@ init([]) ->
        , intensity => 3
        , period    => 60
        }
-    , [ valvex_server_child_specs()
-      , valvex_queue_sup_child_specs()
-      ]
+    , [ valvex_server_child_specs() ]
     }};
 init(Options) ->
   {ok
@@ -28,11 +36,8 @@ init(Options) ->
        , intensity => 3
        , period    => 60
        }
-    , [ valvex_queue_sup_child_specs()
-      , valvex_server_child_specs_with_options(Options)
-      ]
+    , [ valvex_server_child_specs_with_options(Options) ]
     }}.
-
 
 valvex_server_child_specs() ->
   #{ id       => valvex
@@ -50,15 +55,6 @@ valvex_server_child_specs_with_options(Options) ->
    , shutdown => 3600
    , type     => worker
    , modules  => [ valvex_server ]
-   }.
-
-valvex_queue_sup_child_specs() ->
-  #{ id       => valvex_queue_sup
-   , start    => {valvex_queue_sup, start_link, []}
-   , restart  => permanent
-   , shutdown => 3600
-   , type     => supervisor
-   , modules  => [ valvex_queue_sup ]
    }.
 
 %%%_* Emacs ============================================================

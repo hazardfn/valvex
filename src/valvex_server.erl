@@ -222,6 +222,7 @@ handle_call({remove, Key}, _From, #{ queues     := Queues
                                    , queue_pids := QPids
                                    } = S) ->
   supervisor:terminate_child(valvex_queue_sup, Key),
+  supervisor:delete_child(valvex_queue_sup, Key),
   {reply, ok, S#{ queues     := lists:keydelete(Key, 1, Queues)
                 , queue_pids := lists:keydelete(Key, 1, QPids)
                 }};
@@ -273,17 +274,9 @@ handle_cast({push, Key, Value}, #{queue_pids := Queues} = S) ->
     false ->
       {noreply, S};
     {Key, Backend} ->
-      case maybe_locked(Key, Backend) of
-        false ->
-          lager:info("Work pushed - Key:~p, Value:~p", [Key, Value]),
-          valvex_queue:push(Backend, Key, Value),
-          {noreply, S};
-        true ->
-          lager:warning("Pushed to a locked queue: ~p", [Key]),
-          valvex:notify(self(), {push_to_locked_queue, Key}),
-          {noreply, S}
-      end
-  end;
+      valvex_queue:push(Backend, Key, Value),
+      {noreply, S}
+    end;
 handle_cast( {work_finished, WorkerPid}
            , #{ available_workers := Workers } = S) ->
   lager:info("Work has finished and a worker has been free'd: ~p", [WorkerPid]),
@@ -326,15 +319,12 @@ handle_info(_Info, S) ->
 code_change(_Vsn, S, _Extra) ->
   {ok, S}.
 
-terminate(_Reason, #{ workers := Workers, queue_pids := QPids} = _S) ->
+terminate(_Reason, #{ workers := Workers, event_server := ES } = _S) ->
   StopWorkerFun = fun(Worker) ->
                       valvex_worker:stop(Worker)
                   end,
-  StopQueueFun = fun({Key, _Backend}) ->
-                     supervisor:terminate_child(valvex_queue_sup, Key)
-                 end,
   lists:foreach(StopWorkerFun, Workers),
-  lists:foreach(StopQueueFun, QPids),
+  gen_event:stop(ES),
   ok.
 
 %%==============================================================================
@@ -358,15 +348,15 @@ do_add(Valvex, {Key, _, _, _, _, Backend} = Q, crossover_on_existing) ->
       do_add(Valvex, Q, undefined);
     {Key, Backend} ->
       valvex_queue:crossover(Backend, Key, Q);
-    _ ->
+    {_, _} ->
       lager:error("Attempted to switch backend/key - operation not supported"),
       {error, backend_key_crossover_not_supported}
   end;
-do_add(Valvex, {Key, _, _, _, _, Backend} = Q, manual_start) ->
+do_add(Valvex, {Key, _, _, _, _, _} = Q, manual_start) ->
   case get_queue(Valvex, Key) of
     {error, key_not_found} ->
       gen_server:call(Valvex, {add, Q, manual_start});
-    {Key, Backend} ->
+    {Key, _} ->
       lager:error("Attempted to add a non-unique key: ~p", [Key]),
       {error, key_not_unique}
   end.
@@ -423,19 +413,21 @@ do_add_handler(Valvex, Module, Args) ->
 do_remove_handler(Valvex, Module, Args) ->
   gen_server:call(Valvex, {remove_handler, Module, Args}).
 
-do_update(Valvex, Key, Q) ->
-  gen_server:call(Valvex, {update, Key, Q}).
-
+do_update(Valvex, Key, {_, _, _, _, _, Backend} = Q) ->
+  case get_queue(Valvex, Key) of
+    {error, key_not_found} ->
+      lager:error("Attempted to update a non-existing queue"),
+      {error, key_not_found};
+    {Key, Backend} ->
+      gen_server:call(Valvex, {update, Key, Q});
+    _ ->
+      lager:error("Attempted to switch backend/key - operation not supported"),
+      {error, backend_key_crossover_not_supported}
+  end.
 start_workers(WorkerCount) ->
   lists:flatmap(fun(_) ->
                     [valvex_worker:start_link(self())]
                 end, lists:seq(1, WorkerCount)).
-
-maybe_locked(Key, Backend) ->
-  case whereis(Key) of
-    undefined -> false;
-    Pid -> valvex_queue:is_locked(Backend, Pid)
-  end.
 
 %%%_* Emacs ====================================================================
 %%% Local Variables:
