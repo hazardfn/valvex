@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/eunit/valvex_socket_event_handler.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_socket_event_handler.erl by COVER 2016-08-04 at 20:21:59
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_socket_event_handler.erl by COVER 2016-08-04 at 20:28:14
 
 ****************************************************************************
 
@@ -31,15 +31,15 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |       , {handler, Handler}
         |       , {use_local, true}
         |       ]) -&gt;
-    20..|    start_cowboy(Port, Handler),
-    20..|    {ok, [{IP, _, _}, _]} = inet:getif(),
-    20..|    Host = inet_parse:ntoa(IP),
-    20..|    {ok, Gun}      = gun:open(Host, Port),
-    20..|    {ok, Protocol} = gun:await_up(Gun),
-    20..|    gun:ws_upgrade(Gun, "/websocket"),
-    20..|    receive
+    22..|    start_cowboy(Port, Handler),
+    22..|    {ok, [{IP, _, _}, _]} = inet:getif(),
+    22..|    Host = inet_parse:ntoa(IP),
+    22..|    {ok, Gun}      = gun:open(Host, Port),
+    22..|    {ok, Protocol} = gun:await_up(Gun),
+    22..|    gun:ws_upgrade(Gun, "/websocket"),
+    22..|    receive
         |      {gun_ws_upgrade, Gun, ok, _Headers} -&gt;
-    20..|        ok;
+    22..|        ok;
         |      {gun_response, Gun, _, _, Status, Headers} -&gt;
 <font color=red>     0..|        exit({ws_upgrade_failed, Status, Headers});</font>
         |      {gun_error, Gun, _StreamRef, Reason} -&gt;
@@ -48,7 +48,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |    after 15000 -&gt;
 <font color=red>     0..|        exit(timeout)</font>
         |    end,
-    20..|    {ok, #{ gun      =&gt; Gun
+    22..|    {ok, #{ gun      =&gt; Gun
         |          , host     =&gt; Host
         |          , port     =&gt; Port
         |          , protocol =&gt; Protocol
@@ -77,32 +77,32 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |          }}.
         |  
         |  handle_event(Event, #{ gun := Gun } = S) -&gt;
-   364..|    do_dump(Gun, Event),
-   344..|    {ok, S}.
+   462..|    do_dump(Gun, Event),
+   444..|    {ok, S}.
         |  
         |  do_dump(Gun, _Event) -&gt;
-   364..|    Queues      = gen_server:call(valvex, get_queues, 2000),
-   358..|    QueueFun    = fun({Key, _, _, _, _, Backend}) -&gt;
-  1080..|                      Pred = fun(K, _V) -&gt;
- 15990..|                                 lists:member(K, map_blacklist()) == false
+   462..|    Queues      = gen_server:call(valvex, get_queues, 2000),
+   460..|    QueueFun    = fun({Key, _, _, _, _, Backend}) -&gt;
+  1382..|                      Pred = fun(K, _V) -&gt;
+ 20520..|                                 lists:member(K, map_blacklist()) == false
         |                             end,
-  1080..|                      [maps:filter(Pred, valvex_queue:get_state(Backend, Key))]
+  1382..|                      [maps:filter(Pred, valvex_queue:get_state(Backend, Key))]
         |                  end,
-   358..|    QueueMapped = #{ mapped_queues =&gt; lists:flatmap(QueueFun, Queues) },
-   344..|    BaseMap     = #{ created_at    =&gt; format_utc_timestamp()
+   460..|    QueueMapped = #{ mapped_queues =&gt; lists:flatmap(QueueFun, Queues) },
+   446..|    BaseMap     = #{ created_at    =&gt; format_utc_timestamp()
         |                   , name          =&gt; dump
         |                   },
-   344..|    QueueState = maps:merge(BaseMap, QueueMapped),
-   344..|    gun:ws_send(Gun, jsonify(QueueState)).
+   446..|    QueueState = maps:merge(BaseMap, QueueMapped),
+   446..|    gun:ws_send(Gun, jsonify(QueueState)).
         |  
         |  map_blacklist() -&gt;
- 15990..|    [ queue, q, consumer, queue_pid ].
+ 20520..|    [ queue, q, consumer, queue_pid ].
         |  
         |  handle_info({'EXIT', _Pid, _Reason}, S) -&gt;
 <font color=red>     0..|    gen_event:stop(self()),</font>
 <font color=red>     0..|    {ok, S};</font>
         |  handle_info(_Info, State) -&gt;
-     6..|    {ok, State}.
+    18..|    {ok, State}.
         |  
         |  handle_call(_, S) -&gt;
 <font color=red>     0..|    {ok, ok, S}.</font>
@@ -111,23 +111,23 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
 <font color=red>     0..|    {ok, State}.</font>
         |  
         |  terminate(_Reason, #{ gun := Gun }) -&gt;
-    16..|    gun:shutdown(Gun),
-    16..|    ok.
+    18..|    gun:shutdown(Gun),
+    18..|    ok.
         |  
         |  jsonify(Event) -&gt;
-   344..|    {binary, jsx:encode(Event)}.
+   446..|    {binary, jsx:encode(Event)}.
         |  
         |  start_cowboy(Port, Handler) -&gt;
-    20..|    Dispatch = cowboy_router:compile([
+    22..|    Dispatch = cowboy_router:compile([
         |                                      {'_', [
         |                                             {"/websocket", Handler, []}
         |                                            ]}
         |                                     ]),
-    20..|    cowboy:start_clear(http, 100, [{port, Port}], #{ env =&gt; #{dispatch =&gt; Dispatch} }).
+    22..|    cowboy:start_clear(http, 100, [{port, Port}], #{ env =&gt; #{dispatch =&gt; Dispatch} }).
         |  
         |  format_utc_timestamp() -&gt;
-   344..|    TS =  os:timestamp(),
-   344..|    calendar:now_to_universal_time(TS).
+   446..|    TS =  os:timestamp(),
+   446..|    calendar:now_to_universal_time(TS).
         |  %%%_* Emacs ====================================================================
         |  %%% Local Variables:
         |  %%% allout-layout: t

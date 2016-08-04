@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/eunit/valvex_message_event_handler.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_message_event_handler.erl by COVER 2016-08-04 at 20:21:59
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_message_event_handler.erl by COVER 2016-08-04 at 20:28:14
 
 ****************************************************************************
 
@@ -28,14 +28,14 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  %% Gen Event API
         |  %%==============================================================================
         |  init([Pid]) -&gt;
-    22..|    {ok, #{ receiver =&gt; Pid }}.
+    24..|    {ok, #{ receiver =&gt; Pid }}.
         |  
         |  handle_event({queue_started, _Q} = Event, #{ receiver := Pid } = S) -&gt;
-    66..|    Pid ! Event,
-    66..|    {ok, S};
+    70..|    Pid ! Event,
+    70..|    {ok, S};
         |  handle_event({queue_popped, _Q} = Event, #{ receiver := Pid } = S) -&gt;
-    62..|    Pid ! Event,
-    62..|    {ok, S};
+    84..|    Pid ! Event,
+    84..|    {ok, S};
         |  handle_event({queue_popped_r, _Q} = Event, #{ receiver := Pid } = S) -&gt;
      8..|    Pid ! Event,
      8..|    {ok, S};
@@ -52,8 +52,8 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
      4..|    Pid ! Event,
      4..|    {ok, S};
         |  handle_event({queue_tombstoned, _Q} = Event, #{ receiver := Pid } = S) -&gt;
-     4..|    Pid ! Event,
-     4..|    {ok, S};
+     8..|    Pid ! Event,
+     8..|    {ok, S};
         |  handle_event({queue_locked, _Q} = Event, #{ receiver := Pid } = S) -&gt;
      6..|    Pid ! Event,
      6..|    {ok, S};
@@ -61,17 +61,17 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
      4..|    Pid ! Event,
      4..|    {ok, S};
         |  handle_event({queue_consumer_started, _Q} = Event, #{ receiver := Pid } = S) -&gt;
-    68..|    Pid ! Event,
-    68..|    {ok, S};
+    78..|    Pid ! Event,
+    78..|    {ok, S};
         |  handle_event({queue_consumer_stopped, _Q} = Event, #{ receiver := Pid } = S) -&gt;
-    18..|    Pid ! Event,
-    18..|    {ok, S};
+    26..|    Pid ! Event,
+    26..|    {ok, S};
         |  handle_event({timeout, _Key} = Event, #{ receiver := Pid } = S) -&gt;
-    14..|    Pid ! Event,
-    14..|    {ok, S};
+    38..|    Pid ! Event,
+    38..|    {ok, S};
         |  handle_event({result, _Result, _Key} = Event, #{ receiver := Pid } = S) -&gt;
-     4..|    Pid ! Event,
-     4..|    {ok, S};
+     2..|    Pid ! Event,
+     2..|    {ok, S};
         |  handle_event({threshold_hit, _Q} = Event, #{ receiver := Pid } = S) -&gt;
     12..|    Pid ! Event,
     12..|    {ok, S};
@@ -79,21 +79,21 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
     34..|    Pid ! Event,
     34..|    {ok, S};
         |  handle_event({worker_assigned, _Key, _Worker,  _AvailableWorkers} = Event, #{ receiver := Pid } = S) -&gt;
-     6..|    Pid ! Event,
-     6..|    {ok, S};
+     4..|    Pid ! Event,
+     4..|    {ok, S};
         |  handle_event({queue_crossover, _Q, _NuQ} = Event, #{ receiver := Pid } = S) -&gt;
      4..|    Pid ! Event,
      4..|    {ok, S};
         |  handle_event({queue_removed, _Key} = Event, #{ receiver := Pid } = S) -&gt;
-     4..|    Pid ! Event,
-     4..|    {ok, S};
+     6..|    Pid ! Event,
+     6..|    {ok, S};
         |  handle_event({worker_stopped, _Worker} = Event, #{receiver := Pid } = S) -&gt;
 <font color=red>     0..|    Pid ! Event,</font>
 <font color=red>     0..|    {ok, S}.</font>
         |  
         |  
         |  handle_info(_, State) -&gt;
-    70..|    {ok, State}.
+    46..|    {ok, State}.
         |  
         |  handle_call(_, S) -&gt;
 <font color=red>     0..|    {ok, ok, S}.</font>
@@ -102,7 +102,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
 <font color=red>     0..|    {ok, State}.</font>
         |  
         |  terminate(_Reason, _State) -&gt;
-     4..|    ok.
+    20..|    ok.
         |  
         |  %%%_* Emacs ====================================================================
         |  %%% Local Variables:
