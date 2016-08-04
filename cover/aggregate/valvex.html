@@ -5,14 +5,14 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/aggregate/valvex.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex.erl by COVER 2016-08-04 at 16:33:59
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex.erl by COVER 2016-08-04 at 16:53:27
 
 ****************************************************************************
 
         |  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         |  %%% @author Howard Beard-Marlowe &lt;howardbm@live.se&gt;
         |  %%% @copyright 2016 Howard Beard-Marlowe
-        |  %%% @version 0.1.0
+        |  %%% @version 1.0.0
         |  %%% @end
         |  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         |  
@@ -112,7 +112,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |              , {poll_rate, _Poll, ms}
         |              , _Backend
         |              } = Q) -&gt;
-  1034..|    valvex:add(Valvex, Q, undefined).
+  1056..|    valvex:add(Valvex, Q, undefined).
         |  
         |  %% @doc Adds a queue to valvex. There are a few options that aliter slightly
         |  %% the behaviour of the add:
@@ -133,13 +133,13 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |              , {poll_rate, _Poll, ms}
         |              , _Backend
         |              } = Q, Option) -&gt;
-  2785..|    valvex_server:add(Valvex, Q, Option).
+  2749..|    valvex_server:add(Valvex, Q, Option).
         |  
         |  %% @doc removes a queue from valvex with the default setting. see remove/3 for more info.
         |  %% @see remove/3
         |  -spec remove( valvex_ref(), queue_key()) -&gt; ok | key_find_error().
         |  remove(Valvex, Key) -&gt;
-   687..|    valvex:remove(Valvex, Key, undefined).
+   712..|    valvex:remove(Valvex, Key, undefined).
         |  
         |  %% @doc Removes a queue from valvex. There are a few options that alter the way
         |  %% a remove behaves:
@@ -153,13 +153,13 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  %% @see remove_option()
         |  -spec remove(valvex_ref(), queue_key(), remove_option()) -&gt; ok | key_find_error().
         |  remove(Valvex, Key, Option) -&gt;
-  1128..|    valvex_server:remove(Valvex, Key, Option).
+  1154..|    valvex_server:remove(Valvex, Key, Option).
         |  
         |  %% @doc Pushes an item to the queue with the given key. Work can be any
         |  %% 0 arity function.
         |  -spec push(valvex_ref(), queue_key(), function()) -&gt; ok.
         |  push(Valvex, Key, Work) -&gt;
-   718..|    valvex_server:push(Valvex, Key, {Work, erlang:timestamp()}).
+   691..|    valvex_server:push(Valvex, Key, {Work, erlang:timestamp()}).
         |  
         |  %% @doc Gets the list of workers that are currently not undertaking work.
         |  -spec get_available_workers(valvex_ref()) -&gt; valvex_workers().
@@ -174,18 +174,18 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  %% @doc Gets the size of the queue with the given key.
         |  -spec get_queue_size(valvex_ref(), queue_key()) -&gt; non_neg_integer() | key_find_error().
         |  get_queue_size(Valvex, Key) -&gt;
- 75246..|    valvex_server:get_queue_size(Valvex, Key).
+ 53643..|    valvex_server:get_queue_size(Valvex, Key).
         |  
         |  %% @doc Pushes back a set amount of time in order to prevent spamming.
         |  -spec pushback(valvex_ref(), queue_key()) -&gt; ok.
         |  pushback(Valvex, Key) -&gt;
-    38..|    valvex_server:pushback(Valvex, Key).
+    46..|    valvex_server:pushback(Valvex, Key).
         |  
         |  %% @doc Notifies those listening via gen_event of various events happening
         |  %% inside valvex.
         |  -spec notify(valvex_ref(), any()) -&gt; ok.
         |  notify(Valvex, Event) -&gt;
- 12242..|    valvex_server:notify(Valvex, Event).
+ 12037..|    valvex_server:notify(Valvex, Event).
         |  
         |  %% @doc Adds an event handler which can intercept events from valvex
         |  %% and do various things.
@@ -201,7 +201,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  %% @doc Updates a key with a new set of queue settings.
         |  -spec update(valvex_ref(), queue_key(), valvex_queue()) -&gt; ok.
         |  update(Valvex, Key, NuQ) -&gt;
-  1321..|    valvex_server:update(Valvex, Key, NuQ).
+  1335..|    valvex_server:update(Valvex, Key, NuQ).
         |  
         |  %%%_* Emacs ====================================================================
         |  %%% Local Variables:
