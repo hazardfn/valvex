@@ -48,12 +48,12 @@ queue_with_same_key({Key, _, _, _, _, Backend}) ->
 existing_queue_key(#{ queues := []}) ->
   [];
 existing_queue_key(#{ queues := Queues }) ->
-  Index = random:uniform(length(Queues)),
+  Index = rand:uniform(length(Queues)),
   Key = element(1, lists:nth(Index, Queues)),
   Key.
 
 existing_queue(#{ queues := Queues }) ->
-  Index = random:uniform(length(Queues)),
+  Index = rand:uniform(length(Queues)),
   lists:nth(Index, Queues).
 
 first_queue_key(#{ queues := Queues }) ->
