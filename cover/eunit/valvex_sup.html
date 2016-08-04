@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/eunit/valvex_sup.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_sup.erl by COVER 2016-08-04 at 20:28:14
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_sup.erl by COVER 2016-08-04 at 20:37:09
 
 ****************************************************************************
 
@@ -28,7 +28,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  
         |  stop() -&gt;
   1000..|    ChildKillLoop = fun({Id, _, _, _}) -&gt;
-  3790..|                      supervisor:terminate_child(valvex_queue_sup, Id)
+  3796..|                      supervisor:terminate_child(valvex_queue_sup, Id)
         |                    end,
   1000..|    lists:foreach(ChildKillLoop, supervisor:which_children(valvex_queue_sup)),
   1000..|    supervisor:terminate_child(valvex_sup, valvex).
