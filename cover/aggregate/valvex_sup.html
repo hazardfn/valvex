@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/aggregate/valvex_sup.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_sup.erl by COVER 2016-08-04 at 20:12:36
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_sup.erl by COVER 2016-08-04 at 20:21:59
 
 ****************************************************************************
 
@@ -19,22 +19,22 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  -export([ init/1 ]).
         |  
         |  start_link() -&gt;
-   500..|    supervisor:start_link({local, ?MODULE}, ?MODULE, []),
-   500..|    valvex_queue_sup:start_link().
+<font color=red>     0..|    supervisor:start_link({local, ?MODULE}, ?MODULE, []),</font>
+<font color=red>     0..|    valvex_queue_sup:start_link().</font>
         |  
         |  start_link(Options) -&gt;
-    11..|    supervisor:start_link({local, ?MODULE}, ?MODULE, Options),
-    11..|    valvex_queue_sup:start_link().
+    10..|    supervisor:start_link({local, ?MODULE}, ?MODULE, Options),
+    10..|    valvex_queue_sup:start_link().
         |  
         |  stop() -&gt;
-   500..|    ChildKillLoop = fun({Id, _, _, _}) -&gt;
-  1897..|                      supervisor:terminate_child(valvex_queue_sup, Id)
+<font color=red>     0..|    ChildKillLoop = fun({Id, _, _, _}) -&gt;</font>
+<font color=red>     0..|                      supervisor:terminate_child(valvex_queue_sup, Id)</font>
         |                    end,
-   500..|    lists:foreach(ChildKillLoop, supervisor:which_children(valvex_queue_sup)),
-   500..|    supervisor:terminate_child(valvex_sup, valvex).
+<font color=red>     0..|    lists:foreach(ChildKillLoop, supervisor:which_children(valvex_queue_sup)),</font>
+<font color=red>     0..|    supervisor:terminate_child(valvex_sup, valvex).</font>
         |  
         |  init([]) -&gt;
-   500..|    {ok
+<font color=red>     0..|    {ok</font>
         |    , { #{ strategy  =&gt; one_for_one
         |         , intensity =&gt; 3
         |         , period    =&gt; 60
@@ -42,7 +42,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |      , [ valvex_server_child_specs() ]
         |      }};
         |  init(Options) -&gt;
-    11..|    {ok
+    10..|    {ok
         |    , { #{ strategy  =&gt; one_for_one
         |         , intensity =&gt; 3
         |         , period    =&gt; 60
@@ -51,7 +51,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |      }}.
         |  
         |  valvex_server_child_specs() -&gt;
-   500..|    #{ id       =&gt; valvex
+<font color=red>     0..|    #{ id       =&gt; valvex</font>
         |     , start    =&gt; {valvex, start_link, [[]]}
         |     , restart  =&gt; permanent
         |     , shutdown =&gt; 3600
@@ -60,7 +60,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |     }.
         |  
         |  valvex_server_child_specs_with_options(Options) -&gt;
-    11..|    #{ id       =&gt; valvex
+    10..|    #{ id       =&gt; valvex
         |     , start    =&gt; {valvex, start_link, [Options]}
         |     , restart  =&gt; permanent
         |     , shutdown =&gt; 3600

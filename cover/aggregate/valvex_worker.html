@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/aggregate/valvex_worker.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_worker.erl by COVER 2016-08-04 at 20:12:36
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_worker.erl by COVER 2016-08-04 at 20:21:58
 
 ****************************************************************************
 
@@ -31,30 +31,30 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  %%%=============================================================================
         |  -spec start_link(valvex:valvex_ref()) -&gt; valvex:valvex_ref().
         |  start_link(Valvex) -&gt;
-  5011..|    {ok, Pid} = gen_server:start_link(?MODULE, Valvex, []),
-  5011..|    Pid.
+    10..|    {ok, Pid} = gen_server:start_link(?MODULE, Valvex, []),
+    10..|    Pid.
         |  
         |  work(Worker, Work) -&gt;
-     2..|    gen_server:cast(Worker, Work).
+     3..|    gen_server:cast(Worker, Work).
         |  
         |  -spec stop(valvex:valvex_ref()) -&gt; ok.
         |  stop(Worker) -&gt;
-  5011..|    gen_server:call(Worker, stop).
+     9..|    gen_server:call(Worker, stop).
         |  
         |  %%%=============================================================================
         |  %%% Gen Server Callbacks
         |  %%%=============================================================================
         |  init(Valvex) -&gt;
-  5011..|    {ok, #{ valvex =&gt; Valvex }}.
+    10..|    {ok, #{ valvex =&gt; Valvex }}.
         |  
         |  handle_cast({work, Work}, #{ valvex := Valvex } = S) -&gt;
-     2..|    Work(),
-     1..|    gen_server:cast(Valvex, {work_finished, self()}),
-     1..|    {noreply, S}.
+     3..|    Work(),
+     2..|    gen_server:cast(Valvex, {work_finished, self()}),
+     2..|    {noreply, S}.
         |  
         |  handle_call(stop, _From, #{ valvex := Valvex } = S) -&gt;
-  5010..|    valvex:notify(Valvex, {worker_stopped, self()}),
-  5010..|    {stop, normal, ok, S}.
+     7..|    valvex:notify(Valvex, {worker_stopped, self()}),
+     7..|    {stop, normal, ok, S}.
         |  
         |  handle_info(_Msg, S) -&gt;
 <font color=red>     0..|    {noreply, S}.</font>
@@ -63,7 +63,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
 <font color=red>     0..|    {ok, S}.</font>
         |  
         |  terminate(_Reason, _S) -&gt;
-  5010..|    ok.
+     7..|    ok.
         |  %%%_* Emacs ============================================================
         |  %%% Local Variables:
         |  %%% allout-layout: t
