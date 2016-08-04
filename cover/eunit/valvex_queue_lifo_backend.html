@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/eunit/valvex_queue_lifo_backend.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_queue_lifo_backend.erl by COVER 2016-08-04 at 16:53:27
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_queue_lifo_backend.erl by COVER 2016-08-04 at 20:03:08
 
 ****************************************************************************
 
@@ -72,23 +72,23 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |               , valvex:queue_key()
         |               , non_neg_integer()) -&gt; ok.
         |  consume(Valvex, QPid, Backend, Key, Timeout) -&gt;
-   114..|    do_consume(Valvex, QPid, Backend, Key, Timeout).
+   112..|    do_consume(Valvex, QPid, Backend, Key, Timeout).
         |  
         |  %% @doc initiates a crossover, the replacement of the current queue settings
         |  %% with a different arrangement.
         |  -spec crossover( valvex:valvex_ref(), valvex:valvex_queue()) -&gt; ok.
         |  crossover(Q, NuQ) -&gt;
-   620..|    gen_server:cast(Q, {crossover, NuQ}),
-   620..|    gen_server:cast(Q, restart_consumer).
+   702..|    gen_server:cast(Q, {crossover, NuQ}),
+   702..|    gen_server:cast(Q, restart_consumer).
         |  
         |  -spec get_state( valvex:valvex_ref()) -&gt; valvex_queue:queue_state().
         |  get_state(Q) -&gt;
-   378..|    gen_server:call(Q, get_state).
+   364..|    gen_server:call(Q, get_state).
         |  
         |  %% @doc returns true if the consumer is active.
         |  -spec is_consuming(valvex:valvex_ref()) -&gt; true | false.
         |  is_consuming(Q) -&gt;
-   252..|    gen_server:call(Q, is_consuming).
+   224..|    gen_server:call(Q, is_consuming).
         |  
         |  %% @doc returns true if the queue is locked, more details about what that means
         |  %% exist in the readme.
@@ -122,18 +122,18 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  %% @see valvex:valvex_q_item()
         |  -spec push(valvex:valvex_ref(), valvex:valvex_q_item()) -&gt; ok.
         |  push(Q, Value) -&gt;
-   688..|    gen_server:cast(Q, {push, Value}).
+   732..|    gen_server:cast(Q, {push, Value}).
         |  
         |  %% @doc pushes a queue item to the queue. The item is placed at the front.
         |  %% @see valvex:valvex_q_item()
         |  -spec push_r(valvex:valvex_ref(), valvex:valvex_q_item()) -&gt; ok.
         |  push_r(Q, Value) -&gt;
-    18..|    gen_server:cast(Q, {push_r, Value}).
+    16..|    gen_server:cast(Q, {push_r, Value}).
         |  
         |  %% @doc returns the current number of items in the queue.
         |  -spec size(valvex:valvex_ref()) -&gt; non_neg_integer().
         |  size(Q) -&gt;
-107270..|    gen_server:call(Q, size).
+112844..|    gen_server:call(Q, size).
         |  
         |  %% @doc starts a timer that regularly calls the consume function
         |  %% to facilitate constant slurping of the queue, how regularly
@@ -142,12 +142,12 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  %% @see consume()
         |  -spec start_consumer(valvex:valvex_ref()) -&gt; ok.
         |  start_consumer(Q) -&gt;
-  1502..|    gen_server:cast(Q, start_consumer).
+  1604..|    gen_server:cast(Q, start_consumer).
         |  
         |  %% @doc starts a link with the queue gen_server.
         |  -spec start_link(valvex:valvex_ref(), valvex:valvex_queue()) -&gt; valvex:valvex_ref().
         |  start_link(Valvex, { Key, _, _, _, _, _ } = Q) -&gt;
-  2046..|    gen_server:start_link({local, Key}, ?MODULE, [Valvex, Q], []).
+  2116..|    gen_server:start_link({local, Key}, ?MODULE, [Valvex, Q], []).
         |  
         |  %% @doc stops the regular consumption of the queue.
         |  -spec stop_consumer(valvex:valvex_ref()) -&gt; ok.
@@ -182,8 +182,8 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |                 , _Backend
         |                 } = Q
         |       ]) -&gt;
-  2046..|    valvex:notify(Valvex, {queue_started, Q}),
-  2046..|    {ok, #{ key        =&gt; Key
+  2116..|    valvex:notify(Valvex, {queue_started, Q}),
+  2116..|    {ok, #{ key        =&gt; Key
         |          , threshold  =&gt; Threshold
         |          , timeout    =&gt; Timeout
         |          , pushback   =&gt; Pushback
@@ -212,8 +212,8 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |                           , tombstoned := Tombstone
         |                           , valvex     := Valvex
         |                           } = S) -&gt;
-   138..|    Value = queue:out_r(Q0),
-   138..|    evaluate_value(Valvex, Tombstone, Size, RawQ, Value, queue_popped, S);
+   134..|    Value = queue:out_r(Q0),
+   134..|    evaluate_value(Valvex, Tombstone, Size, RawQ, Value, queue_popped, S);
         |  handle_call(pop_r, _From, #{ queue      := Q0
         |                             , q          := RawQ
         |                             , size       := Size
@@ -232,9 +232,9 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  handle_call(is_tombstoned, _From, #{ tombstoned := Tombstoned } = S) -&gt;
      4..|    {reply, Tombstoned, S};
         |  handle_call(size, _From, #{ size := Size } = S) -&gt;
-107270..|    {reply, Size, S};
+112844..|    {reply, Size, S};
         |  handle_call(get_state, _From, S) -&gt;
-   372..|    {reply, S, S}.
+   358..|    {reply, S, S}.
         |  
         |  %% @doc See the "see also" list for a list of asynchronous operations.
         |  %% @see push()
@@ -249,14 +249,14 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |                                                   , q         := RawQ
         |                                                   , queue     := Q
         |                                                   } = S) -&gt;
-   670..|    valvex:notify(Valvex, {queue_push, RawQ}),
-   670..|    evaluate_push(S, queue:in(Value, Q), Work);
+   728..|    valvex:notify(Valvex, {queue_push, RawQ}),
+   728..|    evaluate_push(S, queue:in(Value, Q), Work);
         |  handle_cast( {push_r, {Work, _Timestamp} = Value}, #{ valvex    := Valvex
         |                                                      , q         := RawQ
         |                                                      , queue     := Q
         |                                                      } = S) -&gt;
-    18..|    valvex:notify(Valvex, {queue_push_r, RawQ}),
-    18..|    evaluate_push(S, queue:in_r(Value, Q), Work);
+    16..|    valvex:notify(Valvex, {queue_push_r, RawQ}),
+    16..|    evaluate_push(S, queue:in_r(Value, Q), Work);
         |  handle_cast(lock, #{ valvex := Valvex, q := RawQ } = S) -&gt;
      2..|    valvex:notify(Valvex, {queue_locked, RawQ}),
      2..|    {noreply, S#{ locked := true }};
@@ -264,15 +264,15 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
      2..|    valvex:notify(Valvex, {queue_unlocked, RawQ}),
      2..|    {noreply, S#{ locked := false }};
         |  handle_cast(tombstone, #{ valvex := Valvex, q := RawQ } = S) -&gt;
-   886..|    valvex:notify(Valvex, {queue_tombstoned, RawQ}),
-   886..|    {noreply, S#{ tombstoned := true}};
+   892..|    valvex:notify(Valvex, {queue_tombstoned, RawQ}),
+   892..|    {noreply, S#{ tombstoned := true}};
         |  handle_cast({crossover, NuQ}, #{ key      := Key
         |                                 , valvex   := Valvex
         |                                 , q        := RawQ
         |                                 } = S) -&gt;
-   608..|    valvex:notify(Valvex, {queue_crossover, RawQ, NuQ}),
-   608..|    valvex:update(Valvex, Key, NuQ),
-   546..|    do_crossover(NuQ, S);
+   690..|    valvex:notify(Valvex, {queue_crossover, RawQ, NuQ}),
+   690..|    valvex:update(Valvex, Key, NuQ),
+   646..|    do_crossover(NuQ, S);
         |  handle_cast(start_consumer, #{ valvex     := Valvex
         |                               , queue_pid  := QPid
         |                               , backend    := Backend
@@ -282,9 +282,9 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |                               , q          := RawQ
         |                               , consumer   := TRef0
         |                               } = S) -&gt;
-  1502..|    case TRef0 of
+  1604..|    case TRef0 of
         |      undefined -&gt;
-  1500..|        start_timer(Valvex, QPid, Backend, Key, Timeout, Poll, RawQ, S);
+  1602..|        start_timer(Valvex, QPid, Backend, Key, Timeout, Poll, RawQ, S);
         |      _ -&gt;
      2..|        {noreply, S}
         |    end;
@@ -297,11 +297,11 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |                                 , q         := RawQ
         |                                 , consumer  := TRef
         |                                 } = S) -&gt;
-   546..|    case TRef of
-   170..|      undefined -&gt; {noreply, S};
+   646..|    case TRef of
+   176..|      undefined -&gt; {noreply, S};
         |      _         -&gt;
-   376..|        timer:cancel(TRef),
-   352..|        start_timer(Valvex, QPid, Backend, Key, Timeout, Poll, RawQ, S)
+   470..|        timer:cancel(TRef),
+   450..|        start_timer(Valvex, QPid, Backend, Key, Timeout, Poll, RawQ, S)
         |    end;
         |  handle_cast(stop_consumer, #{ consumer := TRef
         |                              , q        := RawQ
@@ -348,11 +348,11 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
 <font color=red>     0..|    erlang:unregister(Key).</font>
         |  
         |  do_consume(Valvex, QPid, Backend, Key, Timeout) -&gt;
-251016952|    try
-251016952|      QueueValue = gen_server:call(QPid, pop),
-   134..|      case QueueValue of
+253735476|    try
+253741732|      QueueValue = gen_server:call(QPid, pop),
+   130..|      case QueueValue of
         |        {{value, {Work, Timestamp}}, _Q} -&gt;
-    40..|          case is_stale(Timeout, Timestamp) of
+    38..|          case is_stale(Timeout, Timestamp) of
         |            false -&gt;
     20..|              gen_server:call(Valvex, { assign_work
         |                                      , {Work, Timestamp}
@@ -360,30 +360,30 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |                                      }
         |                             );
         |            true  -&gt;
-    20..|              valvex:notify(Valvex, {timeout, Key})
+    18..|              valvex:notify(Valvex, {timeout, Key})
         |          end,
-    20..|          do_consume(Valvex, QPid, Backend, Key, Timeout);
+    18..|          do_consume(Valvex, QPid, Backend, Key, Timeout);
         |        {empty, tombstoned} -&gt;
      4..|          valvex:notify(Valvex, {queue_removed, Key}),
      4..|          valvex:remove(Valvex, Key, force_remove);
         |        {empty, _} -&gt;
-    90..|          ok
+    88..|          ok
         |      end
         |    catch _Error:_Reason -&gt;
-251016822|        do_consume(Valvex, QPid, Backend, Key, Timeout)
+253738478|        do_consume(Valvex, QPid, Backend, Key, Timeout)
         |    end.
         |  
         |  update_state(Q, Size, S) -&gt;
-   684..|    S#{ size := Size, queue := Q }.
+   758..|    S#{ size := Size, queue := Q }.
         |  
         |  evaluate_value(Valvex, Tombstone, Size, RawQ, Value, Event, S) -&gt;
-   142..|    case Value of
+   138..|    case Value of
         |      {{value, {_Work, _Timestamp}}, Q} -&gt;
-    48..|        valvex:notify(Valvex, {Event, RawQ}),
-    48..|        {reply, Value, update_state(Q, Size-1, S)};
+    46..|        valvex:notify(Valvex, {Event, RawQ}),
+    46..|        {reply, Value, update_state(Q, Size-1, S)};
         |      {empty, _}                                -&gt;
-    94..|        case Tombstone of
-    90..|          false -&gt; {reply, Value, S};
+    92..|        case Tombstone of
+    88..|          false -&gt; {reply, Value, S};
      4..|          true  -&gt; {reply, {empty, tombstoned}, S}
         |        end
         |    end.
@@ -395,16 +395,16 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |                 , size      := Size
         |                 , locked    := Locked
         |                 } = S, Q, Work) -&gt;
-   688..|    case Locked of
+   744..|    case Locked of
         |      false -&gt;
-   686..|        case Size &gt;= Threshold of
+   742..|        case Size &gt;= Threshold of
         |          true -&gt;
-    50..|            valvex:pushback(Valvex, Key),
-    50..|            {noreply, S};
+    30..|            valvex:pushback(Valvex, Key),
+    30..|            {noreply, S};
         |          false -&gt;
-   636..|            lager:info("Work pushed - Key:~p, Value:~p", [Key, Work]),
-   636..|            valvex:notify(Valvex, {push_complete, RawQ}),
-   636..|            {noreply, update_state(Q, Size+1, S)}
+   712..|            lager:info("Work pushed - Key:~p, Value:~p", [Key, Work]),
+   712..|            valvex:notify(Valvex, {push_complete, RawQ}),
+   712..|            {noreply, update_state(Q, Size+1, S)}
         |        end;
         |      true -&gt;
      2..|        lager:warning("Pushed to a locked queue: ~p", [Key]),
@@ -419,25 +419,25 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |               , {poll_rate, Poll, ms}
         |               , _Backend
         |               } = Q, S) -&gt;
-   546..|  {noreply, S#{ threshold := Threshold
+   646..|  {noreply, S#{ threshold := Threshold
         |              , timeout   := Timeout
         |              , pushback  := Pushback
         |              , poll_rate := Poll
         |              , q         := Q}}.
         |  
         |  start_timer(Valvex, QPid, Backend, Key, Timeout, Poll, RawQ, S) -&gt;
-  1852..|    {ok, TRef} = timer:apply_interval( Poll
+  2052..|    {ok, TRef} = timer:apply_interval( Poll
         |                                     , ?MODULE
         |                                     , consume
         |                                     , [Valvex, QPid, Backend, Key, Timeout]
         |                                     ),
-  1786..|    valvex:notify(Valvex, {queue_consumer_started, RawQ}),
-  1786..|    {noreply, S#{ consumer =&gt; TRef, consuming =&gt; true }}.
+  2008..|    valvex:notify(Valvex, {queue_consumer_started, RawQ}),
+  2008..|    {noreply, S#{ consumer =&gt; TRef, consuming =&gt; true }}.
         |  
         |  is_stale(Timeout, Timestamp) -&gt;
-    40..|    TimeoutMS = timer:seconds(Timeout),
-    40..|    Diff      = timer:now_diff(erlang:timestamp(), Timestamp),
-    40..|    Diff      &gt; (TimeoutMS * 1000).
+    38..|    TimeoutMS = timer:seconds(Timeout),
+    38..|    Diff      = timer:now_diff(erlang:timestamp(), Timestamp),
+    38..|    Diff      &gt; (TimeoutMS * 1000).
         |  %%%_* Emacs ====================================================================
         |  %%% Local Variables:
         |  %%% allout-layout: t

@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/aggregate/valvex_message_event_handler.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_message_event_handler.erl by COVER 2016-08-04 at 16:53:27
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_message_event_handler.erl by COVER 2016-08-04 at 20:03:08
 
 ****************************************************************************
 
@@ -31,11 +31,11 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
     12..|    {ok, #{ receiver =&gt; Pid }}.
         |  
         |  handle_event({queue_started, _Q} = Event, #{ receiver := Pid } = S) -&gt;
-    35..|    Pid ! Event,
-    35..|    {ok, S};
+    39..|    Pid ! Event,
+    39..|    {ok, S};
         |  handle_event({queue_popped, _Q} = Event, #{ receiver := Pid } = S) -&gt;
-    34..|    Pid ! Event,
-    34..|    {ok, S};
+    29..|    Pid ! Event,
+    29..|    {ok, S};
         |  handle_event({queue_popped_r, _Q} = Event, #{ receiver := Pid } = S) -&gt;
      4..|    Pid ! Event,
      4..|    {ok, S};
@@ -61,20 +61,20 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
      2..|    Pid ! Event,
      2..|    {ok, S};
         |  handle_event({queue_consumer_started, _Q} = Event, #{ receiver := Pid } = S) -&gt;
-    37..|    Pid ! Event,
-    37..|    {ok, S};
+    41..|    Pid ! Event,
+    41..|    {ok, S};
         |  handle_event({queue_consumer_stopped, _Q} = Event, #{ receiver := Pid } = S) -&gt;
      9..|    Pid ! Event,
      9..|    {ok, S};
         |  handle_event({timeout, _Key} = Event, #{ receiver := Pid } = S) -&gt;
-     9..|    Pid ! Event,
-     9..|    {ok, S};
+     6..|    Pid ! Event,
+     6..|    {ok, S};
         |  handle_event({result, _Result, _Key} = Event, #{ receiver := Pid } = S) -&gt;
      1..|    Pid ! Event,
      1..|    {ok, S};
         |  handle_event({threshold_hit, _Q} = Event, #{ receiver := Pid } = S) -&gt;
-     4..|    Pid ! Event,
-     4..|    {ok, S};
+     6..|    Pid ! Event,
+     6..|    {ok, S};
         |  handle_event({work_requeued, _Key, _AvailableWorkers} = Event, #{ receiver := Pid } = S) -&gt;
     17..|    Pid ! Event,
     17..|    {ok, S};
@@ -93,7 +93,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  
         |  
         |  handle_info(_, State) -&gt;
-    24..|    {ok, State}.
+    23..|    {ok, State}.
         |  
         |  handle_call(_, S) -&gt;
 <font color=red>     0..|    {ok, ok, S}.</font>
