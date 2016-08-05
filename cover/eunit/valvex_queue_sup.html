@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/eunit/valvex_queue_sup.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_queue_sup.erl by COVER 2016-08-05 at 14:03:58
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_queue_sup.erl by COVER 2016-08-05 at 14:10:13
 
 ****************************************************************************
 
@@ -22,7 +22,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
    222..|    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
         |  
         |  start_child([_Backend, _Key, _Q] = Args) -&gt;
-   722..|      supervisor:start_child(?MODULE, valvex_queue_child_specs(Args)).
+   746..|      supervisor:start_child(?MODULE, valvex_queue_child_specs(Args)).
         |  
         |  init([]) -&gt;
    222..|    {ok
@@ -34,7 +34,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |      }}.
         |  
         |  valvex_queue_child_specs([Backend, Key, Q]) -&gt;
-   722..|    #{ id       =&gt; Key
+   746..|    #{ id       =&gt; Key
         |     , start    =&gt; {valvex_queue, start_link, [Backend, valvex, Q]}
         |     , restart  =&gt; permanent
         |     , shutdown =&gt; 3600

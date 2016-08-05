@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/eunit/valvex_worker.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_worker.erl by COVER 2016-08-05 at 14:03:58
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_worker.erl by COVER 2016-08-05 at 14:10:13
 
 ****************************************************************************
 
@@ -39,7 +39,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  
         |  -spec stop(valvex:valvex_ref()) -&gt; ok.
         |  stop(Worker) -&gt;
-  2022..|    gen_server:call(Worker, stop).
+  2020..|    gen_server:call(Worker, stop).
         |  
         |  %%%=============================================================================
         |  %%% Gen Server Callbacks
@@ -53,8 +53,8 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
      2..|    {noreply, S}.
         |  
         |  handle_call(stop, _From, #{ valvex := Valvex } = S) -&gt;
-  2020..|    valvex:notify(Valvex, {worker_stopped, self()}),
-  2020..|    {stop, normal, ok, S}.
+  2018..|    valvex:notify(Valvex, {worker_stopped, self()}),
+  2018..|    {stop, normal, ok, S}.
         |  
         |  handle_info(_Msg, S) -&gt;
 <font color=red>     0..|    {noreply, S}.</font>
@@ -63,7 +63,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
 <font color=red>     0..|    {ok, S}.</font>
         |  
         |  terminate(_Reason, _S) -&gt;
-  2020..|    ok.
+  2018..|    ok.
         |  %%%_* Emacs ============================================================
         |  %%% Local Variables:
         |  %%% allout-layout: t
