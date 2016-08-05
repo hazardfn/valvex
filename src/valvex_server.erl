@@ -413,7 +413,7 @@ do_add_handler(Valvex, Module, Args) ->
 do_remove_handler(Valvex, Module, Args) ->
   gen_server:call(Valvex, {remove_handler, Module, Args}).
 
-do_update(Valvex, Key, {_, _, _, _, _, Backend} = Q) ->
+do_update(Valvex, Key, {Key, _, _, _, _, Backend} = Q) ->
   case get_queue(Valvex, Key) of
     {error, key_not_found} ->
       lager:error("Attempted to update a non-existing queue"),
@@ -421,9 +421,13 @@ do_update(Valvex, Key, {_, _, _, _, _, Backend} = Q) ->
     {Key, Backend} ->
       gen_server:call(Valvex, {update, Key, Q});
     _ ->
-      lager:error("Attempted to switch backend/key - operation not supported"),
+      lager:error("Attempted to switch backend - operation not supported"),
       {error, backend_key_crossover_not_supported}
-  end.
+  end;
+do_update(_Valvex, _Key, {_OtherKey, _, _, _, _, _}) ->
+  lager:error("Attempted to switch key - operation not supported"),
+  {error, backend_key_crossover_not_supported}.
+ 
 start_workers(WorkerCount) ->
   lists:flatmap(fun(_) ->
                     [valvex_worker:start_link(self())]
