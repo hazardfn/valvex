@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/aggregate/valvex_message_event_handler.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_message_event_handler.erl by COVER 2016-08-04 at 20:37:09
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_message_event_handler.erl by COVER 2016-08-05 at 13:23:49
 
 ****************************************************************************
 
@@ -31,8 +31,8 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
     12..|    {ok, #{ receiver =&gt; Pid }}.
         |  
         |  handle_event({queue_started, _Q} = Event, #{ receiver := Pid } = S) -&gt;
-    39..|    Pid ! Event,
-    39..|    {ok, S};
+    35..|    Pid ! Event,
+    35..|    {ok, S};
         |  handle_event({queue_popped, _Q} = Event, #{ receiver := Pid } = S) -&gt;
     42..|    Pid ! Event,
     42..|    {ok, S};
@@ -61,8 +61,8 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
      2..|    Pid ! Event,
      2..|    {ok, S};
         |  handle_event({queue_consumer_started, _Q} = Event, #{ receiver := Pid } = S) -&gt;
-    43..|    Pid ! Event,
-    43..|    {ok, S};
+    39..|    Pid ! Event,
+    39..|    {ok, S};
         |  handle_event({queue_consumer_stopped, _Q} = Event, #{ receiver := Pid } = S) -&gt;
     13..|    Pid ! Event,
     13..|    {ok, S};
@@ -93,7 +93,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  
         |  
         |  handle_info(_, State) -&gt;
-    21..|    {ok, State}.
+    23..|    {ok, State}.
         |  
         |  handle_call(_, S) -&gt;
 <font color=red>     0..|    {ok, ok, S}.</font>
