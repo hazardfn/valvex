@@ -73,7 +73,7 @@ queue_backend() ->
 %%%_* Proper Callbacks =========================================================
 
 proper_test_() ->
-  {timeout, 30000, ?_assert(proper:quickcheck(valvex_tests_proper:prop_valvex(), [{to_file, user}, {numtests, 500}]))}.
+  {timeout, 30000, ?_assert(proper:quickcheck(valvex_tests_proper:prop_valvex(), [{to_file, user}]))}.
 prop_valvex() ->
   ?FORALL(Cmds, commands(?MODULE),
           ?TRAPEXIT(
@@ -103,25 +103,23 @@ command(S) ->
         [ {call,?SERVER,add,[?SERVER, queue_with_same_key(existing_queue(S)), crossover_on_existing]} || Queues] ++
         [ {call,?SERVER,push,[?SERVER, existing_queue_key(S), random_wait_fun()]} || Queues] ++
         [ {call,?SERVER,remove,[?SERVER, existing_queue_key(S)]} || Queues] ++
+        [ {call,?SERVER,remove,[?SERVER, atom()]} || Queues] ++
         [ {call,?SERVER,remove,[?SERVER, existing_queue_key(S), remove_option()]} || Queues] ++
-        [ {call,?SERVER,update,[?SERVER, first_queue_key(S), queue_with_same_key(first_queue(S))]} || Queues]
+        [ {call,?SERVER,remove,[?SERVER, atom(), remove_option()]} || Queues ] ++
+        [ {call,?SERVER,update,[?SERVER, first_queue_key(S), queue_with_same_key(first_queue(S))]} || Queues] ++
+        [ {call,?SERVER,update,[?SERVER, atom(), queue()]} || Queues]
         ).
 
-precondition(#{ queues := Queues }, {call,_,add,[?SERVER, {Key, _, _, _, _, _}]}) ->
-  lists:keymember(Key, 1, Queues) =:= false andalso length(Queues) < 5;
-precondition(#{ queues := Queues }, {call,_,add,[?SERVER, {Key, _, _, _, _, _}, crossover_on_existing]}) ->
-  lists:keymember(Key, 1, Queues);
-precondition(#{ queues := Queues }, {call,_,add,[?SERVER, {Key, _, _, _, _, _}, _Option]}) ->
-  lists:keymember(Key, 1, Queues) =:= false andalso length(Queues) < 5;
+precondition(_S, {call,_,add,[?SERVER, _Q]}) ->
+  true;
+precondition(_S, {call,_,add,[?SERVER, _Q, crossover_on_existing]}) ->
+  true;
+precondition(_S, {call,_,add,[?SERVER, _Q, _Option]}) ->
+  true;
 precondition(_S, {call,_,remove,[?SERVER, _Key]}) ->
   true;
-precondition(#{ queue_pids := QPids }, {call,_,remove,[?SERVER, Key, lock_queue]}) ->
-  {Key, Backend} = lists:keyfind(Key, 1, QPids),
-  try
-    valvex_queue:is_consuming(Backend, Key) =:= false
-  catch
-    _:_ -> false
-  end;
+precondition(_S, {call,_,remove,[?SERVER, _Key, lock_queue]}) ->
+  true;
 precondition(_S, {call,_,remove,[?SERVER, _Key, _Option]}) ->
   true;
 precondition(_S, {call,_,push,[?SERVER, _Key, _Fun]}) ->
@@ -192,7 +190,9 @@ next_state(#{ queues := Queues
             } = S, _V, {call, _, update, [?SERVER, Key, {Key, _, _, _, _, Backend} = Q]}) ->
   S#{ queues := lists:keyreplace(Key, 1, Queues, Q)
     , queue_pids := lists:keyreplace(Key, 1, QPids, {Key, Backend})
-    }.
+    };
+next_state(S, _V, {call, _, update, [?SERVER, _Key, {_OtherKey, _, _, _, _, _}]}) ->
+  S.
 
 %%%_* Emacs ====================================================================
 %%% Local Variables:

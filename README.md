@@ -63,7 +63,7 @@ RandomFun = fun() ->
 valvex:push(valvex, Key, RandomFun),
 flush(),
 receive
-  {result, {expected_reply, Value}} ->
+  {result, {expected_reply, Value}, randomqueue} ->
     io:format("Value: ~p~n", [Value]);
   {timeout, Key} ->
     io:format("The timeout has been hit");
@@ -73,7 +73,7 @@ after
   15000 ->
     io:format("Some hard timeout was reached indicating something seriously went wrong")
 end,
- valvex:remove_handler(valvex, valvex_message_event_handler, []).
+valvex:remove_handler(valvex, valvex_message_event_handler, []).
 ````
 Output:
 
