@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/eunit/valvex_sup.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_sup.erl by COVER 2016-08-05 at 13:23:49
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_sup.erl by COVER 2016-08-05 at 13:31:11
 
 ****************************************************************************
 
@@ -19,22 +19,22 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  -export([ init/1 ]).
         |  
         |  start_link() -&gt;
-   126..|    supervisor:start_link({local, ?MODULE}, ?MODULE, []),
-   126..|    valvex_queue_sup:start_link().
+   200..|    supervisor:start_link({local, ?MODULE}, ?MODULE, []),
+   200..|    valvex_queue_sup:start_link().
         |  
         |  start_link(Options) -&gt;
     22..|    supervisor:start_link({local, ?MODULE}, ?MODULE, Options),
     22..|    valvex_queue_sup:start_link().
         |  
         |  stop() -&gt;
-   126..|    ChildKillLoop = fun({Id, _, _, _}) -&gt;
-   188..|                      supervisor:terminate_child(valvex_queue_sup, Id)
+   200..|    ChildKillLoop = fun({Id, _, _, _}) -&gt;
+   540..|                      supervisor:terminate_child(valvex_queue_sup, Id)
         |                    end,
-   126..|    lists:foreach(ChildKillLoop, supervisor:which_children(valvex_queue_sup)),
-   126..|    supervisor:terminate_child(valvex_sup, valvex).
+   200..|    lists:foreach(ChildKillLoop, supervisor:which_children(valvex_queue_sup)),
+   200..|    supervisor:terminate_child(valvex_sup, valvex).
         |  
         |  init([]) -&gt;
-   126..|    {ok
+   200..|    {ok
         |    , { #{ strategy  =&gt; one_for_one
         |         , intensity =&gt; 3
         |         , period    =&gt; 60
@@ -51,7 +51,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |      }}.
         |  
         |  valvex_server_child_specs() -&gt;
-   126..|    #{ id       =&gt; valvex
+   200..|    #{ id       =&gt; valvex
         |     , start    =&gt; {valvex, start_link, [[]]}
         |     , restart  =&gt; permanent
         |     , shutdown =&gt; 3600
