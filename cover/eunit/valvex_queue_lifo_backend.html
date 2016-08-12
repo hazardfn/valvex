@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/eunit/valvex_queue_lifo_backend.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_queue_lifo_backend.erl by COVER 2016-08-12 at 20:08:14
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_queue_lifo_backend.erl by COVER 2016-08-12 at 20:11:19
 
 ****************************************************************************
 
@@ -84,7 +84,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  
         |  -spec get_state( valvex:valvex_ref()) -&gt; valvex_queue:queue_state().
         |  get_state(Q) -&gt;
-   560..|    gen_server:call(Q, get_state).
+   554..|    gen_server:call(Q, get_state).
         |  
         |  %% @doc returns true if the consumer is active.
         |  -spec is_consuming(valvex:valvex_ref()) -&gt; true | false.
@@ -134,7 +134,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  %% @doc returns the current number of items in the queue.
         |  -spec size(valvex:valvex_ref()) -&gt; non_neg_integer().
         |  size(Q) -&gt;
-130502..|    gen_server:call(Q, size).
+182352..|    gen_server:call(Q, size).
         |  
         |  %% @doc starts a timer that regularly calls the consume function
         |  %% to facilitate constant slurping of the queue, how regularly
@@ -235,9 +235,9 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  handle_call(is_tombstoned, _From, #{ tombstoned := Tombstoned } = S) -&gt;
      4..|    {reply, Tombstoned, S};
         |  handle_call(size, _From, #{ size := Size } = S) -&gt;
-130502..|    {reply, Size, S};
+182352..|    {reply, Size, S};
         |  handle_call(get_state, _From, S) -&gt;
-   552..|    {reply, S, S}.
+   550..|    {reply, S, S}.
         |  
         |  %% @doc See the "see also" list for a list of asynchronous operations.
         |  %% @see push()
