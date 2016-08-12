@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/eunit/valvex_message_event_handler.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_message_event_handler.erl by COVER 2016-08-05 at 14:10:13
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_message_event_handler.erl by COVER 2016-08-12 at 19:54:16
 
 ****************************************************************************
 
@@ -31,8 +31,8 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
     24..|    {ok, #{ receiver =&gt; Pid }}.
         |  
         |  handle_event({queue_started, _Q} = Event, #{ receiver := Pid } = S) -&gt;
-    78..|    Pid ! Event,
-    78..|    {ok, S};
+    68..|    Pid ! Event,
+    68..|    {ok, S};
         |  handle_event({queue_popped, _Q} = Event, #{ receiver := Pid } = S) -&gt;
     84..|    Pid ! Event,
     84..|    {ok, S};
@@ -61,11 +61,11 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
      4..|    Pid ! Event,
      4..|    {ok, S};
         |  handle_event({queue_consumer_started, _Q} = Event, #{ receiver := Pid } = S) -&gt;
-    86..|    Pid ! Event,
-    86..|    {ok, S};
+    68..|    Pid ! Event,
+    68..|    {ok, S};
         |  handle_event({queue_consumer_stopped, _Q} = Event, #{ receiver := Pid } = S) -&gt;
-    26..|    Pid ! Event,
-    26..|    {ok, S};
+    20..|    Pid ! Event,
+    20..|    {ok, S};
         |  handle_event({timeout, _Key} = Event, #{ receiver := Pid } = S) -&gt;
     38..|    Pid ! Event,
     38..|    {ok, S};
@@ -93,7 +93,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  
         |  
         |  handle_info(_, State) -&gt;
-    46..|    {ok, State}.
+    34..|    {ok, State}.
         |  
         |  handle_call(_, S) -&gt;
 <font color=red>     0..|    {ok, ok, S}.</font>
@@ -102,7 +102,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
 <font color=red>     0..|    {ok, State}.</font>
         |  
         |  terminate(_Reason, _State) -&gt;
-    18..|    ok.
+    16..|    ok.
         |  
         |  %%%_* Emacs ====================================================================
         |  %%% Local Variables:

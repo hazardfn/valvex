@@ -5,14 +5,14 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/aggregate/valvex_queue.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_queue.erl by COVER 2016-08-05 at 14:10:13
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_queue.erl by COVER 2016-08-12 at 19:54:16
 
 ****************************************************************************
 
         |  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         |  %%% @author Howard Beard-Marlowe &lt;howardbm@live.se&gt;
         |  %%% @copyright 2016 Howard Beard-Marlowe
-        |  %%% @version 1.0.2
+        |  %%% @version 1.1.0
         |  %%% @end
         |  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         |  
@@ -109,12 +109,12 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  %% work with this behaviour for any reason it is important that the user is made aware and something is logged.
         |  -spec crossover(valvex:queue_backend(), valvex:valvex_ref(), valvex:valvex_queue()) -&gt; ok.
         |  crossover(Backend, Q, NuQ) -&gt;
-    72..|    Backend:crossover(Q, NuQ).
+     2..|    Backend:crossover(Q, NuQ).
         |  
         |  %% @doc Used to get information on the state of the queues.
         |  -spec get_state(valvex:queue_backend(), valvex:valvex_ref()) -&gt; queue_state().
         |  get_state(Backend, Q) -&gt;
-   566..|    Backend:get_state(Q).
+   775..|    Backend:get_state(Q).
         |  
         |  %% @doc Returns true if the consumer is started, false otherwise.
         |  -spec is_consuming(valvex:queue_backend(), valvex:valvex_ref()) -&gt; true | false.
@@ -141,7 +141,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  %% @doc This will lock a queue, a locked queue cannot be pushed to.
         |  -spec lock(valvex:queue_backend(), valvex:valvex_ref()) -&gt; ok.
         |  lock(Backend, Q) -&gt;
-    22..|    Backend:lock(Q).
+     3..|    Backend:lock(Q).
         |  
         |  %% @doc This will pop the queue, depending on your backends behaviour
         |  %% this can have different conotations see the documentation for your
@@ -162,7 +162,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  %% @see valvex:valvex_q_item()
         |  -spec push(valvex:queue_backend(), valvex:valvex_ref(), valvex:valvex_q_item()) -&gt; ok.
         |  push(Backend, Q, Value) -&gt;
-   123..|    Backend:push(Q, Value).
+    37..|    Backend:push(Q, Value).
         |  
         |  %% @doc This will do the reverse operation of push, this can have different conotations
         |  %% depending on your backend view its documentation for more information.
@@ -175,17 +175,17 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  %% work.
         |  -spec size(valvex:queue_backend(), valvex:valvex_ref()) -&gt; non_neg_integer().
         |  size(Backend, Q) -&gt;
- 68929..|    Backend:size(Q).
+ 59562..|    Backend:size(Q).
         |  
         |  %% @doc This function should start your consumer, this will be a regularly run
         |  %% function that slurps the queue.
         |  -spec start_consumer(valvex:queue_backend(), valvex:valvex_ref()) -&gt; ok.
         |  start_consumer(Backend, Q) -&gt;
-   294..|    Backend:start_consumer(Q).
+    43..|    Backend:start_consumer(Q).
         |  
         |  -spec start_link(valvex:queue_backend(), valvex:valvex_ref(), valvex:valvex_queue()) -&gt; {ok, valvex:valvex_ref()}.
         |  start_link(Backend, Valvex, Q) -&gt;
-   373..|    Backend:start_link(Valvex, Q).
+    39..|    Backend:start_link(Valvex, Q).
         |  
         |  %% @doc This function should stop the consumer, note that it should not remove the queue
         |  %% entirely.
@@ -197,7 +197,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  %% note a queue does not have to be locked to be tombstoned.
         |  -spec tombstone(valvex:queue_backend(), valvex:valvex_ref()) -&gt; ok.
         |  tombstone(Backend, Q) -&gt;
-   130..|    Backend:tombstone(Q).
+     4..|    Backend:tombstone(Q).
         |  
         |  %% @doc This function unlocks a locked queue, it is idempotent.
         |  -spec unlock(valvex:queue_backend(), valvex:valvex_ref()) -&gt; ok.
