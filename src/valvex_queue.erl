@@ -41,6 +41,7 @@
                         , backend    => module()
                         , size       => non_neg_integer()
                         , poll_rate  => non_neg_integer()
+                        , poll_count => non_neg_integer()
                         , queue      => queue:queue()
                         , q          => valvex:valvex_queue()
                         , locked     => true | false
