@@ -15,5 +15,8 @@ docs:
 
 check: compile dialyzer xref
 
-test:
-	ERL_FLAGS="-config config/test.sys.config" ./rebar3 eunit
+test: proper
+	ERL_FLAGS="-config config/test.sys.config" ./rebar3 eunit --module=valvex_tests
+
+proper:
+	ERL_FLAGS="-config config/sys.config" ./rebar3 eunit --module=valvex_tests_proper

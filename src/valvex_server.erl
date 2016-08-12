@@ -1,7 +1,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% @author Howard Beard-Marlowe <howardbm@live.se>
 %%% @copyright 2016 Howard Beard-Marlowe
-%%% @version 1.0.2
+%%% @version 1.1.0
 %%% @end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -62,6 +62,7 @@ add(Valvex, { _Key
             , {timeout, _Timeout, seconds}
             , {pushback, _Pushback, seconds}
             , {poll_rate, _Poll, ms}
+            , {poll_count, _PollCount}
             , _Backend
             } = Q, Option) ->
   do_add(Valvex, Q, Option).
@@ -182,6 +183,7 @@ handle_call({add, { Key
                   , _Timeout
                   , _Pushback
                   , _Poll
+                  , _PollCount
                   , Backend
                   } = Q, Option}, _From, #{ queues       := Queues
                                           , queue_pids   := QPids
@@ -245,6 +247,7 @@ handle_call({update, Key, { Key
                           , _
                           , _
                           , _
+                          , _
                           , Backend} = Q}, _From, #{ queues     := Queues
                                                   , queue_pids := QPids
                                                   } = S) ->
@@ -258,7 +261,7 @@ handle_call(get_queues, _From, #{queues := Queues} = S) ->
 
 handle_cast({pushback, Key}, #{ queues := Queues } = S) ->
   case lists:keyfind(Key, 1, Queues) of
-    {Key, _, _, {pushback, Pushback, seconds}, _, _} = Q ->
+    {Key, _, _, {pushback, Pushback, seconds}, _, _, _} = Q ->
       Valvex = self(),
       spawn(fun() ->
                 TimeoutMS = timer:seconds(Pushback),
@@ -298,6 +301,7 @@ handle_cast({init, Queues, Pushback, WorkerCount, EventHandlers}, _S) ->
                  , _Timeout
                  , _Pushback
                  , _Poll
+                 , _PollCount
                  , Backend
                  } = Q) ->
                  valvex_queue_sup:start_child([Backend, Key, Q]),
@@ -334,7 +338,7 @@ terminate(_Reason, #{ workers := Workers, event_server := ES } = _S) ->
 get_queue(Valvex, Key) ->
   gen_server:call(Valvex, {get_queue, Key}).
 
-do_add(Valvex, {Key, _, _, _, _, _} = Q, undefined) ->
+do_add(Valvex, {Key, _, _, _, _, _, _} = Q, undefined) ->
   case get_queue(Valvex, Key) of
     {error, key_not_found} ->
       gen_server:call(Valvex, {add, Q, undefined});
@@ -342,7 +346,7 @@ do_add(Valvex, {Key, _, _, _, _, _} = Q, undefined) ->
       lager:error("Attempted to add a non-unique key: ~p", [Key]),
       {error, key_not_unique}
   end;
-do_add(Valvex, {Key, _, _, _, _, Backend} = Q, crossover_on_existing) ->
+do_add(Valvex, {Key, _, _, _, _, _, Backend} = Q, crossover_on_existing) ->
   case get_queue(Valvex, Key) of
     {error, key_not_found} ->
       do_add(Valvex, Q, undefined);
@@ -352,7 +356,7 @@ do_add(Valvex, {Key, _, _, _, _, Backend} = Q, crossover_on_existing) ->
       lager:error("Attempted to switch backend/key - operation not supported"),
       {error, backend_key_crossover_not_supported}
   end;
-do_add(Valvex, {Key, _, _, _, _, _} = Q, manual_start) ->
+do_add(Valvex, {Key, _, _, _, _, _, _} = Q, manual_start) ->
   case get_queue(Valvex, Key) of
     {error, key_not_found} ->
       gen_server:call(Valvex, {add, Q, manual_start});
@@ -413,7 +417,7 @@ do_add_handler(Valvex, Module, Args) ->
 do_remove_handler(Valvex, Module, Args) ->
   gen_server:call(Valvex, {remove_handler, Module, Args}).
 
-do_update(Valvex, Key, {Key, _, _, _, _, Backend} = Q) ->
+do_update(Valvex, Key, {Key, _, _, _, _, _, Backend} = Q) ->
   case get_queue(Valvex, Key) of
     {error, key_not_found} ->
       lager:error("Attempted to update a non-existing queue"),
@@ -424,10 +428,10 @@ do_update(Valvex, Key, {Key, _, _, _, _, Backend} = Q) ->
       lager:error("Attempted to switch backend - operation not supported"),
       {error, backend_key_crossover_not_supported}
   end;
-do_update(_Valvex, _Key, {_OtherKey, _, _, _, _, _}) ->
+do_update(_Valvex, _Key, {_OtherKey, _, _, _, _, _, _}) ->
   lager:error("Attempted to switch key - operation not supported"),
   {error, backend_key_crossover_not_supported}.
- 
+
 start_workers(WorkerCount) ->
   lists:flatmap(fun(_) ->
                     [valvex_worker:start_link(self())]

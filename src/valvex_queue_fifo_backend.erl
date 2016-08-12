@@ -19,7 +19,7 @@
 -behaviour(valvex_queue).
 -behaviour(gen_server).
 
--export([ consume/5
+-export([ consume/6
         , crossover/2
         , get_state/1
         , is_consuming/1
@@ -59,9 +59,10 @@
              , valvex:valvex_ref()
              , valvex:queue_backend()
              , valvex:queue_key()
+             , non_neg_integer()
              , non_neg_integer()) -> ok.
-consume(Valvex, QPid, Backend, Key, Timeout) ->
-  do_consume(Valvex, QPid, Backend, Key, Timeout).
+consume(Valvex, QPid, Backend, Key, Timeout, PollCount) ->
+  do_consume(Valvex, QPid, Backend, Key, Timeout, PollCount).
 
 %% @doc initiates a crossover, the replacement of the current queue settings
 %% with a different arrangement.
@@ -136,7 +137,7 @@ start_consumer(Q) ->
 
 %% @doc starts a link with the queue gen_server.
 -spec start_link(valvex:valvex_ref(), valvex:valvex_queue()) -> valvex:valvex_ref().
-start_link(Valvex, { Key, _, _, _, _, _ } = Q) ->
+start_link(Valvex, { Key, _, _, _, _, _, _ } = Q) ->
   gen_server:start_link({local, Key}, ?MODULE, [Valvex, Q], []).
 
 %% @doc stops the regular consumption of the queue.
@@ -169,6 +170,7 @@ init([ Valvex, { Key
                , {timeout, Timeout, seconds}
                , {pushback, Pushback, seconds}
                , {poll_rate, Poll, ms}
+               , {poll_count, PollCount}
                , _Backend
                } = Q
      ]) ->
@@ -179,6 +181,7 @@ init([ Valvex, { Key
         , pushback   => Pushback
         , backend    => ?MODULE
         , size       => 0
+        , poll_count => PollCount
         , poll_rate  => Poll
         , queue      => queue:new()
         , q          => Q
@@ -270,29 +273,31 @@ handle_cast(start_consumer, #{ valvex     := Valvex
                              , key        := Key
                              , timeout    := Timeout
                              , poll_rate  := Poll
+                             , poll_count := PollCount
                              , q          := RawQ
                              , consumer   := TRef0
                              } = S) ->
   case TRef0 of
     undefined ->
-      start_timer(Valvex, QPid, Backend, Key, Timeout, Poll, RawQ, S);
+      start_timer(Valvex, QPid, Backend, Key, Timeout, Poll, RawQ, S, PollCount);
     _ ->
       {noreply, S}
   end;
-handle_cast(restart_consumer, #{ valvex    := Valvex
-                               , queue_pid := QPid
-                               , backend   := Backend
-                               , key       := Key
-                               , timeout   := Timeout
-                               , poll_rate := Poll
-                               , q         := RawQ
-                               , consumer  := TRef
+handle_cast(restart_consumer, #{ valvex     := Valvex
+                               , queue_pid  := QPid
+                               , backend    := Backend
+                               , key        := Key
+                               , timeout    := Timeout
+                               , poll_rate  := Poll
+                               , poll_count := PollCount
+                               , q          := RawQ
+                               , consumer   := TRef
                                } = S) ->
   case TRef of
     undefined -> {noreply, S};
     _         ->
       timer:cancel(TRef),
-      start_timer(Valvex, QPid, Backend, Key, Timeout, Poll, RawQ, S)
+      start_timer(Valvex, QPid, Backend, Key, Timeout, Poll, RawQ, S, PollCount)
   end;
 handle_cast(stop_consumer, #{ consumer := TRef
                             , q        := RawQ
@@ -338,31 +343,29 @@ maybe_unregister_queue(undefined, _Key) ->
 maybe_unregister_queue(_Pid, Key) ->
   erlang:unregister(Key).
 
-do_consume(Valvex, QPid, Backend, Key, Timeout) ->
-  try
-    QueueValue = gen_server:call(QPid, pop),
-    case QueueValue of
-      {{value, {Work, Timestamp}}, _Q} ->
-        case is_stale(Timeout, Timestamp) of
-          false ->
-            gen_server:call(Valvex, { assign_work
-                                    , {Work, Timestamp}
-                                    , {Key, QPid, Backend}
-                                    }
-                           );
-          true  ->
-            valvex:notify(Valvex, {timeout, Key})
-        end,
-        do_consume(Valvex, QPid, Backend, Key, Timeout);
-      {empty, tombstoned} ->
-        valvex:notify(Valvex, {queue_removed, Key}),
-        valvex:remove(Valvex, Key, force_remove);
-      {empty, _} ->
-        ok
-    end
-  catch _Error:_Reason ->
-      do_consume(Valvex, QPid, Backend, Key, Timeout)
-  end.
+do_consume(_Valvex, _QPid, _Backend, _Key, _Timeout, -1) ->
+  ok;
+do_consume(Valvex, QPid, Backend, Key, Timeout, N) ->
+  QueueValue = gen_server:call(QPid, pop),
+  case QueueValue of
+    {{value, {Work, Timestamp}}, _Q} ->
+      case is_stale(Timeout, Timestamp) of
+        false ->
+          gen_server:call(Valvex, { assign_work
+                                  , {Work, Timestamp}
+                                  , {Key, QPid, Backend}
+                                  }
+                         );
+        true  ->
+          valvex:notify(Valvex, {timeout, Key})
+      end;
+    {empty, tombstoned} ->
+      valvex:notify(Valvex, {queue_removed, Key}),
+      valvex:remove(Valvex, Key, force_remove);
+    {empty, _} ->
+      ok
+  end,
+  do_consume(Valvex, QPid, Backend, Key, Timeout, N-1).
 
 update_state(Q, Size, S) ->
   S#{ size := Size, queue := Q }.
@@ -408,19 +411,21 @@ do_crossover({ _Key
              , {timeout, Timeout, seconds}
              , {pushback, Pushback, seconds}
              , {poll_rate, Poll, ms}
+             , {poll_count, PollCount}
              , _Backend
              } = Q, S) ->
-{noreply, S#{ threshold := Threshold
-            , timeout   := Timeout
-            , pushback  := Pushback
-            , poll_rate := Poll
-            , q         := Q}}.
+{noreply, S#{ threshold  := Threshold
+            , timeout    := Timeout
+            , pushback   := Pushback
+            , poll_rate  := Poll
+            , poll_count := PollCount
+            , q          := Q}}.
 
-start_timer(Valvex, QPid, Backend, Key, Timeout, Poll, RawQ, S) ->
+start_timer(Valvex, QPid, Backend, Key, Timeout, Poll, RawQ, S, PollCount) ->
   {ok, TRef} = timer:apply_interval( Poll
                                    , ?MODULE
                                    , consume
-                                   , [Valvex, QPid, Backend, Key, Timeout]
+                                   , [Valvex, QPid, Backend, Key, Timeout, PollCount]
                                    ),
   valvex:notify(Valvex, {queue_consumer_started, RawQ}),
   {noreply, S#{ consumer => TRef, consuming => true }}.

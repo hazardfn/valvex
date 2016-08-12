@@ -98,6 +98,7 @@ test_add(Config) when is_list(Config)   ->
                                       , {timeout, 20, seconds}
                                       , {pushback, 20, seconds}
                                       , {poll_rate, 3000, ms}
+                                      , {poll_count, 5}
                                       , valvex_queue_fifo_backend
                                       })),
   ?assert(is_pid(whereis(KeyNew))),
@@ -108,6 +109,7 @@ test_add(Config) when is_list(Config)   ->
                                                            , {timeout, 20, seconds}
                                                            , {pushback, 20, seconds}
                                                            , {poll_rate, 3000, ms}
+                                                           , {poll_count, 5}
                                                            , valvex_queue_fifo_backend
                                                            })),
   %% Add a manual_start queue and verify the consumer is dead
@@ -116,6 +118,7 @@ test_add(Config) when is_list(Config)   ->
                                       , {timeout, 20, seconds}
                                       , {pushback, 20, seconds}
                                       , {poll_rate, 3000, ms}
+                                      , {poll_count, 5}
                                       , valvex_queue_fifo_backend
                                       }, manual_start)),
   ?assertEqual(false, ManualConFun()).
@@ -188,6 +191,7 @@ test_crossover(Config) when is_list(Config)   ->
                  , {timeout, 20, seconds}
                  , {pushback, 20, seconds}
                  , {poll_rate, 3000, ms}
+                 , {poll_count, 5}
                  , valvex_queue_lifo_backend
                  },
   ?assertNotEqual(RawQLifo, UpdatedQLifo),
@@ -196,6 +200,7 @@ test_crossover(Config) when is_list(Config)   ->
                  , {timeout, 20, seconds}
                  , {pushback, 20, seconds}
                  , {poll_rate, 3000, ms}
+                 , {poll_count, 5}
                  , valvex_queue_fifo_backend
                  },
   ?assertNotEqual(RawQFifo, UpdatedQFifo),
@@ -232,6 +237,7 @@ test_crossover_errors(Config) when is_list(Config)   ->
                     , {timeout, 20, seconds}
                     , {pushback, 20, seconds}
                     , {poll_rate, 3000, ms}
+                    , {poll_count, 5}
                     , valvex_queue_lifo_backend
                     },
   UpdatedBackendQLifo = { test_lifo
@@ -239,6 +245,7 @@ test_crossover_errors(Config) when is_list(Config)   ->
                         , {timeout, 20, seconds}
                         , {pushback, 20, seconds}
                         , {poll_rate, 3000, ms}
+                        , {poll_count, 5}
                         , valvex_queue_fifo_backend
                         },
   UpdatedBothQLifo = { test_lifo_other
@@ -246,6 +253,7 @@ test_crossover_errors(Config) when is_list(Config)   ->
                      , {timeout, 20, seconds}
                      , {pushback, 20, seconds}
                      , {poll_rate, 3000, ms}
+                     , {poll_count, 5}
                      , valvex_queue_fifo_backend
                      },
   ?assertNotEqual(RawQLifo, UpdatedKeyQLifo),
@@ -256,6 +264,7 @@ test_crossover_errors(Config) when is_list(Config)   ->
                     , {timeout, 20, seconds}
                     , {pushback, 20, seconds}
                     , {poll_rate, 3000, ms}
+                    , {poll_count, 5}
                     , valvex_queue_fifo_backend
                     },
   UpdatedBackendQFifo = { test_fifo
@@ -263,6 +272,7 @@ test_crossover_errors(Config) when is_list(Config)   ->
                         , {timeout, 20, seconds}
                         , {pushback, 20, seconds}
                         , {poll_rate, 3000, ms}
+                        , {poll_count, 5}
                         , valvex_queue_lifo_backend
                         },
   UpdatedBothQFifo = { test_fifo_other
@@ -270,6 +280,7 @@ test_crossover_errors(Config) when is_list(Config)   ->
                      , {timeout, 20, seconds}
                      , {pushback, 20, seconds}
                      , {poll_rate, 3000, ms}
+                     , {poll_count, 5}
                      , valvex_queue_lifo_backend
                      },
   ?assertNotEqual(RawQFifo, UpdatedKeyQFifo),

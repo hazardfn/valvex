@@ -1,7 +1,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% @author Howard Beard-Marlowe <howardbm@live.se>
 %%% @copyright 2016 Howard Beard-Marlowe
-%%% @version 1.0.2
+%%% @version 1.1.0
 %%% @end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -38,6 +38,7 @@
 -type queue_backend()    :: module() | {module, list()}.
 -type queue_key()        :: atom().
 -type queue_poll_rate()  :: {poll_rate, non_neg_integer(), ms}.
+-type queue_poll_count() :: {poll_count, non_neg_integer()}.
 -type queue_pushback()   :: {pushback, non_neg_integer(), seconds}.
 -type queue_threshold()  :: {threshold, non_neg_integer()}.
 -type queue_timeout()    :: {timeout, non_neg_integer(), seconds}.
@@ -57,17 +58,20 @@
                             , queue_timeout()
                             , queue_pushback()
                             , queue_poll_rate()
+                            , queue_poll_count()
                             , queue_backend()
                             }.
 -type valvex_q_item()    :: {function(), erlang:timestamp()}
                           | {empty, any()}.
 -type valvex_options()   :: [{atom(), any()}].
+
 -type valvex_workers()   :: [pid()].
 
 -export_type([ add_option/0
              , key_find_error/0
              , queue_backend/0
              , queue_key/0
+             , queue_poll_count/0
              , queue_poll_rate/0
              , queue_pushback/0
              , queue_threshold/0
@@ -99,6 +103,7 @@ add(Valvex, { _Key
             , {timeout, _Timeout, seconds}
             , {pushback, _Pushback, seconds}
             , {poll_rate, _Poll, ms}
+            , {poll_count, _PollCount}
             , _Backend
             } = Q) ->
   valvex:add(Valvex, Q, undefined).
@@ -120,6 +125,7 @@ add(Valvex, { _Key
             , {timeout, _Timeout, seconds}
             , {pushback, _Pushback, seconds}
             , {poll_rate, _Poll, ms}
+            , {poll_count, _PollCount}
             , _Backend
             } = Q, Option) ->
   valvex_server:add(Valvex, Q, Option).

@@ -30,18 +30,20 @@ queue() ->
   , {threshold, non_neg_integer()}
   , {timeout, non_neg_integer(), seconds}
   , {pushback, non_neg_integer(), seconds}
-  , {poll_rate, integer(5000, inf), ms}
+  , {poll_rate, integer(1, inf), ms}
+  , {poll_count, integer(0, inf)}
   , ?MODULE:queue_backend()
   }.
 
 queue_with_same_key([]) ->
   [];
-queue_with_same_key({Key, _, _, _, _, Backend}) ->
+queue_with_same_key({Key, _, _, _, _, _, Backend}) ->
   { Key
   , {threshold, non_neg_integer()}
   , {timeout, non_neg_integer(), seconds}
   , {pushback, non_neg_integer(), seconds}
   , {poll_rate, integer(5000, inf), ms}
+  , {poll_count, integer(0, inf)}
   , Backend
   }.
 
@@ -73,15 +75,16 @@ queue_backend() ->
 %%%_* Proper Callbacks =========================================================
 
 proper_test_() ->
-  {timeout, 30000, ?_assert(proper:quickcheck(valvex_tests_proper:prop_valvex(), [{to_file, user}]))}.
+  {timeout, 30000, ?_assert(proper:quickcheck(valvex_tests_proper:prop_valvex(), [{to_file, user}, {numtests, 500}]))}.
 prop_valvex() ->
   ?FORALL(Cmds, commands(?MODULE),
           ?TRAPEXIT(
              begin
-               application:start(lager),
-               valvex_sup:start_link(),
+               valvex_test_forwarder:start_link(),
+               application:ensure_all_started(valvex),
                {History,State,Result} = run_commands(?MODULE, Cmds),
-               valvex_sup:stop(),
+               application:stop(valvex),
+               gen_server:stop(valvex_test_forwarder),
                ?WHENFAIL(io:format("History: ~w~nState: ~w\nResult: ~w~n",
                                    [History,State,Result]),
                          aggregate(command_names(Cmds), Result =:= ok))
@@ -149,13 +152,13 @@ postcondition(_S, {call,_,update,[?SERVER, _Key, _Queue]}, R) ->
 
 next_state(#{ queues     := Queues
             , queue_pids := QueuePids
-            } = S, _V, {call,_,add,[?SERVER, {Key, _, _, _, _, Backend} = Q]}) ->
+            } = S, _V, {call,_,add,[?SERVER, {Key, _, _, _, _, _, Backend} = Q]}) ->
   S#{ queues     := lists:append(Queues, [Q])
     , queue_pids := lists:append(QueuePids, [{Key, Backend}])
     };
 next_state(#{ queues     := Queues
             , queue_pids := QueuePids
-            } = S, _V, {call,_,add,[?SERVER, {Key, _, _, _, _, Backend} = Q, crossover_on_existing]}) ->
+            } = S, _V, {call,_,add,[?SERVER, {Key, _, _, _, _, _, Backend} = Q, crossover_on_existing]}) ->
   case lists:keyfind(Key, 1, QueuePids) of
     {Key, Backend} ->
       S#{ queues     := lists:append(lists:keydelete(Key, 1, Queues), [Q])
@@ -165,7 +168,7 @@ next_state(#{ queues     := Queues
   end;
 next_state(#{ queues     := Queues
             , queue_pids := QueuePids
-            } = S, _V, {call,_,add,[?SERVER, {Key, _, _, _, _, Backend} = Q, _Option]}) ->
+            } = S, _V, {call,_,add,[?SERVER, {Key, _, _, _, _, _, Backend} = Q, _Option]}) ->
   S#{ queues     := lists:append(Queues, [Q])
     , queue_pids := lists:append(QueuePids, [{Key, Backend}])
     };
@@ -187,11 +190,11 @@ next_state(S, _V, {call,_,push,[?SERVER, _Key, _Fun]}) ->
   S;
 next_state(#{ queues := Queues
             , queue_pids := QPids
-            } = S, _V, {call, _, update, [?SERVER, Key, {Key, _, _, _, _, Backend} = Q]}) ->
+            } = S, _V, {call, _, update, [?SERVER, Key, {Key, _, _, _, _, _, Backend} = Q]}) ->
   S#{ queues := lists:keyreplace(Key, 1, Queues, Q)
     , queue_pids := lists:keyreplace(Key, 1, QPids, {Key, Backend})
     };
-next_state(S, _V, {call, _, update, [?SERVER, _Key, {_OtherKey, _, _, _, _, _}]}) ->
+next_state(S, _V, {call, _, update, [?SERVER, _Key, {_OtherKey, _, _, _, _, _, _}]}) ->
   S.
 
 %%%_* Emacs ====================================================================

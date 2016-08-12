@@ -3,7 +3,6 @@
 
 -export([ start_link/0
         , start_link/1
-        , stop/0
         ]).
 -export([ init/1 ]).
 
@@ -14,13 +13,6 @@ start_link() ->
 start_link(Options) ->
   supervisor:start_link({local, ?MODULE}, ?MODULE, Options),
   valvex_queue_sup:start_link().
-
-stop() ->
-  ChildKillLoop = fun({Id, _, _, _}) ->
-                    supervisor:terminate_child(valvex_queue_sup, Id)
-                  end,
-  lists:foreach(ChildKillLoop, supervisor:which_children(valvex_queue_sup)),
-  supervisor:terminate_child(valvex_sup, valvex).
 
 init([]) ->
   {ok

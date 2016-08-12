@@ -71,7 +71,7 @@ handle_event(Event, #{ gun := Gun } = S) ->
 
 do_dump(Gun, _Event) ->
   Queues      = gen_server:call(valvex, get_queues, 2000),
-  QueueFun    = fun({Key, _, _, _, _, Backend}) ->
+  QueueFun    = fun({Key, _, _, _, _, _, Backend}) ->
                     Pred = fun(K, _V) ->
                                lists:member(K, map_blacklist()) == false
                            end,
