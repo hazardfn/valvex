@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/eunit/valvex_queue_sup.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_queue_sup.erl by COVER 2016-08-13 at 11:57:58
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_queue_sup.erl by COVER 2016-08-13 at 12:00:55
 
 ****************************************************************************
 
@@ -19,13 +19,13 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  -export([ valvex_queue_child_specs/1 ]).
         |  
         |  start_link() -&gt;
-   534..|    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+    22..|    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
         |  
         |  start_child([_Backend, _Key, _Q] = Args) -&gt;
-  1120..|      supervisor:start_child(?MODULE, valvex_queue_child_specs(Args)).
+    78..|      supervisor:start_child(?MODULE, valvex_queue_child_specs(Args)).
         |  
         |  init([]) -&gt;
-   534..|    {ok
+    22..|    {ok
         |    , { #{ strategy  =&gt; one_for_one
         |         , intensity =&gt; 3
         |         , period    =&gt; 60
@@ -34,7 +34,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |      }}.
         |  
         |  valvex_queue_child_specs([Backend, Key, Q]) -&gt;
-  1120..|    #{ id       =&gt; Key
+    78..|    #{ id       =&gt; Key
         |     , start    =&gt; {valvex_queue, start_link, [Backend, valvex, Q]}
         |     , restart  =&gt; permanent
         |     , shutdown =&gt; 3600
