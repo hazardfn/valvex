@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/aggregate/valvex.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex.erl by COVER 2016-08-12 at 20:11:19
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex.erl by COVER 2016-08-13 at 11:57:58
 
 ****************************************************************************
 
@@ -102,9 +102,9 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  %% @doc Starts a link with the valvex gen_server.
         |  -spec start_link(valvex_options()) -&gt; {ok, valvex_ref()}.
         |  start_link(Options) -&gt;
-    11..|    Pid = valvex_server:start_link(Options),
-    11..|    lager:info("Valvex server started: ~p", [Pid]),
-    11..|    {ok, Pid}.
+   267..|    Pid = valvex_server:start_link(Options),
+   264..|    lager:info("Valvex server started: ~p", [Pid]),
+   264..|    {ok, Pid}.
         |  
         |  %% @doc Adds a queue to valvex using the default option undefined.
         |  %% @see add/3
@@ -117,7 +117,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |              , {poll_count, _PollCount}
         |              , _Backend
         |              } = Q) -&gt;
-     2..|    valvex:add(Valvex, Q, undefined).
+   298..|    valvex:add(Valvex, Q, undefined).
         |  
         |  %% @doc Adds a queue to valvex. There are a few options that aliter slightly
         |  %% the behaviour of the add:
@@ -139,13 +139,13 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |              , {poll_count, _PollCount}
         |              , _Backend
         |              } = Q, Option) -&gt;
-    11..|    valvex_server:add(Valvex, Q, Option).
+   657..|    valvex_server:add(Valvex, Q, Option).
         |  
         |  %% @doc removes a queue from valvex with the default setting. see remove/3 for more info.
         |  %% @see remove/3
         |  -spec remove( valvex_ref(), queue_key()) -&gt; ok | key_find_error().
         |  remove(Valvex, Key) -&gt;
-     1..|    valvex:remove(Valvex, Key, undefined).
+   226..|    valvex:remove(Valvex, Key, undefined).
         |  
         |  %% @doc Removes a queue from valvex. There are a few options that alter the way
         |  %% a remove behaves:
@@ -159,55 +159,55 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  %% @see remove_option()
         |  -spec remove(valvex_ref(), queue_key(), remove_option()) -&gt; ok | key_find_error().
         |  remove(Valvex, Key, Option) -&gt;
-     6..|    valvex_server:remove(Valvex, Key, Option).
+   426..|    valvex_server:remove(Valvex, Key, Option).
         |  
         |  %% @doc Pushes an item to the queue with the given key. Work can be any
         |  %% 0 arity function.
         |  -spec push(valvex_ref(), queue_key(), function()) -&gt; ok.
         |  push(Valvex, Key, Work) -&gt;
-    37..|    valvex_server:push(Valvex, Key, {Work, erlang:timestamp()}).
+   128..|    valvex_server:push(Valvex, Key, {Work, erlang:timestamp()}).
         |  
         |  %% @doc Gets the list of workers that are currently not undertaking work.
         |  -spec get_available_workers(valvex_ref()) -&gt; valvex_workers().
         |  get_available_workers(Valvex) -&gt;
-     2..|    valvex_server:get_available_workers(Valvex).
+<font color=red>     0..|    valvex_server:get_available_workers(Valvex).</font>
         |  
         |  %% @doc Gets the mumber of workers that are currently not undertaking work.
         |  -spec get_available_workers_count(valvex_ref()) -&gt; non_neg_integer().
         |  get_available_workers_count(Valvex) -&gt;
-     1..|    length(valvex:get_available_workers(Valvex)).
+<font color=red>     0..|    length(valvex:get_available_workers(Valvex)).</font>
         |  
         |  %% @doc Gets the size of the queue with the given key.
         |  -spec get_queue_size(valvex_ref(), queue_key()) -&gt; non_neg_integer() | key_find_error().
         |  get_queue_size(Valvex, Key) -&gt;
- 91183..|    valvex_server:get_queue_size(Valvex, Key).
+<font color=red>     0..|    valvex_server:get_queue_size(Valvex, Key).</font>
         |  
         |  %% @doc Pushes back a set amount of time in order to prevent spamming.
         |  -spec pushback(valvex_ref(), queue_key()) -&gt; ok.
         |  pushback(Valvex, Key) -&gt;
-     4..|    valvex_server:pushback(Valvex, Key).
+     5..|    valvex_server:pushback(Valvex, Key).
         |  
         |  %% @doc Notifies those listening via gen_event of various events happening
         |  %% inside valvex.
         |  -spec notify(valvex_ref(), any()) -&gt; ok.
         |  notify(Valvex, Event) -&gt;
-   310..|    valvex_server:notify(Valvex, Event).
+  3175..|    valvex_server:notify(Valvex, Event).
         |  
         |  %% @doc Adds an event handler which can intercept events from valvex
         |  %% and do various things.
         |  -spec add_handler(valvex_ref(), module(), [any()]) -&gt; ok.
         |  add_handler(Valvex, Module, Args) -&gt;
-    12..|    valvex_server:add_handler(Valvex, Module, Args).
+<font color=red>     0..|    valvex_server:add_handler(Valvex, Module, Args).</font>
         |  
         |  %% @doc Removes a previously added handler.
         |  -spec remove_handler(valvex_ref(), module(), [any()]) -&gt; ok.
         |  remove_handler(Valvex, Module, Args) -&gt;
-     1..|    valvex_server:remove_handler(Valvex, Module, Args).
+<font color=red>     0..|    valvex_server:remove_handler(Valvex, Module, Args).</font>
         |  
         |  %% @doc Updates a key with a new set of queue settings.
         |  -spec update(valvex_ref(), queue_key(), valvex_queue()) -&gt; ok.
         |  update(Valvex, Key, NuQ) -&gt;
-     2..|    valvex_server:update(Valvex, Key, NuQ).
+   330..|    valvex_server:update(Valvex, Key, NuQ).
         |  
         |  %%%_* Emacs ====================================================================
         |  %%% Local Variables:

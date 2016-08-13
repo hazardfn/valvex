@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/aggregate/valvex_app.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_app.erl by COVER 2016-08-12 at 20:11:19
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_app.erl by COVER 2016-08-13 at 11:57:58
 
 ****************************************************************************
 
@@ -28,14 +28,14 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  start() -&gt;
 <font color=red>     0..|    application:start(valvex).</font>
         |  start(_StartType, _StartArgs) -&gt;
-    11..|    case application:get_all_env(valvex) of
+   267..|    case application:get_all_env(valvex) of
 <font color=red>     0..|       []      -&gt; valvex_sup:start_link();</font>
         |      _Options -&gt;
-    11..|       {ok, Queues}          = get_setting(valvex, queues),
-    11..|       {ok, EventHandlers}   = get_setting(valvex, event_handlers),
-    11..|       {ok, Workers}         = get_setting(valvex, workers),
-    11..|       {ok, PushbackEnabled} = get_setting(valvex, pushback_enabled),
-    11..|       valvex_sup:start_link([ {queues, Queues}
+   267..|       {ok, Queues}          = get_setting(valvex, queues),
+   267..|       {ok, EventHandlers}   = get_setting(valvex, event_handlers),
+   267..|       {ok, Workers}         = get_setting(valvex, workers),
+   267..|       {ok, PushbackEnabled} = get_setting(valvex, pushback_enabled),
+   267..|       valvex_sup:start_link([ {queues, Queues}
         |                             , {pushback_enabled, PushbackEnabled}
         |                             , {workers, Workers}
         |                             , {event_handlers, EventHandlers}
@@ -43,14 +43,14 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |    end.
         |  %%----------------------------------------------------------------------------------------------------------------------
         |  stop(_State) -&gt;
-    11..|      ok.
+   267..|      ok.
         |  
         |  %%======================================================================================================================
         |  %% Internal functions
         |  %%======================================================================================================================
         |  
         |  get_setting(App, Par) -&gt;
-    44..|    application:get_env(App, Par).
+  1068..|    application:get_env(App, Par).
         |  
         |  %%%_* Emacs ============================================================================================================
         |  %%% Local Variables:
