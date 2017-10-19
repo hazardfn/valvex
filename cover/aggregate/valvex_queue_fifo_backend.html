@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/aggregate/valvex_queue_fifo_backend.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_queue_fifo_backend.erl by COVER 2016-08-13 at 12:00:55
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_queue_fifo_backend.erl by COVER 2017-10-19 at 13:13:46
 
 ****************************************************************************
 
@@ -73,7 +73,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |               , non_neg_integer()
         |               , non_neg_integer()) -&gt; ok.
         |  consume(Valvex, QPid, Backend, Key, Timeout, PollCount) -&gt;
-    90..|    do_consume(Valvex, QPid, Backend, Key, Timeout, PollCount).
+   108..|    do_consume(Valvex, QPid, Backend, Key, Timeout, PollCount).
         |  
         |  %% @doc initiates a crossover, the replacement of the current queue settings
         |  %% with a different arrangement.
@@ -85,7 +85,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  %% @doc returns the queue state.
         |  -spec get_state(valvex:valvex_ref()) -&gt; valvex_queue:queue_state().
         |  get_state(Q) -&gt;
-   544..|    gen_server:call(Q, get_state).
+   556..|    gen_server:call(Q, get_state).
         |  
         |  %% @doc returns true if the consumer is active.
         |  -spec is_consuming(valvex:valvex_ref()) -&gt; true | false.
@@ -130,7 +130,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  %% @see valvex:valvex_q_item()
         |  -spec push_r(valvex:valvex_ref(), valvex:valvex_q_item()) -&gt; ok.
         |  push_r(Q, Value) -&gt;
-     9..|    gen_server:cast(Q, {push_r, Value}).
+     8..|    gen_server:cast(Q, {push_r, Value}).
         |  
         |  %% @doc returns the current number of items in the queue.
         |  -spec size(valvex:valvex_ref()) -&gt; non_neg_integer().
@@ -216,8 +216,8 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |                           , tombstoned := Tombstone
         |                           , valvex     := Valvex
         |                           } = S) -&gt;
-   487..|    Value = queue:out(Q0),
-   487..|    evaluate_value(Valvex, Tombstone, Size, RawQ, Value, queue_popped, S);
+   600..|    Value = queue:out(Q0),
+   600..|    evaluate_value(Valvex, Tombstone, Size, RawQ, Value, queue_popped, S);
         |  handle_call(pop_r, _From, #{ queue      := Q0
         |                             , q          := RawQ
         |                             , size       := Size
@@ -238,7 +238,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  handle_call(size, _From, #{ size := Size } = S) -&gt;
      7..|    {reply, Size, S};
         |  handle_call(get_state, _From, S) -&gt;
-   541..|    {reply, S, S}.
+   553..|    {reply, S, S}.
         |  
         |  
         |  %% @doc See the "see also" list for a list of asynchronous operations.
@@ -260,8 +260,8 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |                                                      , q         := RawQ
         |                                                      , queue     := Q
         |                                                      } = S) -&gt;
-     9..|    valvex:notify(Valvex, {queue_push_r, RawQ}),
-     9..|    evaluate_push(S, queue:in_r(Value, Q), Work);
+     8..|    valvex:notify(Valvex, {queue_push_r, RawQ}),
+     8..|    evaluate_push(S, queue:in_r(Value, Q), Work);
         |  handle_cast(lock, #{ valvex := Valvex, q := RawQ } = S) -&gt;
      2..|    valvex:notify(Valvex, {queue_locked, RawQ}),
      2..|    {noreply, S#{ locked := true }};
@@ -355,14 +355,14 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
 <font color=red>     0..|    erlang:unregister(Key).</font>
         |  
         |  do_consume(_Valvex, _QPid, _Backend, _Key, _Timeout, -1) -&gt;
-    79..|    ok;
+    98..|    ok;
         |  do_consume(Valvex, QPid, Backend, Key, Timeout, N) -&gt;
-   486..|    QueueValue = gen_server:call(QPid, pop),
-   485..|    case QueueValue of
+   599..|    QueueValue = gen_server:call(QPid, pop),
+   598..|    case QueueValue of
         |      {{value, {Work, Timestamp}}, _Q} -&gt;
-    19..|        case is_stale(Timeout, Timestamp) of
+    18..|        case is_stale(Timeout, Timestamp) of
         |          false -&gt;
-    10..|            gen_server:call(Valvex, { assign_work
+     9..|            gen_server:call(Valvex, { assign_work
         |                                    , {Work, Timestamp}
         |                                    , {Key, QPid, Backend}
         |                                    }
@@ -374,21 +374,21 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
      1..|        valvex:notify(Valvex, {queue_removed, Key}),
      1..|        valvex:remove(Valvex, Key, force_remove);
         |      {empty, _} -&gt;
-   465..|        ok
+   579..|        ok
         |    end,
-   475..|    do_consume(Valvex, QPid, Backend, Key, Timeout, N-1).
+   589..|    do_consume(Valvex, QPid, Backend, Key, Timeout, N-1).
         |  
         |  update_state(Q, Size, S) -&gt;
-    49..|    S#{ size := Size, queue := Q }.
+    47..|    S#{ size := Size, queue := Q }.
         |  
         |  evaluate_value(Valvex, Tombstone, Size, RawQ, Value, Event, S) -&gt;
-   489..|    case Value of
+   602..|    case Value of
         |      {{value, {_Work, _Timestamp}}, Q} -&gt;
-    23..|        valvex:notify(Valvex, {Event, RawQ}),
-    23..|        {reply, Value, update_state(Q, Size-1, S)};
+    22..|        valvex:notify(Valvex, {Event, RawQ}),
+    22..|        {reply, Value, update_state(Q, Size-1, S)};
         |      {empty, _}                                -&gt;
-   466..|        case Tombstone of
-   465..|          false -&gt; {reply, Value, S};
+   580..|        case Tombstone of
+   579..|          false -&gt; {reply, Value, S};
      1..|          true  -&gt; {reply, {empty, tombstoned}, S}
         |        end
         |    end.
@@ -400,16 +400,16 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |                 , size      := Size
         |                 , locked    := Locked
         |                 } = S, Q, Work) -&gt;
-    28..|    case Locked of
+    27..|    case Locked of
         |      false -&gt;
-    27..|        case Size &gt;= Threshold of
+    26..|        case Size &gt;= Threshold of
         |          true -&gt;
      1..|            valvex:pushback(Valvex, Key),
      1..|            {noreply, S};
         |          false -&gt;
-    26..|            lager:info("Work pushed - Key:~p, Value:~p", [Key, Work]),
-    26..|            valvex:notify(Valvex, {push_complete, RawQ}),
-    26..|            {noreply, update_state(Q, Size+1, S)}
+    25..|            lager:info("Work pushed - Key:~p, Value:~p", [Key, Work]),
+    25..|            valvex:notify(Valvex, {push_complete, RawQ}),
+    25..|            {noreply, update_state(Q, Size+1, S)}
         |        end;
         |      true -&gt;
      1..|        lager:warning("Pushed to a locked queue: ~p", [Key]),
@@ -442,9 +442,9 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
     27..|    {noreply, S#{ consumer =&gt; TRef, consuming =&gt; true }}.
         |  
         |  is_stale(Timeout, Timestamp) -&gt;
-    19..|    TimeoutMS = timer:seconds(Timeout),
-    19..|    Diff      = timer:now_diff(erlang:timestamp(), Timestamp),
-    19..|    Diff      &gt; (TimeoutMS * 1000).
+    18..|    TimeoutMS = timer:seconds(Timeout),
+    18..|    Diff      = timer:now_diff(erlang:timestamp(), Timestamp),
+    18..|    Diff      &gt; (TimeoutMS * 1000).
         |  %%%_* Emacs ====================================================================
         |  %%% Local Variables:
         |  %%% allout-layout: t

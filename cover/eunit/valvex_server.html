@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/eunit/valvex_server.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_server.erl by COVER 2016-08-13 at 12:00:55
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_server.erl by COVER 2017-10-19 at 13:13:46
 
 ****************************************************************************
 
@@ -99,7 +99,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  %% @doc Gets the current size of the queue with the given key.
         |  -spec get_queue_size( valvex:valvex_ref(), valvex:queue_key()) -&gt; non_neg_integer() | valvex:key_find_error().
         |  get_queue_size(Valvex, Key) -&gt;
-176324..|    do_get_queue_size(Valvex, Key).
+272362..|    do_get_queue_size(Valvex, Key).
         |  
         |  %% @doc Pushes back on the client forcing them to wait
         |  %% this prevents spamming if enabled.
@@ -111,7 +111,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  %% within valvex, read the readme for more info.
         |  -spec notify( valvex:valvex_ref(), any()) -&gt; ok.
         |  notify(Valvex, Event) -&gt;
-   644..|    do_notify(Valvex, Event).
+   626..|    do_notify(Valvex, Event).
         |  
         |  %% @doc Adds a handler which will receive events from valvex, view
         |  %% the readme for more info on events.
@@ -171,23 +171,23 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  %% @see remove_handler()
         |  %% @see update()
         |  handle_call({get_queue, Key}, _From, #{ queue_pids := Queues } = S) -&gt;
-176370..|    case lists:keyfind(Key, 1, Queues) of
+272408..|    case lists:keyfind(Key, 1, Queues) of
         |      false -&gt;
     20..|        {reply, {error, key_not_found}, S};
         |      {Key, _Backend} = Queue -&gt;
-176350..|        lager:info("get_queue found: ~p", [Queue]),
-176350..|        {reply, Queue, S}
+272388..|        lager:info("get_queue found: ~p", [Queue]),
+272388..|        {reply, Queue, S}
         |    end;
         |  handle_call({get_raw_queue, Key}, _From, #{ queue_pids := Queues
         |                                            , queues     := RawQueues
         |                                            } = S) -&gt;
- 42056..|    case lists:keyfind(Key, 1, Queues) of
+ 90202..|    case lists:keyfind(Key, 1, Queues) of
         |      false -&gt;
      8..|        {reply, {error, key_not_found}, S};
         |      {Key, _Backend} -&gt;
- 42048..|        RawQ = lists:keyfind(Key, 1, RawQueues),
- 42048..|        lager:info("get_raw_queue found: ~p", [RawQ]),
- 42048..|        {reply, RawQ, S}
+ 90194..|        RawQ = lists:keyfind(Key, 1, RawQueues),
+ 90194..|        lager:info("get_raw_queue found: ~p", [RawQ]),
+ 90194..|        {reply, RawQ, S}
         |    end;
         |  handle_call({add, { Key
         |                    , _Threshold
@@ -216,7 +216,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
      4..|    {reply, Workers, S};
         |  handle_call( {assign_work, {Work, Timestamp}, {Key, QPid, Backend}}
         |             , _From, #{ available_workers := Workers } = S) -&gt;
-    42..|    case Workers == [] of
+    38..|    case Workers == [] of
         |      false -&gt;
      4..|        [Worker | T] = Workers,
      4..|        Valvex = self(),
@@ -227,9 +227,9 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
      4..|        valvex_worker:work(Worker, {work, WorkFun}),
      4..|        {noreply, S#{ available_workers := T }};
         |      true -&gt;
-    38..|        valvex:notify(self(), {work_requeued, Key, []}),
-    38..|        valvex_queue:push_r(Backend, QPid, {Work, Timestamp}),
-    38..|        {noreply, S}
+    34..|        valvex:notify(self(), {work_requeued, Key, []}),
+    34..|        valvex_queue:push_r(Backend, QPid, {Work, Timestamp}),
+    34..|        {noreply, S}
         |    end;
         |  handle_call({remove, Key}, _From, #{ queues     := Queues
         |                                     , queue_pids := QPids
@@ -268,7 +268,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
      4..|    {reply, ok, S#{ queues     := NewQueues
         |                  , queue_pids := NewQPids }};
         |  handle_call(get_queues, _From, #{queues := Queues} = S) -&gt;
-   522..|    {reply, Queues, S}.
+   536..|    {reply, Queues, S}.
         |  
         |  handle_cast({pushback, Key}, #{ queues := Queues } = S) -&gt;
      8..|    case lists:keyfind(Key, 1, Queues) of
@@ -298,9 +298,9 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  handle_cast({notify, Event}
         |             , #{ event_server := EventServer } = S
         |             ) -&gt;
-   624..|    lager:info("Event sent to subscribers: ~p", [Event]),
-   624..|    gen_event:notify(EventServer, Event),
-   624..|    {noreply, S};
+   608..|    lager:info("Event sent to subscribers: ~p", [Event]),
+   608..|    gen_event:notify(EventServer, Event),
+   608..|    {noreply, S};
         |  handle_cast({init, Queues, Pushback, WorkerCount, EventHandlers}, _S) -&gt;
     22..|    {ok, EventServer} = gen_event:start_link(),
     22..|    HandlerFun = fun({EventModule, Args}) -&gt;
@@ -335,19 +335,19 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
 <font color=red>     0..|    {ok, S}.</font>
         |  
         |  terminate(_Reason, #{ workers := Workers, event_server := ES } = _S) -&gt;
-    22..|    StopWorkerFun = fun(Worker) -&gt;
-    22..|                        valvex_worker:stop(Worker)
+    20..|    StopWorkerFun = fun(Worker) -&gt;
+    20..|                        valvex_worker:stop(Worker)
         |                    end,
-    22..|    lists:foreach(StopWorkerFun, Workers),
-    20..|    gen_event:stop(ES),
-    16..|    ok.
+    20..|    lists:foreach(StopWorkerFun, Workers),
+    18..|    gen_event:stop(ES),
+    14..|    ok.
         |  
         |  %%==============================================================================
         |  %% Internal functions
         |  %%==============================================================================
         |  
         |  get_queue(Valvex, Key) -&gt;
-176370..|    gen_server:call(Valvex, {get_queue, Key}).
+272408..|    gen_server:call(Valvex, {get_queue, Key}).
         |  
         |  do_add(Valvex, {Key, _, _, _, _, _, _} = Q, undefined) -&gt;
     12..|    case get_queue(Valvex, Key) of
@@ -409,9 +409,9 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
      4..|    gen_server:call(Valvex, get_workers).
         |  
         |  do_get_queue_size(Valvex, Key) -&gt;
-176324..|    case get_queue(Valvex, Key) of
+272362..|    case get_queue(Valvex, Key) of
         |      {Key, Backend} -&gt;
-176324..|        valvex_queue:size(Backend, Key);
+272362..|        valvex_queue:size(Backend, Key);
         |      Error -&gt;
 <font color=red>     0..|        Error</font>
         |    end.
@@ -420,7 +420,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
      8..|    gen_server:cast(Valvex, {pushback, Key}).
         |  
         |  do_notify(Valvex, Event) -&gt;
-   644..|    gen_server:cast(Valvex, {notify, Event}).
+   626..|    gen_server:cast(Valvex, {notify, Event}).
         |  
         |  do_add_handler(Valvex, Module, Args) -&gt;
     24..|    gen_server:call(Valvex, {add_handler, Module, Args}).

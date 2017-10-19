@@ -5,7 +5,7 @@
 <title>/home/travis/build/hazardfn/valvex/_build/test/cover/aggregate/valvex_queue.html</title>
 </head><body style='background-color: white; color: black'>
 <pre>
-File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_queue.erl by COVER 2016-08-13 at 12:00:55
+File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/ebin/../src/valvex_queue.erl by COVER 2017-10-19 at 13:13:46
 
 ****************************************************************************
 
@@ -115,7 +115,7 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  %% @doc Used to get information on the state of the queues.
         |  -spec get_state(valvex:queue_backend(), valvex:valvex_ref()) -&gt; queue_state().
         |  get_state(Backend, Q) -&gt;
-   829..|    Backend:get_state(Q).
+   846..|    Backend:get_state(Q).
         |  
         |  %% @doc Returns true if the consumer is started, false otherwise.
         |  -spec is_consuming(valvex:queue_backend(), valvex:valvex_ref()) -&gt; true | false.
@@ -169,14 +169,14 @@ File generated from /home/travis/build/hazardfn/valvex/_build/test/lib/valvex/eb
         |  %% depending on your backend view its documentation for more information.
         |  -spec push_r( valvex:queue_backend(), valvex:valvex_ref(), valvex:valvex_q_item()) -&gt; ok.
         |  push_r(Backend, Q, Value) -&gt;
-    19..|    Backend:push_r(Q, Value).
+    17..|    Backend:push_r(Q, Value).
         |  
         |  %% @doc This function should retrieve the current size of the queue, if for some reason
         |  %% this is costly with your implementation make sure the user is notified this doesnt
         |  %% work.
         |  -spec size(valvex:queue_backend(), valvex:valvex_ref()) -&gt; non_neg_integer().
         |  size(Backend, Q) -&gt;
- 88162..|    Backend:size(Q).
+136181..|    Backend:size(Q).
         |  
         |  %% @doc This function should start your consumer, this will be a regularly run
         |  %% function that slurps the queue.
